@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   MAG_GROUPS,
@@ -87,6 +87,24 @@ export default function TrainerMagazinePage() {
   // Modals state
   const [isWriterModalOpen, setIsWriterModalOpen] = useState(false);
   const [activeArticle, setActiveArticle] = useState<ArticleCardData | null>(null);
+  const articleDrawerRef = useRef<HTMLDivElement | null>(null);
+
+  // Lock background scroll when article reader is open so touch/mouse scroll acts directly on the article
+  useEffect(() => {
+    if (activeArticle) {
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      if (articleDrawerRef.current) {
+        articleDrawerRef.current.scrollTop = 0;
+      }
+      return () => {
+        document.body.style.overflow = prevBodyOverflow;
+        document.documentElement.style.overflow = prevHtmlOverflow;
+      };
+    }
+  }, [activeArticle]);
   const [activeVideo, setActiveVideo] = useState<{
     url: string;
     title: string;
@@ -262,7 +280,14 @@ export default function TrainerMagazinePage() {
               const sections = MAG_SECTIONS.filter((s) => s.group === group.key);
               return (
                 <div key={group.key} className="mag-group-card">
-                  <div className="mag-group-head">
+                  <div
+                    className="mag-group-head"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      const firstSec = sections[0];
+                      if (firstSec) handleJumpToSection(group.key, firstSec.slug);
+                    }}
+                  >
                     <span className="mag-group-num">{group.number}</span>
                     <h2 className="mag-group-title">
                       {group.title[lang] || group.title.ar}
@@ -511,6 +536,7 @@ export default function TrainerMagazinePage() {
       {/* MODAL 1: Article Reader Drawer */}
       {activeArticle && (
         <div
+          ref={articleDrawerRef}
           className="article-drawer-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setActiveArticle(null);

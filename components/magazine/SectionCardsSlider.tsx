@@ -64,8 +64,8 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
   const [flippedCardKey, setFlippedCardKey] = useState<string | null>(null);
   const isProgrammaticScrollRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isDraggingRef = useRef(false);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const lastTouchTimeRef = useRef<number>(0);
 
   const scrollToSlide = useCallback((idx: number) => {
     if (!mobileTrackRef.current) return;
@@ -105,7 +105,11 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
 
   // Global document click listener: when user clicks outside cards, un-flip all flipped cards
   useEffect(() => {
-    const handleDocClick = () => {
+    const handleDocClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('.article-card') || target?.closest('.mag-flip-container')) {
+        return;
+      }
       setFlippedCardKey(null);
     };
     document.addEventListener('click', handleDocClick);
@@ -186,17 +190,18 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
     setFlippedCardKey((prev) => (prev === cardKey ? null : cardKey));
   };
 
-  // Card click toggles 3D flip (filters synthetic touch clicks)
+  // Immediate card click toggles 3D flip cleanly (unless scrolling/dragging)
   const handleCardClick = (cardKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (Date.now() - lastTouchTimeRef.current < 500) {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
       return;
     }
     toggleFlipCard(cardKey);
   };
 
-  // Card touch handler to avoid flipping when dragging/swiping
   const handleCardTouchStart = (e: React.TouchEvent) => {
+    isDraggingRef.current = false;
     if (e.touches.length > 0) {
       touchStartPosRef.current = {
         x: e.touches[0].clientX,
@@ -206,20 +211,13 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
     }
   };
 
-  const handleCardTouchEnd = (cardKey: string, e: React.TouchEvent) => {
-    if (!touchStartPosRef.current) return;
-    if (e.changedTouches.length > 0) {
-      const dx = Math.abs(e.changedTouches[0].clientX - touchStartPosRef.current.x);
-      const dy = Math.abs(e.changedTouches[0].clientY - touchStartPosRef.current.y);
-      const dt = Date.now() - touchStartPosRef.current.time;
-      // If movement is tiny (< 10px) and brief (< 400ms), treat as clean tap to flip
-      if (dx < 10 && dy < 10 && dt < 400) {
-        e.stopPropagation();
-        lastTouchTimeRef.current = Date.now();
-        toggleFlipCard(cardKey);
-      }
+  const handleCardTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || e.touches.length === 0) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      isDraggingRef.current = true;
     }
-    touchStartPosRef.current = null;
   };
 
   const handleActionRead = (card: ArticleCardData) => {
@@ -400,17 +398,19 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
                         <article
                           key={cardKey}
                           className={`article-card ${isFeature ? 'feature' : ''} ${isVideo ? 'video-card' : ''} ${isFlipped ? 'flipped' : ''}`}
-                          onClick={(e) => handleCardClick(cardKey, e)}
-                          onTouchStart={handleCardTouchStart}
-                          onTouchEnd={(e) => handleCardTouchEnd(cardKey, e)}
                           style={{
                             ['--article-image' as any]: `url('${card.image}')`,
                             ['--card-accent' as any]: slide.accent || '#ffd166',
                           }}
+                          onTouchStart={handleCardTouchStart}
+                          onTouchMove={handleCardTouchMove}
                         >
                           <div className="article-card-inner">
                             {/* FRONT FACE */}
-                            <div className="article-card-face article-card-front">
+                            <div
+                              className="article-card-face article-card-front"
+                              onClick={(e) => handleCardClick(cardKey, e)}
+                            >
                               {isVideo && (
                                 <span className="article-type-badge video">
                                   ▶ {lang === 'ar' ? 'فيديو' : lang === 'fr' ? 'Vidéo' : 'Video'}
@@ -428,14 +428,6 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      if (Date.now() - lastTouchTimeRef.current < 400) return;
-                                      handleActionRead(card);
-                                    }}
-                                    onTouchStart={(e) => e.stopPropagation()}
-                                    onTouchEnd={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      lastTouchTimeRef.current = Date.now();
                                       handleActionRead(card);
                                     }}
                                     aria-label={isVideo ? 'Watch Video' : 'Read Article'}
@@ -457,14 +449,8 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
                                     type="button"
                                     className="article-detail-btn"
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
-                                      if (Date.now() - lastTouchTimeRef.current < 400) return;
-                                      toggleFlipCard(cardKey);
-                                    }}
-                                    onTouchStart={(e) => e.stopPropagation()}
-                                    onTouchEnd={(e) => {
-                                      e.stopPropagation();
-                                      lastTouchTimeRef.current = Date.now();
                                       toggleFlipCard(cardKey);
                                     }}
                                     aria-label={t.article_details || 'التفاصيل'}
@@ -475,21 +461,18 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
                               </div>
                             </div>
 
-                            {/* BACK FACE */}
-                            <div className="article-card-face article-card-back">
+                            {/* BACK FACE - Tapping anywhere on back face flips back to front */}
+                            <div
+                              className="article-card-face article-card-back"
+                              onClick={(e) => handleCardClick(cardKey, e)}
+                            >
                               {/* Close / Flip Back Button */}
                               <button
                                 type="button"
                                 className="article-flip-back-btn"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
-                                  if (Date.now() - lastTouchTimeRef.current < 400) return;
-                                  toggleFlipCard(cardKey);
-                                }}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                onTouchEnd={(e) => {
-                                  e.stopPropagation();
-                                  lastTouchTimeRef.current = Date.now();
                                   toggleFlipCard(cardKey);
                                 }}
                                 aria-label="Back"
@@ -511,20 +494,12 @@ export const SectionCardsSlider: React.FC<SectionCardsSliderProps> = ({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  if (Date.now() - lastTouchTimeRef.current < 400) return;
-                                  handleActionRead(card);
-                                }}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                onTouchEnd={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  lastTouchTimeRef.current = Date.now();
                                   handleActionRead(card);
                                 }}
                               >
                                 {isVideo
-                                  ? (lang === 'ar' ? '▶ شاهد الفيديو' : lang === 'fr' ? '▶ Voir la vidéo' : '▶ Watch video')
-                                  : (t.article_read || (lang === 'ar' ? 'اطلع على المقال كاملًا ↗' : lang === 'fr' ? 'Lire l’article ↗' : 'Read Article ↗'))}
+                                  ? (lang === 'ar' ? '▶ شاهد الفيديو كاملاً' : lang === 'fr' ? '▶ Voir la vidéo' : '▶ Watch Full Video')
+                                  : (t.article_read || (lang === 'ar' ? 'اطلع على المقال كاملًا ↗' : lang === 'fr' ? 'Lire l’article ↗' : 'Read Full Article ↗'))}
                               </button>
                             </div>
                           </div>

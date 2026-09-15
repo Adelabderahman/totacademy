@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   MAG_GROUPS,
@@ -38,6 +38,7 @@ import {
   User,
   Mail,
   Phone,
+  ArrowRight,
   ArrowUpRight,
   BookMarked,
   Info,
@@ -59,6 +60,29 @@ export default function TrainerMagazinePage() {
   const [activePracticeSec, setActivePracticeSec] = useState('pedagogy-lab');
   const [activeInnovationSec, setActiveInnovationSec] = useState('edtech-ai');
   const [activeCommunitySec, setActiveCommunitySec] = useState('podcast-highlights');
+
+  // Swipe-to-dismiss gesture on article sheet (swipe right to return to magazine)
+  const articleTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleArticleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      articleTouchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleArticleTouchEnd = (e: React.TouchEvent) => {
+    if (!articleTouchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0].clientX - articleTouchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - articleTouchStartRef.current.y;
+    articleTouchStartRef.current = null;
+    // Horizontal swipe to the right (> 60px) returns to the magazine
+    if (dx > 60 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      setActiveArticle(null);
+    }
+  };
 
   // Modals state
   const [isWriterModalOpen, setIsWriterModalOpen] = useState(false);
@@ -491,16 +515,30 @@ export default function TrainerMagazinePage() {
           onClick={(e) => {
             if (e.target === e.currentTarget) setActiveArticle(null);
           }}
+          onTouchStart={handleArticleTouchStart}
+          onTouchEnd={handleArticleTouchEnd}
         >
           <div className="article-sheet" dir={isRtl ? 'rtl' : 'ltr'}>
-            <button
-              type="button"
-              className="modal-close-btn"
-              onClick={() => setActiveArticle(null)}
-              aria-label={ARTICLE_CONTENT[lang].close}
-            >
-              <X size={18} />
-            </button>
+            <div className="article-sheet-top-nav">
+              <button
+                type="button"
+                className="article-back-nav-btn"
+                onClick={() => setActiveArticle(null)}
+              >
+                <ArrowRight size={16} className={isRtl ? '' : 'rotate-180'} />
+                <span>
+                  {lang === 'ar' ? 'العودة للمجلة' : lang === 'fr' ? 'Retour au magazine' : 'Back to Magazine'}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="article-sheet-close-btn"
+                onClick={() => setActiveArticle(null)}
+                aria-label={ARTICLE_CONTENT[lang].close}
+              >
+                <X size={18} />
+              </button>
+            </div>
 
             <div className="article-sheet-hero">
               <img

@@ -444,58 +444,80 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .hero-actions { justify-content: center; width: 100%; }
   .btn-primary, .btn-outline { width: 100%; }
 
-  /* 1. المسار التأصيلي: محتوى أكثر عرضاً */
-  .pathway-section {
-    padding: 18px 8px !important;
-    margin-bottom: 25px !important;
-    border-radius: 16px !important;
+  /* 1. المسار التأصيلي: الخلفية الخضراء فوق الخلفية الزرقاء ومحتواها أكثر عرضاً */
+  .learning-wrapper > .container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    max-width: 100% !important;
     width: 100% !important;
+  }
+  .pathway-section {
+    padding: 16px 6px !important;
+    margin-left: -2px !important;
+    margin-right: -2px !important;
+    width: calc(100% + 4px) !important;
+    max-width: calc(100% + 4px) !important;
+    border-radius: 14px !important;
+    margin-bottom: 25px !important;
+    box-sizing: border-box !important;
   }
   .pathway-intro-container {
     flex-direction: column !important;
-    padding: 14px 10px !important;
+    padding: 14px 8px !important;
     gap: 12px !important;
-    border-radius: 14px !important;
-    margin-bottom: 16px !important;
+    border-radius: 12px !important;
+    margin-bottom: 14px !important;
     width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pathway-text-col {
-    padding: 0 !important;
+    padding: 0 4px !important;
     text-align: center !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pathway-main-title {
-    font-size: 16px !important;
+    font-size: 16.5px !important;
     margin-bottom: 6px !important;
   }
   .pathway-main-desc {
-    font-size: 12px !important;
+    font-size: 12.5px !important;
     line-height: 1.6 !important;
   }
   .pathway-doc-col {
     width: 100% !important;
-    padding: 14px 10px !important;
-    border-radius: 12px !important;
+    padding: 12px 8px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
   }
   .pathway-video-col {
     width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pathway-registration-layout {
     flex-direction: column !important;
-    border-radius: 14px !important;
+    border-radius: 12px !important;
     width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .reg-info-side {
-    padding: 16px 12px !important;
+    padding: 16px 10px !important;
     border-inline-end: none !important;
     border-bottom: 1px solid #cbd5e1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .reg-info-title {
-    font-size: 18px !important;
+    font-size: 17.5px !important;
     margin-bottom: 10px !important;
+    text-align: center !important;
   }
   .reg-form-side {
-    padding: 16px 12px !important;
+    padding: 16px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   /* 2. أزرار اختر المستوى المناسب: في صف واحد بحجم صغير */
@@ -732,8 +754,95 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     font-size: 14px !important;
   }
 
-  #axis1-lessons-wrapper { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
-  .lesson-card-container { flex: 0 0 88%; min-width: 88%; scroll-snap-align: center; }
+  /* 4. قسم الدروس: Swiper Slider احترافي بدون شريط تمرير مع بطاقات أعرض */
+  #module-master-container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .axis-section {
+    padding: 20px 8px !important;
+    border-radius: 16px !important;
+    margin-bottom: 25px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .swipe-container {
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .swipe-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  #axis1-lessons-wrapper {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-behavior: smooth !important;
+    gap: 12px !important;
+    padding: 6px 6px 14px 6px !important;
+    margin: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  #axis1-lessons-wrapper::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+  .lesson-card-container {
+    flex: 0 0 93% !important;
+    min-width: 93% !important;
+    max-width: 93% !important;
+    scroll-snap-align: center !important;
+    scroll-snap-stop: always !important;
+    box-sizing: border-box !important;
+  }
+  .lesson-card {
+    width: 100% !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18) !important;
+  }
+  .lesson-thumb {
+    height: 185px !important;
+  }
+  .lesson-body {
+    padding: 16px !important;
+  }
+  .lesson-title {
+    font-size: 15px !important;
+    margin-bottom: 6px !important;
+    line-height: 1.4 !important;
+  }
+  .lesson-desc {
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+    margin-bottom: 12px !important;
+  }
+  .lesson-footer {
+    padding-top: 10px !important;
+  }
+  .btn-lesson {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+  .lesson-progress {
+    padding: 9px !important;
+    font-size: 12px !important;
+  }
   .qz-options { grid-template-columns: 1fr; }
   .consultant-bar { flex-direction: column; text-align: center; gap: 14px; }
   .consultant-info { flex-direction: column; align-items: center; text-align: center; }

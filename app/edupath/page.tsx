@@ -69,6 +69,9 @@ export default function EduPathPage() {
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeLessonSlide, setActiveLessonSlide] = useState<number>(0);
+  const lessonsSliderRef = useRef<HTMLDivElement>(null);
+  const lessonItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Load completion states from localStorage on mount
   useEffect(() => {
@@ -147,6 +150,52 @@ export default function EduPathPage() {
   const activeLessons = useMemo(() => {
     return allLessonsDB[activeModule.id] || allLessonsDB.module_1;
   }, [activeModule.id]);
+
+  // Reset mobile lesson slider position when active module changes
+  useEffect(() => {
+    setActiveLessonSlide(0);
+    if (lessonsSliderRef.current) {
+      lessonsSliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }, [activeModule.id]);
+
+  // Synchronize active lesson slide on touch scroll
+  useEffect(() => {
+    const container = lessonsSliderRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.left + containerRect.width / 2;
+
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      lessonItemRefs.current.forEach((card, idx) => {
+        if (!card) return;
+        const cardRect = card.getBoundingClientRect();
+        const cardCenter = cardRect.left + cardRect.width / 2;
+        const dist = Math.abs(cardCenter - containerCenter);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = idx;
+        }
+      });
+
+      setActiveLessonSlide(closestIdx);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [activeLessons]);
+
+  const scrollToLessonSlide = (index: number) => {
+    const target = lessonItemRefs.current[index];
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      setActiveLessonSlide(index);
+    }
+  };
 
   // Current Active Quizzes for this module and language
   const activeQuizzesList = useMemo(() => {
@@ -620,13 +669,19 @@ export default function EduPathPage() {
 
           {/* Lessons Horizontal Swipe / Grid */}
           <div className="swipe-container mt-6">
-            <div id="axis1-lessons-wrapper">
-              {activeLessons.map((lesson) => {
+            <div id="axis1-lessons-wrapper" ref={lessonsSliderRef}>
+              {activeLessons.map((lesson, idx) => {
                 const isFinished = (completedLessons[activeModule.id] || []).includes(lesson.id);
                 const isPlaying = activeVideoCard === lesson.id;
 
                 return (
-                  <div key={lesson.id} className="lesson-card-container">
+                  <div
+                    key={lesson.id}
+                    ref={(el) => {
+                      lessonItemRefs.current[idx] = el;
+                    }}
+                    className="lesson-card-container"
+                  >
                     <div className="lesson-card">
                       <div className="lesson-thumb">
                         {isPlaying ? (
@@ -717,6 +772,51 @@ export default function EduPathPage() {
                 );
               })}
             </div>
+
+            {/* Mobile Slider Controls & Dots */}
+            {activeLessons.length > 1 && (
+              <div className="flex md:hidden items-center justify-between mt-4 px-2 select-none" dir="ltr">
+                <button
+                  type="button"
+                  onClick={() => scrollToLessonSlide(Math.max(0, activeLessonSlide - 1))}
+                  disabled={activeLessonSlide === 0}
+                  className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center disabled:opacity-25 disabled:pointer-events-none hover:bg-white/30 active:scale-95 transition shadow-sm"
+                  aria-label="Previous lesson"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  {activeLessons.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToLessonSlide(idx)}
+                      className={`transition-all duration-300 rounded-full ${
+                        activeLessonSlide === idx
+                          ? 'w-7 h-2.5 bg-accent-yellow shadow-md'
+                          : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
+                      }`}
+                      aria-label={`Slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => scrollToLessonSlide(Math.min(activeLessons.length - 1, activeLessonSlide + 1))}
+                  disabled={activeLessonSlide === activeLessons.length - 1}
+                  className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center disabled:opacity-25 disabled:pointer-events-none hover:bg-white/30 active:scale-95 transition shadow-sm"
+                  aria-label="Next lesson"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </section>
 

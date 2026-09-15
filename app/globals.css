@@ -843,7 +843,75 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     padding: 9px !important;
     font-size: 12px !important;
   }
-  .qz-options { grid-template-columns: 1fr; }
+  /* 5. قسم اختبارات المقياس: Swipe Slider احترافي للهاتف (8 شرائح) */
+  .quiz-section { padding: 20px 10px !important; border-radius: 16px !important; margin-bottom: 30px !important; }
+  .quiz-layout { display: block !important; margin-top: 10px !important; }
+  .quiz-sidebar { display: none !important; }
+
+  .quiz-main { padding: 0 !important; background: transparent !important; border: none !important; }
+  .qz-panels-wrapper {
+    display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; scroll-snap-type: x mandatory !important; gap: 15px !important;
+    scrollbar-width: none !important; padding-bottom: 10px !important; -webkit-overflow-scrolling: touch !important;
+  }
+  .qz-panels-wrapper::-webkit-scrollbar { display: none !important; }
+
+  .qz-panel {
+    flex: 0 0 100% !important; max-width: 100% !important; scroll-snap-align: center !important;
+    background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 16px !important;
+    padding: 15px 10px !important; display: block !important; text-align: center !important; box-sizing: border-box !important;
+  }
+
+  .qz-panel h3 { font-size: 15px !important; margin-bottom: 8px !important; }
+  .qz-panel p { font-size: 10px !important; margin-bottom: 12px !important; line-height: 1.4 !important; }
+
+  .qz-intro-list { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin-top: 10px !important; }
+  .qz-intro-item { padding: 8px !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important; gap: 6px !important; }
+  .qz-intro-item div { font-size: 9px !important; }
+
+  .qz-intro-meta { flex-direction: column !important; align-items: center !important; gap: 6px !important; }
+
+  .qz-intro-item .lesson-progress { padding: 4px 6px !important; margin: 0 !important; font-size: 8px !important; }
+
+  .qz-start-screen h3 { display: none !important; }
+  .qz-start-screen p, .qz-start-screen div { text-align: center !important; }
+  .qz-start-screen div { font-size: 16px !important; margin-bottom: 15px !important; }
+  .qz-start-screen button { font-size: 12px !important; padding: 10px !important; }
+
+  .qz-qbox { padding: 0 !important; margin-bottom: 4px !important; background: transparent !important; border: none !important; }
+  .qz-qtext { font-size: 12px !important; margin-bottom: 8px !important; text-align: center !important; }
+
+  .qz-options { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 6px !important; margin-bottom: 4px !important; width: 100% !important; }
+
+  .qz-option { position: relative !important; overflow: hidden !important; padding: 18px 8px !important; min-height: 65px !important; font-size: 12px !important; display: flex !important; flex-direction: column !important; text-align: center !important; justify-content: center !important; align-items: center !important; }
+  .qz-label { position: absolute !important; top: 0px !important; left: 5px !important; width: auto !important; height: auto !important; min-width: auto !important; font-size: 20px !important; font-weight: 800 !important; margin: 0 !important; background: transparent !important; border: none !important; color: #fff !important; opacity: 0.15 !important; z-index: 1 !important; pointer-events: none !important; }
+  .qz-text { position: relative !important; z-index: 2 !important; }
+
+  .qz-divider { display: block !important; width: 85% !important; margin: 8px auto 12px auto !important; border: 0 !important; height: 1px !important; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important; }
+
+  .qz-bottom-cards { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; flex-direction: row !important; width: 100% !important; }
+  .qz-card-mini { position: relative !important; padding: 22px 8px 8px 8px !important; min-height: 70px; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; }
+  .qz-muted { position: absolute !important; top: 4px !important; right: 8px !important; font-size: 9px !important; margin: 0 !important; text-align: right !important; width: auto !important; }
+
+  .qz-info-text { font-size: 8px !important; margin-top: 0 !important; position: relative !important; z-index: 2 !important; }
+  .qz-score-number { font-size: 16px !important; position: relative !important; z-index: 2 !important; }
+  .qz-score-number span { font-size: 10px !important; }
+  .btn-outline[id^="qz-hint-btn"] { padding: 4px !important; font-size: 8px !important; margin-top: 4px !important; position: relative !important; z-index: 2 !important; }
+
+  .qz-retry-mobile-card { display: flex !important; }
+  .qz-retry-mini-btn { font-size: 9px; padding: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; width: 100%; cursor: pointer; margin-top: 0; transition: 0.3s; font-family: inherit; position: relative; z-index: 2; }
+  .qz-retry-mini-btn:hover { background: var(--accent-yellow); color: #000; }
+
+  .mobile-quiz-header-wrap { display: flex !important; justify-content: flex-start !important; align-items: center !important; position: relative !important; margin-bottom: 10px !important; padding-bottom: 6px !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  .mobile-quiz-dynamic-title { font-size: 11px !important; font-weight: 700 !important; color: #fff !important; margin: 0 !important; text-align: start !important; max-width: 65%; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  .mobile-quiz-next-top { position: absolute !important; left: 0 !important; display: flex !important; align-items: center !important; gap: 2px !important; font-size: 8px !important; color: var(--accent-yellow) !important; cursor: pointer !important; background: rgba(255,255,255,0.08); padding: 4px 6px; border-radius: 4px; }
+  html[dir="ltr"] .mobile-quiz-next-top { left: auto !important; right: 0 !important; }
+
+  .mobile-quiz-next-bottom { display: flex !important; justify-content: center !important; align-items: center !important; gap: 4px !important; font-size: 10px !important; font-weight: 700 !important; color: #000 !important; cursor: pointer !important; margin-top: 8px !important; padding: 6px !important; background: var(--accent-yellow) !important; border-radius: 8px !important; width: 100% !important; transition: 0.3s !important; }
+
+  .swipe-pagination-qz { display: flex; justify-content: center; gap: 8px; margin-top: 15px; }
+  .swipe-dot-qz { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); transition: 0.3s; cursor: pointer; }
+  .swipe-dot-qz.active { background: var(--accent-yellow); width: 24px; border-radius: 10px; }
+
   .consultant-bar { flex-direction: column; text-align: center; gap: 14px; }
   .consultant-info { flex-direction: column; align-items: center; text-align: center; }
   .btn-whatsapp { width: 100%; justify-content: center; }

@@ -533,26 +533,29 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     font-size: 18px !important;
     margin: 25px 0 15px !important;
   }
+  /* 3. Flip Modules: إصلاح جذري لقلب البطاقات مع تجاوب سلس وتصميم متناسق */
   .modules-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
-    perspective: 1000px !important;
-    -webkit-perspective: 1000px !important;
+    perspective: 1400px !important;
+    -webkit-perspective: 1400px !important;
   }
   .flip-module-card {
     height: 155px !important;
-    perspective: 1000px !important;
-    -webkit-perspective: 1000px !important;
+    perspective: 1400px !important;
+    -webkit-perspective: 1400px !important;
     touch-action: manipulation !important;
     -webkit-tap-highlight-color: transparent !important;
     user-select: none !important;
     cursor: pointer !important;
+    background: transparent !important;
+    position: relative !important;
   }
   .flip-module-inner {
     position: relative !important;
     width: 100% !important;
     height: 100% !important;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1) !important;
+    transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     transform-style: preserve-3d !important;
     -webkit-transform-style: preserve-3d !important;
     border-radius: 12px !important;
@@ -560,6 +563,10 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .flip-module-card.flipped .flip-module-inner {
     transform: rotateY(-180deg) !important;
     -webkit-transform: rotateY(-180deg) !important;
+  }
+  [dir="ltr"] .flip-module-card.flipped .flip-module-inner {
+    transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
   }
   .flip-module-front, .flip-module-back {
     position: absolute !important;
@@ -577,22 +584,20 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .flip-module-front {
     justify-content: center !important;
     align-items: center !important;
-    transform: rotateY(0deg) translateZ(1px) !important;
-    -webkit-transform: rotateY(0deg) translateZ(1px) !important;
-  }
-  .flip-module-back {
-    transform: rotateY(180deg) translateZ(1px) !important;
-    -webkit-transform: rotateY(180deg) translateZ(1px) !important;
-    justify-content: flex-start !important;
-    overflow: hidden !important;
-  }
-  .flip-module-card:not(.flipped) .flip-module-front {
-    pointer-events: auto !important;
+    transform: rotateY(0deg) !important;
+    -webkit-transform: rotateY(0deg) !important;
     z-index: 2 !important;
   }
-  .flip-module-card:not(.flipped) .flip-module-back {
-    pointer-events: none !important;
+  .flip-module-back {
+    transform: rotateY(-180deg) !important;
+    -webkit-transform: rotateY(-180deg) !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
     z-index: 1 !important;
+  }
+  [dir="ltr"] .flip-module-back {
+    transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
   }
   .flip-module-card.flipped .flip-module-front {
     pointer-events: none !important;
@@ -601,6 +606,14 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .flip-module-card.flipped .flip-module-back {
     pointer-events: auto !important;
     z-index: 5 !important;
+  }
+  .flip-module-card:not(.flipped) .flip-module-front {
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
+  .flip-module-card:not(.flipped) .flip-module-back {
+    pointer-events: none !important;
+    z-index: 1 !important;
   }
   .module-icon {
     font-size: 20px !important;

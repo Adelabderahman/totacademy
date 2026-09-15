@@ -246,7 +246,8 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 .module-title { font-size: 16px; font-weight: 800; line-height: 1.35; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin: 0; }
 
 .flip-module-back { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); transform: rotateY(180deg); padding: 20px 16px; justify-content: flex-start; color: #fff; }
-.module-back-title { font-size: 14.5px; font-weight: 800; color: var(--accent-yellow); margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; width: 100%; text-align: center; }
+.module-back-header { width: 100%; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+.module-back-title { font-size: 14.5px; font-weight: 800; color: var(--accent-yellow); margin-bottom: 0; width: 100%; text-align: center; }
 .module-desc { font-size: 12.5px; color: rgba(255,255,255,0.9); line-height: 1.55; margin: 0; text-align: start; }
 .btn-start-module {
   margin-top: auto; background: var(--accent-yellow); color: #000; padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: var(--transition); border: none; cursor: pointer; width: 100%; font-family: inherit;
@@ -536,12 +537,16 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
     perspective: 1000px !important;
+    -webkit-perspective: 1000px !important;
   }
   .flip-module-card {
     height: 155px !important;
     perspective: 1000px !important;
+    -webkit-perspective: 1000px !important;
     touch-action: manipulation !important;
     -webkit-tap-highlight-color: transparent !important;
+    user-select: none !important;
+    cursor: pointer !important;
   }
   .flip-module-inner {
     position: relative !important;
@@ -572,55 +577,126 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .flip-module-front {
     justify-content: center !important;
     align-items: center !important;
+    transform: rotateY(0deg) translateZ(1px) !important;
+    -webkit-transform: rotateY(0deg) translateZ(1px) !important;
   }
   .flip-module-back {
-    transform: rotateY(180deg) !important;
-    -webkit-transform: rotateY(180deg) !important;
+    transform: rotateY(180deg) translateZ(1px) !important;
+    -webkit-transform: rotateY(180deg) translateZ(1px) !important;
     justify-content: flex-start !important;
     overflow: hidden !important;
   }
+  .flip-module-card:not(.flipped) .flip-module-front {
+    pointer-events: auto !important;
+    z-index: 2 !important;
+  }
+  .flip-module-card:not(.flipped) .flip-module-back {
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+  .flip-module-card.flipped .flip-module-front {
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+  .flip-module-card.flipped .flip-module-back {
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
   .module-icon {
-    font-size: 22px !important;
+    font-size: 20px !important;
     top: 8px !important;
     inset-inline-start: 8px !important;
   }
   .module-number {
-    font-size: 12px !important;
+    font-size: 11px !important;
     top: 8px !important;
     inset-inline-end: 8px !important;
   }
   .module-title-wrapper {
     margin-top: 14px !important;
     gap: 2px !important;
+    width: 100% !important;
+    padding: 0 2px !important;
+    text-align: center !important;
   }
   .module-subtitle {
-    font-size: 9.5px !important;
+    font-size: 8.5px !important;
     margin-bottom: 2px !important;
+    letter-spacing: 0.2px !important;
   }
   /* 4. عنوان المقياس: تصغير الحجم */
   .module-title {
-    font-size: 11.5px !important;
-    line-height: 1.3 !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    word-break: break-word !important;
+    padding: 0 1px !important;
   }
-  .module-back-title {
-    font-size: 11px !important;
+  .module-back-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
     margin-bottom: 3px !important;
     padding-bottom: 3px !important;
     border-bottom: 1px solid rgba(255,255,255,0.12) !important;
   }
+  .module-back-title {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+    word-break: break-word !important;
+    text-align: center !important;
+    flex: 1 1 auto !important;
+  }
+  .module-back-return-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+    color: var(--accent-yellow) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+    padding: 1px 4px !important;
+    margin-inline-start: 4px !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+  }
+  .module-flip-hint {
+    position: absolute !important;
+    bottom: 5px !important;
+    inset-inline-end: 6px !important;
+    font-size: 11px !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    width: 17px !important;
+    height: 17px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+  }
   .module-desc {
-    font-size: 9.5px !important;
-    line-height: 1.4 !important;
+    font-size: 8.8px !important;
+    line-height: 1.35 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 3 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
   }
   .btn-start-module {
-    font-size: 10.5px !important;
-    padding: 5px 8px !important;
+    font-size: 9.5px !important;
+    padding: 5px 6px !important;
     margin-top: auto !important;
     border-radius: 6px !important;
+    letter-spacing: -0.2px !important;
   }
 
   /* 5. البروغراس: حذف النص الشارح تحته */

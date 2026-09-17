@@ -95,11 +95,20 @@ export default function EduPathPage() {
   const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const panelsWrapperRef = useRef<HTMLDivElement>(null);
   const panelElementsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const isProgrammaticScrollRef = useRef<boolean>(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
+
+  // Smooth swipe navigation state
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const dragOffsetRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+  const touchInfoRef = useRef<{
+    startX: number;
+    startY: number;
+    startTime: number;
+    isHorizontal: boolean | null;
+  }>({ startX: 0, startY: 0, startTime: 0, isHorizontal: null });
 
   // Open & Close Detailed Report Modal with Back-Button Sync
   const openReportModal = () => {
@@ -335,108 +344,143 @@ export default function EduPathPage() {
     }
   };
 
-  // Scroll Quiz Slide on touch/swipe/click
+  // Scroll / Switch Quiz Slide
   const scrollToQuizSlide = (tabIdx: number) => {
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
-    setActiveQuizTab(tabIdx);
-    if (tabIdx >= 1 && tabIdx <= 6) {
-      setActiveQuizIndex(tabIdx - 1);
-    }
-    const target = panelElementsRef.current[tabIdx];
-    if (target) {
-      isProgrammaticScrollRef.current = true;
-      target.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-      scrollTimeoutRef.current = setTimeout(() => {
-        isProgrammaticScrollRef.current = false;
-      }, 500);
+    const clamped = Math.max(0, Math.min(7, tabIdx));
+    setActiveQuizTab(clamped);
+    if (clamped >= 1 && clamped <= 6) {
+      setActiveQuizIndex(clamped - 1);
     }
   };
 
-  // Switch Quiz Tab and scroll to panel on mobile
+  // Switch Quiz Tab
   const switchQuizTab = (tabIdx: number) => {
     scrollToQuizSlide(tabIdx);
   };
 
   const handlePrevSlide = () => {
-    const prevIdx = Math.max(0, activeQuizTab - 1);
-    scrollToQuizSlide(prevIdx);
+    setActiveQuizTab((prev) => {
+      const nextTab = Math.max(0, prev - 1);
+      if (nextTab >= 1 && nextTab <= 6) {
+        setActiveQuizIndex(nextTab - 1);
+      }
+      return nextTab;
+    });
   };
 
   const handleNextSlide = () => {
-    const nextIdx = Math.min(7, activeQuizTab + 1);
-    scrollToQuizSlide(nextIdx);
-  };
-
-  // Touch handlers for mobile swipe
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length > 0) {
-      touchStartPosRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        time: Date.now(),
-      };
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartPosRef.current || e.changedTouches.length === 0) return;
-    const touchEnd = e.changedTouches[0];
-    const dx = touchEnd.clientX - touchStartPosRef.current.x;
-    const dy = touchEnd.clientY - touchStartPosRef.current.y;
-    const dt = Date.now() - touchStartPosRef.current.time;
-
-    // Minimum swipe threshold: 35px horizontal and not predominantly vertical
-    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) && dt < 800) {
-      if (lang === 'ar') {
-        if (dx < 0) {
-          handleNextSlide();
-        } else {
-          handlePrevSlide();
-        }
-      } else {
-        if (dx < 0) {
-          handleNextSlide();
-        } else {
-          handlePrevSlide();
-        }
+    setActiveQuizTab((prev) => {
+      const nextTab = Math.min(7, prev + 1);
+      if (nextTab >= 1 && nextTab <= 6) {
+        setActiveQuizIndex(nextTab - 1);
       }
-    }
-    touchStartPosRef.current = null;
-  };
-
-  // Handle Carousel Scroll on Touch/Swipe
-  const handlePanelsScroll = () => {
-    if (isProgrammaticScrollRef.current) return;
-    const container = panelsWrapperRef.current;
-    if (!container) return;
-    const containerRect = container.getBoundingClientRect();
-    const containerCenter = (containerRect.left + containerRect.right) / 2;
-
-    let closestIdx = activeQuizTab;
-    let minDiff = Infinity;
-
-    panelElementsRef.current.forEach((el, idx) => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const elCenter = (rect.left + rect.right) / 2;
-      const diff = Math.abs(containerCenter - elCenter);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIdx = idx;
-      }
+      return nextTab;
     });
+  };
 
-    if (closestIdx !== activeQuizTab && closestIdx >= 0 && closestIdx <= 7) {
-      setActiveQuizTab(closestIdx);
-      if (closestIdx >= 1 && closestIdx <= 6) {
-        setActiveQuizIndex(closestIdx - 1);
+  // Smooth swipe & drag handlers for mobile and mouse
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchInfoRef.current = {
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        startTime: Date.now(),
+        isHorizontal: null,
+      };
+      isDraggingRef.current = true;
+      dragOffsetRef.current = 0;
+      setIsDragging(true);
+      setDragOffset(0);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1 || !isDraggingRef.current) return;
+    const curX = e.touches[0].clientX;
+    const curY = e.touches[0].clientY;
+    const dx = curX - touchInfoRef.current.startX;
+    const dy = curY - touchInfoRef.current.startY;
+
+    if (touchInfoRef.current.isHorizontal === null) {
+      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
+        touchInfoRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
       }
     }
+
+    if (touchInfoRef.current.isHorizontal) {
+      let offset = dx;
+      if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
+        offset = dx * 0.25;
+      }
+      dragOffsetRef.current = offset;
+      setDragOffset(offset);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDraggingRef.current) return;
+    const isHorizontal = touchInfoRef.current.isHorizontal;
+    const dt = Date.now() - touchInfoRef.current.startTime;
+    const offset = dragOffsetRef.current;
+
+    isDraggingRef.current = false;
+    dragOffsetRef.current = 0;
+    setIsDragging(false);
+    setDragOffset(0);
+
+    if (isHorizontal) {
+      const isFlick = dt < 320 && Math.abs(offset) > 25;
+      const isDrag = Math.abs(offset) > 40;
+
+      if (isFlick || isDrag) {
+        if (offset < 0) {
+          handleNextSlide();
+        } else {
+          handlePrevSlide();
+        }
+      }
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    touchInfoRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: Date.now(),
+      isHorizontal: null,
+    };
+    isDraggingRef.current = true;
+    dragOffsetRef.current = 0;
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    const dx = e.clientX - touchInfoRef.current.startX;
+    const dy = e.clientY - touchInfoRef.current.startY;
+
+    if (touchInfoRef.current.isHorizontal === null) {
+      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
+        touchInfoRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
+      }
+    }
+
+    if (touchInfoRef.current.isHorizontal) {
+      let offset = dx;
+      if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
+        offset = dx * 0.25;
+      }
+      dragOffsetRef.current = offset;
+      setDragOffset(offset);
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDraggingRef.current) return;
+    handleTouchEnd();
   };
 
   // Advance to next question or complete quiz
@@ -1303,75 +1347,121 @@ export default function EduPathPage() {
               <div
                 className="qz-panels-wrapper"
                 ref={panelsWrapperRef}
-                onScroll={handlePanelsScroll}
                 onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
               >
-                {/* Tab 0: Overview */}
                 <div
-                  ref={(el) => { panelElementsRef.current[0] = el; }}
-                  className={`qz-panel ${activeQuizTab === 0 ? 'active' : ''}`}
+                  className="qz-panels-track"
+                  style={{
+                    transform: `translateX(calc(-${activeQuizTab * 100}% + ${dragOffset}px))`,
+                    transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
                 >
-                  <h3 className="text-accent-yellow text-xl font-bold mb-3">
-                    {lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}
-                  </h3>
-                  <p className="text-sm text-white/90 mb-4 leading-relaxed">
-                    {lang === 'ar'
-                      ? 'يحتوي هذا المقياس على 6 اختبارات تأصيلية لتقييم استيعابك للمفاهيم الأساسية، مدة كل سؤال 15 ثانية.'
-                      : 'This module features 6 foundational quizzes to test your core mastery (15s per question).'}
-                  </p>
+                  {/* Tab 0: Overview - صفحة المحاور (8 boxes filling the slide) */}
+                  <div
+                    ref={(el) => { panelElementsRef.current[0] = el; }}
+                    className={`qz-panel ${activeQuizTab === 0 ? 'active' : ''}`}
+                  >
+                    <h3 className="text-accent-yellow text-sm md:text-xl font-bold mb-1">
+                      {lang === 'ar' ? 'محاور وخطة التقييم' : 'Assessment Modules & Plan'}
+                    </h3>
+                    <p className="text-[10px] md:text-sm text-white/80 mb-2 leading-tight">
+                      {lang === 'ar'
+                        ? '8 محاور متكاملة: عرض المحور، 6 اختبارات تأصيلية (15ث/سؤال)، والتقرير النهائي المعتمد.'
+                        : '8 core modules: overview, 6 quizzes (15s/q), and final accredited report.'}
+                    </p>
 
-                  <div className="qz-intro-list">
-                    {activeQuizzesList.map((q, idx) => {
-                      const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
-                      return (
-                        <div key={idx} className="qz-intro-item">
+                    <div className="qz-intro-list">
+                      {/* المربع 1: محور عرض المحور والدروس */}
+                      <div
+                        className="qz-intro-item qz-intro-item-axis"
+                        onClick={() => {
+                          const lessonsEl = document.getElementById('axis1-group') || document.getElementById('axis1-lessons-wrapper');
+                          if (lessonsEl) {
+                            lessonsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                        title={lang === 'ar' ? 'انتقال لعرض المحور والدروس' : 'View Module Lessons'}
+                      >
+                        <div className="qz-intro-item-title text-sky-300 flex items-center justify-center gap-1">
+                          <span>📖</span>
+                          <span>{lang === 'ar' ? 'عرض المحور والدروس' : 'Module Lessons'}</span>
+                        </div>
+                        <div className="qz-intro-meta">
+                          <span className="qz-intro-badge qz-badge-blue">
+                            🎓 {lang === 'ar' ? `${activeLessons.length} دروس تأصيلية` : `${activeLessons.length} Lessons`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* المربعات 2 إلى 7: المحاور الستة للاختبارات التأصيلية */}
+                      {activeQuizzesList.map((q, idx) => {
+                        const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                        return (
                           <div
-                            className="font-bold text-accent-yellow hover:underline cursor-pointer flex items-center gap-2"
+                            key={idx}
+                            className={`qz-intro-item ${isDone ? 'completed' : ''}`}
                             onClick={() => {
                               setQuizStates((prev) => ({ ...prev, [idx]: 'intro' }));
                               scrollToQuizSlide(idx + 1);
                             }}
+                            title={q.title}
                           >
-                            <span>{idx + 1}. {q.title}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
-                              <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                          </div>
+                            <div className="qz-intro-item-title text-accent-yellow flex items-center justify-center gap-1">
+                              <span>{idx + 1}. {q.title}</span>
+                            </div>
 
-                          <div className="qz-intro-meta">
-                            <span className="text-xs text-accent-yellow font-mono">
-                              ⏳ {lang === 'ar' ? 'المدة الكلية: 90s' : 'Duration: 90s'}
-                            </span>
-                            <label className={`lesson-progress ${isDone ? 'completed' : ''}`}>
-                              <input
-                                type="checkbox"
-                                checked={isDone}
-                                onChange={() => toggleQuizCompletion(idx)}
-                              />
-                              <span className="prog-text">
-                                {isDone ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'تحديد كمكتمل' : 'Mark Done')}
+                            <div className="qz-intro-meta">
+                              <span className="qz-intro-badge qz-badge-yellow">
+                                ⏳ {lang === 'ar' ? '90s' : '90s'}
                               </span>
-                            </label>
+                              <span
+                                className={`lesson-progress ${isDone ? 'completed' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleQuizCompletion(idx);
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isDone}
+                                  onChange={() => toggleQuizCompletion(idx)}
+                                />
+                                <span className="prog-text">
+                                  {isDone ? (lang === 'ar' ? 'مكتمل' : 'Done') : (lang === 'ar' ? 'بدء' : 'Start')}
+                                </span>
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
 
-                  <div className="mt-3 md:hidden">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuizStates((prev) => ({ ...prev, [0]: 'intro' }));
-                        scrollToQuizSlide(1);
-                      }}
-                      className="mobile-quiz-next-bottom"
-                    >
-                      <span>{lang === 'ar' ? 'الانتقال للاختبار الأول (1 من 6) ➔' : 'Start First Quiz (1 of 6) ➔'}</span>
-                    </button>
+                      {/* المربع 8: محور التقرير النهائي */}
+                      <div
+                        className="qz-intro-item qz-intro-item-report"
+                        onClick={() => {
+                          scrollToQuizSlide(7);
+                        }}
+                        title={lang === 'ar' ? 'الانتقال إلى التقرير النهائي' : 'Go to Final Report'}
+                      >
+                        <div className="qz-intro-item-title text-amber-300 flex items-center justify-center gap-1">
+                          <span>📊</span>
+                          <span>{lang === 'ar' ? 'محور التقرير النهائي' : 'Final Report'}</span>
+                        </div>
+                        <div className="qz-intro-meta">
+                          <span className="qz-intro-badge qz-badge-gold">
+                            🏆 {lang === 'ar' ? 'النتيجة والاعتماد' : 'Score & Certification'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */}
                 {activeQuizzesList.map((quiz, qIdx) => {
@@ -1826,49 +1916,50 @@ export default function EduPathPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Pop-Up Modal for Viewing Detailed Report */}
-                {showReportModal && (
-                  <div
-                    className="report-modal-backdrop"
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) {
-                        closeReportModal();
-                      }
-                    }}
-                  >
-                    <div className="report-modal-container">
-                      <div className="report-modal-header">
-                        <div className="report-modal-title">
-                          <span>📄</span>
-                          <span>{lang === 'ar' ? 'معاينة التقرير التفصيلي المعتمد' : 'Detailed Assessment Report'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={downloadReportPDF}
-                            className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-                          >
-                            <span>📥</span>
-                            <span>{lang === 'ar' ? 'تحميل PDF' : 'Download PDF'}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={closeReportModal}
-                            className="report-modal-close-btn"
-                            title={lang === 'ar' ? 'إغلاق المعاينة' : 'Close'}
-                          >
-                            ✕
-                          </button>
-                        </div>
+              {/* Pop-Up Modal for Viewing Detailed Report */}
+              {showReportModal && (
+                <div
+                  className="report-modal-backdrop"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      closeReportModal();
+                    }
+                  }}
+                >
+                  <div className="report-modal-container">
+                    <div className="report-modal-header">
+                      <div className="report-modal-title">
+                        <span>📄</span>
+                        <span>{lang === 'ar' ? 'معاينة التقرير التفصيلي المعتمد' : 'Detailed Assessment Report'}</span>
                       </div>
-                      <div className="report-modal-body">
-                        {renderFullDetailedReport()}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={downloadReportPDF}
+                          className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                        >
+                          <span>📥</span>
+                          <span>{lang === 'ar' ? 'تحميل PDF' : 'Download PDF'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={closeReportModal}
+                          className="report-modal-close-btn"
+                          title={lang === 'ar' ? 'إغلاق المعاينة' : 'Close'}
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
+                    <div className="report-modal-body">
+                      {renderFullDetailedReport()}
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Mobile Swipe Pagination Dots */}
               <div className="swipe-pagination-qz">

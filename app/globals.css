@@ -298,14 +298,23 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 .qz-tab-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); box-shadow: 0 4px 15px rgba(17,82,207,0.4); color: #fff; }
 
 .quiz-main { flex: 1; min-width: 0; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 25px; position: relative; }
-.qz-panels-wrapper { width: 100%; }
+.qz-panels-wrapper { width: 100%; position: relative; }
+.qz-panels-track { display: block; width: 100%; transform: none !important; transition: none !important; }
 .qz-panel { display: none; animation: fadeInQz 0.3s ease; }
 .qz-panel.active { display: block; }
 @keyframes fadeInQz { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-.qz-intro-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-.qz-intro-item { background: rgba(255,255,255,0.05); padding: 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-.qz-intro-meta { display: flex; align-items: center; gap: 12px; }
+.qz-intro-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 15px; }
+.qz-intro-item { background: rgba(255,255,255,0.05); padding: 14px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between; align-items: center; min-height: 90px; text-align: center; gap: 8px; cursor: pointer; transition: 0.2s; }
+.qz-intro-item:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.25); transform: translateY(-2px); }
+.qz-intro-item-axis { background: rgba(14, 165, 233, 0.12); border-color: rgba(56, 189, 248, 0.35); }
+.qz-intro-item-report { background: rgba(245, 158, 11, 0.12); border-color: rgba(251, 191, 36, 0.4); }
+.qz-intro-item-title { font-size: 13.5px; font-weight: 700; line-height: 1.3; }
+.qz-intro-meta { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.qz-intro-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.qz-badge-blue { background: rgba(14, 165, 233, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
+.qz-badge-yellow { background: rgba(255, 171, 0, 0.15); color: var(--accent-yellow); border: 1px solid rgba(255, 171, 0, 0.3); }
+.qz-badge-gold { background: rgba(245, 158, 11, 0.25); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.4); }
 
 .qz-top-progress { margin-bottom: 20px; width: 100%; }
 .qz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -877,54 +886,128 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     box-sizing: border-box !important;
   }
   .qz-panels-wrapper { 
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory !important;
-    scroll-behavior: smooth !important;
-    gap: 12px !important; 
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    padding: 4px 2px 8px 2px !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-x: contain !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    align-items: flex-start !important;
-  }
-  .qz-panels-wrapper::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-  }
-  
-  .qz-panel { 
-    flex: 0 0 94% !important;
-    min-width: 94% !important;
-    max-width: 94% !important;
-    scroll-snap-align: center !important;
-    scroll-snap-stop: always !important;
-    background: rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    overflow: hidden !important; 
+    width: 100% !important; 
+    position: relative !important; 
+    padding: 0 !important; 
     border-radius: 14px !important; 
-    padding: 10px 10px !important;
-    display: block !important;
-    text-align: center !important;
+    user-select: none !important; 
+    touch-action: pan-y !important; 
     box-sizing: border-box !important;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important;
+  }
+  .qz-panels-track { 
+    display: flex !important; 
+    flex-direction: row !important; 
+    width: 100% !important; 
+    direction: ltr !important; 
+    will-change: transform !important; 
+    box-sizing: border-box !important;
+  }
+  .qz-panel { 
+    flex: 0 0 100% !important; 
+    min-width: 100% !important; 
+    max-width: 100% !important; 
+    width: 100% !important; 
+    box-sizing: border-box !important; 
+    display: block !important; 
+    direction: rtl !important; 
+    background: rgba(0, 0, 0, 0.35) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.12) !important; 
+    border-radius: 14px !important; 
+    padding: 8px 8px 10px 8px !important; 
+    text-align: center !important; 
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important; 
   }
   
-  .qz-panel h3 { font-size: 13px !important; margin-bottom: 4px !important; font-weight: 800 !important; }
-  .qz-panel p { font-size: 9.5px !important; margin-bottom: 6px !important; line-height: 1.35 !important; }
+  .qz-panel h3 { font-size: 13px !important; margin-bottom: 2px !important; font-weight: 800 !important; }
+  .qz-panel p { font-size: 9.5px !important; margin-bottom: 4px !important; line-height: 1.25 !important; }
   
-  .qz-intro-list { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 5px !important; margin-top: 6px !important; margin-bottom: 6px !important; }
-  .qz-intro-item { padding: 6px 8px !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important; gap: 3px !important; border-radius: 8px !important; }
-  .qz-intro-item div { font-size: 9px !important; line-height: 1.25 !important; }
-  
-  .qz-intro-meta { flex-direction: row !important; align-items: center !important; gap: 5px !important; }
-  .qz-intro-item .lesson-progress { padding: 2px 5px !important; margin: 0 !important; font-size: 7.5px !important; }
+  /* 8 Boxes grid on Slide 0 - taller boxes filling slide 0 with zero bottom dead space */
+  .qz-intro-list { 
+    display: grid !important; 
+    grid-template-columns: 1fr 1fr !important; 
+    gap: 6px !important; 
+    margin-top: 4px !important; 
+    margin-bottom: 2px !important; 
+    width: 100% !important; 
+    box-sizing: border-box !important;
+  }
+  .qz-intro-item { 
+    padding: 7px 6px !important; 
+    min-height: 48px !important; 
+    height: 48px !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+    justify-content: space-between !important; 
+    align-items: center !important; 
+    text-align: center !important; 
+    border-radius: 8px !important; 
+    background: rgba(255, 255, 255, 0.05) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+    cursor: pointer !important; 
+    transition: all 0.2s ease !important; 
+    box-sizing: border-box !important; 
+  }
+  .qz-intro-item:hover, .qz-intro-item:active { 
+    background: rgba(255, 255, 255, 0.09) !important; 
+    border-color: rgba(255, 255, 255, 0.25) !important; 
+    transform: translateY(-1px) !important;
+  }
+  .qz-intro-item-axis { 
+    background: rgba(14, 165, 233, 0.12) !important; 
+    border: 1px solid rgba(56, 189, 248, 0.35) !important; 
+  }
+  .qz-intro-item-report { 
+    background: rgba(245, 158, 11, 0.12) !important; 
+    border: 1px solid rgba(251, 191, 36, 0.4) !important; 
+  }
+  .qz-intro-item-title { 
+    font-size: 9.5px !important; 
+    line-height: 1.2 !important; 
+    font-weight: 700 !important; 
+    text-align: center !important; 
+    width: 100% !important; 
+    white-space: nowrap !important; 
+    overflow: hidden !important; 
+    text-overflow: ellipsis !important; 
+  }
+  .qz-intro-meta { 
+    display: flex !important; 
+    flex-direction: row !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    gap: 4px !important; 
+    width: 100% !important; 
+    margin-top: 1px !important; 
+  }
+  .qz-intro-badge { 
+    font-size: 7.5px !important; 
+    font-weight: 700 !important; 
+    padding: 1px 4px !important; 
+    border-radius: 4px !important; 
+    white-space: nowrap !important; 
+  }
+  .qz-badge-blue { 
+    background: rgba(14, 165, 233, 0.2) !important; 
+    color: #7dd3fc !important; 
+    border: 1px solid rgba(56, 189, 248, 0.3) !important; 
+  }
+  .qz-badge-yellow { 
+    background: rgba(255, 171, 0, 0.15) !important; 
+    color: var(--accent-yellow) !important; 
+    border: 1px solid rgba(255, 171, 0, 0.3) !important; 
+  }
+  .qz-badge-gold { 
+    background: rgba(245, 158, 11, 0.25) !important; 
+    color: #fde68a !important; 
+    border: 1px solid rgba(251, 191, 36, 0.4) !important; 
+  }
+  .qz-intro-item .lesson-progress { 
+    padding: 1.5px 4px !important; 
+    margin: 0 !important; 
+    font-size: 7.5px !important; 
+    border-radius: 4px !important; 
+  }
 
   .qz-start-screen { padding: 8px 4px !important; }
   .qz-start-screen h3 { display: block !important; font-size: 13px !important; margin-bottom: 4px !important; color: var(--accent-yellow) !important; } 

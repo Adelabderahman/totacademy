@@ -2689,19 +2689,16 @@ export default function EduPathPage() {
                 >
                   <span>{lang === 'ar' ? 'السابق ➔' : '← Prev'}</span>
                 </button>
-                <div className="text-center px-2">
-                  <span className="text-xs md:text-sm font-bold text-accent-yellow font-mono block truncate max-w-[260px] md:max-w-md">
+                <div className="text-center px-2 flex-1 flex items-center justify-center min-w-0">
+                  <span className="text-xs md:text-sm font-bold text-accent-yellow block truncate max-w-[280px] md:max-w-lg">
                     {examTab === 0
-                      ? (lang === 'ar' ? '📋 عناوين وفهرس الشرائح' : 'Slides Overview & Index')
+                      ? (lang === 'ar' ? 'عناوين وفهرس الشرائح' : 'Slides Overview & Index')
                       : examTab === 1
-                      ? (lang === 'ar' ? '👤 المعلومات الشخصية للمتدرب' : 'Personal Information')
+                      ? (lang === 'ar' ? 'المعلومات الشخصية والبيانات الأكاديمية' : 'Personal Information')
                       : examTab === 10
-                      ? (lang === 'ar' ? '✅ مراجعة وإرسال الامتحان' : '✅ Review & Submit')
-                      : (lang === 'ar' ? `📝 المحور 0${examTab - 1} من 8: ${levelModules.foundation[examTab - 2]?.title[lang] || ''}` : `📝 Module 0${examTab - 1} of 8`)}
+                      ? (lang === 'ar' ? 'مراجعة وإرسال الامتحان' : 'Review & Submit')
+                      : (levelModules.foundation[examTab - 2]?.title[lang] || '')}
                   </span>
-                  <div className="text-[10px] text-white/60">
-                    {lang === 'ar' ? `شريحة ${examTab + 1} من 11` : `Slide ${examTab + 1} of 11`}
-                  </div>
                 </div>
                 <button
                   type="button"

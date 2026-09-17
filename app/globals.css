@@ -435,9 +435,20 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
 }
 .fe-input:focus, .fe-textarea:focus { background: rgba(0,0,0,0.4); border-color: var(--accent-yellow); box-shadow: 0 0 0 3px rgba(255, 171, 0, 0.12); outline: none; }
 .fe-section-title { font-size: 16px; font-weight: 800; color: var(--accent-yellow); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; text-align: start; }
-.fe-file-upload { border: 2px dashed rgba(255,255,255,0.3); background: rgba(0,0,0,0.2); border-radius: 9px; padding: 14px; text-align: center; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+.fe-file-upload {
+  width: 100%;
+  max-width: 320px;
+  border: 1.5px dashed rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.2);
+  border-radius: 9px;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 6px;
+}
 .fe-file-upload:hover { border-color: var(--accent-yellow); background: rgba(255,255,255,0.05); }
-.fe-file-upload label { cursor: pointer; color: var(--accent-yellow); font-weight: 700; font-size: 12.5px; margin: 0; display: block; }
+.fe-file-upload label { cursor: pointer; color: var(--accent-yellow); font-weight: 700; font-size: 11.5px; margin: 0; display: block; }
 
 /* Grand Blue & Orange Sections */
 .grand-blue-section, .grand-orange-section {
@@ -2131,16 +2142,16 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
   }
   .fe-file-upload {
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: 250px !important;
     box-sizing: border-box !important;
-    padding: 10px !important;
+    padding: 7px 10px !important;
     border-radius: 8px !important;
     border: 1.5px dashed rgba(255, 255, 255, 0.28) !important;
     background: rgba(0, 0, 0, 0.2) !important;
     margin-top: 4px !important;
   }
   .fe-file-upload label {
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     color: var(--accent-yellow) !important;
     cursor: pointer !important;
     display: block !important;

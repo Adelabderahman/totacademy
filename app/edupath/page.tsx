@@ -379,59 +379,94 @@ export default function EduPathPage() {
     });
   };
 
-  // Smooth swipe & drag handlers for mobile and mouse
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchInfoRef.current = {
-        startX: e.touches[0].clientX,
-        startY: e.touches[0].clientY,
-        startTime: Date.now(),
-        isHorizontal: null,
-      };
-      isDraggingRef.current = true;
-      dragOffsetRef.current = 0;
-      setIsDragging(true);
-      setDragOffset(0);
-    }
+  // Unified pointer swipe & drag handlers for mobile touch and desktop mouse
+  const pointerRef = useRef<{
+    id: number | null;
+    startX: number;
+    startY: number;
+    startTime: number;
+    isDown: boolean;
+    isHorizontal: boolean | null;
+    hasMoved: boolean;
+  }>({
+    id: null,
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    isDown: false,
+    isHorizontal: null,
+    hasMoved: false,
+  });
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only handle primary button for mouse
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    pointerRef.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: Date.now(),
+      isDown: true,
+      isHorizontal: null,
+      hasMoved: false,
+    };
+    dragOffsetRef.current = 0;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1 || !isDraggingRef.current) return;
-    const curX = e.touches[0].clientX;
-    const curY = e.touches[0].clientY;
-    const dx = curX - touchInfoRef.current.startX;
-    const dy = curY - touchInfoRef.current.startY;
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerRef.current.isDown || pointerRef.current.id !== e.pointerId) return;
+    const dx = e.clientX - pointerRef.current.startX;
+    const dy = e.clientY - pointerRef.current.startY;
 
-    if (touchInfoRef.current.isHorizontal === null) {
-      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
-        touchInfoRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
+    if (pointerRef.current.isHorizontal === null) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+        pointerRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
+        if (pointerRef.current.isHorizontal) {
+          pointerRef.current.hasMoved = true;
+          isDraggingRef.current = true;
+          setIsDragging(true);
+          try {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          } catch {}
+        }
       }
     }
 
-    if (touchInfoRef.current.isHorizontal) {
+    if (pointerRef.current.isHorizontal) {
       let offset = dx;
       if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
-        offset = dx * 0.25;
+        offset = dx * 0.25; // resistance at boundary
       }
       dragOffsetRef.current = offset;
       setDragOffset(offset);
     }
   };
 
-  const handleTouchEnd = () => {
-    if (!isDraggingRef.current) return;
-    const isHorizontal = touchInfoRef.current.isHorizontal;
-    const dt = Date.now() - touchInfoRef.current.startTime;
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerRef.current.isDown || pointerRef.current.id !== e.pointerId) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const isHorizontal = pointerRef.current.isHorizontal;
+    const dt = Date.now() - pointerRef.current.startTime;
     const offset = dragOffsetRef.current;
 
+    pointerRef.current.isDown = false;
+    pointerRef.current.isHorizontal = null;
+    pointerRef.current.id = null;
     isDraggingRef.current = false;
     dragOffsetRef.current = 0;
     setIsDragging(false);
     setDragOffset(0);
 
+    setTimeout(() => {
+      pointerRef.current.hasMoved = false;
+    }, 60);
+
     if (isHorizontal) {
-      const isFlick = dt < 320 && Math.abs(offset) > 25;
-      const isDrag = Math.abs(offset) > 40;
+      const isFlick = dt < 380 && Math.abs(offset) > 18;
+      const isDrag = Math.abs(offset) > 35;
 
       if (isFlick || isDrag) {
         if (offset < 0) {
@@ -443,44 +478,27 @@ export default function EduPathPage() {
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    touchInfoRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      startTime: Date.now(),
-      isHorizontal: null,
-    };
-    isDraggingRef.current = true;
-    dragOffsetRef.current = 0;
-    setIsDragging(true);
-    setDragOffset(0);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingRef.current) return;
-    const dx = e.clientX - touchInfoRef.current.startX;
-    const dy = e.clientY - touchInfoRef.current.startY;
-
-    if (touchInfoRef.current.isHorizontal === null) {
-      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
-        touchInfoRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
-      }
-    }
-
-    if (touchInfoRef.current.isHorizontal) {
-      let offset = dx;
-      if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
-        offset = dx * 0.25;
-      }
-      dragOffsetRef.current = offset;
-      setDragOffset(offset);
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pointerRef.current.id === e.pointerId) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+      pointerRef.current.isDown = false;
+      pointerRef.current.isHorizontal = null;
+      pointerRef.current.id = null;
+      pointerRef.current.hasMoved = false;
+      isDraggingRef.current = false;
+      dragOffsetRef.current = 0;
+      setIsDragging(false);
+      setDragOffset(0);
     }
   };
 
-  const handleMouseUp = () => {
-    if (!isDraggingRef.current) return;
-    handleTouchEnd();
+  const handleCaptureClick = (e: React.MouseEvent) => {
+    if (pointerRef.current.hasMoved) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
   };
 
   // Advance to next question or complete quiz
@@ -1347,14 +1365,11 @@ export default function EduPathPage() {
               <div
                 className="qz-panels-wrapper"
                 ref={panelsWrapperRef}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchEnd}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+                onClickCapture={handleCaptureClick}
               >
                 <div
                   className="qz-panels-track"
@@ -1389,13 +1404,20 @@ export default function EduPathPage() {
                         }}
                         title={lang === 'ar' ? 'انتقال لعرض المحور والدروس' : 'View Module Lessons'}
                       >
-                        <div className="qz-intro-item-title text-sky-300 flex items-center justify-center gap-1">
-                          <span>📖</span>
-                          <span>{lang === 'ar' ? 'عرض المحور والدروس' : 'Module Lessons'}</span>
+                        <div className="qz-intro-item-header">
+                          <span className="qz-intro-icon-wrap bg-sky-500/20 text-sky-400 border border-sky-400/30">
+                            📖
+                          </span>
+                          <span className="qz-intro-item-title text-sky-200">
+                            {lang === 'ar' ? 'عرض المحور والدروس' : 'Module Lessons'}
+                          </span>
                         </div>
                         <div className="qz-intro-meta">
                           <span className="qz-intro-badge qz-badge-blue">
                             🎓 {lang === 'ar' ? `${activeLessons.length} دروس تأصيلية` : `${activeLessons.length} Lessons`}
+                          </span>
+                          <span className="qz-intro-badge qz-badge-blue opacity-90">
+                            {lang === 'ar' ? 'استكشاف ⬅' : 'Explore →'}
                           </span>
                         </div>
                       </div>
@@ -1413,8 +1435,13 @@ export default function EduPathPage() {
                             }}
                             title={q.title}
                           >
-                            <div className="qz-intro-item-title text-accent-yellow flex items-center justify-center gap-1">
-                              <span>{idx + 1}. {q.title}</span>
+                            <div className="qz-intro-item-header">
+                              <span className="qz-intro-icon-wrap bg-amber-500/20 text-accent-yellow border border-amber-400/30">
+                                0{idx + 1}
+                              </span>
+                              <span className="qz-intro-item-title text-white">
+                                {q.title}
+                              </span>
                             </div>
 
                             <div className="qz-intro-meta">
@@ -1422,20 +1449,14 @@ export default function EduPathPage() {
                                 ⏳ {lang === 'ar' ? '90s' : '90s'}
                               </span>
                               <span
-                                className={`lesson-progress ${isDone ? 'completed' : ''}`}
+                                className={`qz-intro-badge ${isDone ? 'qz-badge-green' : 'qz-badge-yellow'} cursor-pointer flex items-center gap-1`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleQuizCompletion(idx);
                                 }}
+                                title={lang === 'ar' ? 'تغيير حالة الإنجاز' : 'Toggle Done'}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={isDone}
-                                  onChange={() => toggleQuizCompletion(idx)}
-                                />
-                                <span className="prog-text">
-                                  {isDone ? (lang === 'ar' ? 'مكتمل' : 'Done') : (lang === 'ar' ? 'بدء' : 'Start')}
-                                </span>
+                                {isDone ? '✓ ' + (lang === 'ar' ? 'مكتمل' : 'Done') : '▶ ' + (lang === 'ar' ? 'بدء' : 'Start')}
                               </span>
                             </div>
                           </div>
@@ -1450,13 +1471,20 @@ export default function EduPathPage() {
                         }}
                         title={lang === 'ar' ? 'الانتقال إلى التقرير النهائي' : 'Go to Final Report'}
                       >
-                        <div className="qz-intro-item-title text-amber-300 flex items-center justify-center gap-1">
-                          <span>📊</span>
-                          <span>{lang === 'ar' ? 'محور التقرير النهائي' : 'Final Report'}</span>
+                        <div className="qz-intro-item-header">
+                          <span className="qz-intro-icon-wrap bg-amber-500/25 text-amber-300 border border-amber-400/40">
+                            🏆
+                          </span>
+                          <span className="qz-intro-item-title text-amber-200">
+                            {lang === 'ar' ? 'محور التقرير النهائي' : 'Final Report'}
+                          </span>
                         </div>
                         <div className="qz-intro-meta">
                           <span className="qz-intro-badge qz-badge-gold">
-                            🏆 {lang === 'ar' ? 'النتيجة والاعتماد' : 'Score & Certification'}
+                            📊 {lang === 'ar' ? 'المحصلة والاعتماد' : 'Score & Certification'}
+                          </span>
+                          <span className="qz-intro-badge qz-badge-gold opacity-90">
+                            {lang === 'ar' ? 'عرض ⬅' : 'View →'}
                           </span>
                         </div>
                       </div>

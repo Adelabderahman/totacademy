@@ -556,6 +556,17 @@ export default function EduPathPage() {
   };
 
   const handleExamPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (target && (
+      target.closest('textarea') ||
+      target.closest('input') ||
+      target.closest('button') ||
+      target.closest('label') ||
+      target.closest('a') ||
+      target.closest('.fe-intro-module-card')
+    )) {
+      return;
+    }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     examPointerRef.current = {
       id: e.pointerId,
@@ -575,7 +586,7 @@ export default function EduPathPage() {
     const dy = e.clientY - examPointerRef.current.startY;
 
     if (examPointerRef.current.isHorizontal === null) {
-      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
         examPointerRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
         if (examPointerRef.current.isHorizontal) {
           examPointerRef.current.hasMoved = true;
@@ -590,14 +601,8 @@ export default function EduPathPage() {
 
     if (examPointerRef.current.isHorizontal) {
       let offset = dx;
-      if (lang === 'ar') {
-        if ((examTab === 0 && dx < 0) || (examTab === 10 && dx > 0)) {
-          offset = dx * 0.25;
-        }
-      } else {
-        if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
-          offset = dx * 0.25;
-        }
+      if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
+        offset = dx * 0.2;
       }
       examDragOffsetRef.current = offset;
       setExamDragOffset(offset);
@@ -627,22 +632,14 @@ export default function EduPathPage() {
     }, 60);
 
     if (isHorizontal) {
-      const isFlick = dt < 380 && Math.abs(offset) > 18;
-      const isDrag = Math.abs(offset) > 35;
+      const isFlick = dt < 350 && Math.abs(offset) > 20;
+      const isDrag = Math.abs(offset) > 40;
 
       if (isFlick || isDrag) {
-        if (lang === 'ar') {
-          if (offset > 0) {
-            handleExamNextSlide();
-          } else {
-            handleExamPrevSlide();
-          }
+        if (offset < 0) {
+          handleExamNextSlide();
         } else {
-          if (offset < 0) {
-            handleExamNextSlide();
-          } else {
-            handleExamPrevSlide();
-          }
+          handleExamPrevSlide();
         }
       }
     }
@@ -2735,10 +2732,8 @@ export default function EduPathPage() {
                   <div
                     className="fe-panels-track"
                     style={{
-                      transform: lang === 'ar'
-                        ? `translateX(calc(-${(10 - examTab) * 100}% + ${examDragOffset}px))`
-                        : `translateX(calc(-${examTab * 100}% + ${examDragOffset}px))`,
-                      transition: isExamDragging ? 'none' : 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+                      transform: `translateX(calc(-${examTab * 100}% + ${examDragOffset}px))`,
+                      transition: isExamDragging ? 'none' : 'transform 0.38s cubic-bezier(0.2, 0.95, 0.35, 1)',
                     }}
                   >
                     {(() => {
@@ -2886,16 +2881,6 @@ export default function EduPathPage() {
                           const tabIndex = mNum + 1;
                           return (
                             <div key={`fe-panel-${mNum}`} className={`fe-panel ${examTab === tabIndex ? 'active' : ''}`}>
-                              <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-                                <h3 className="fe-section-title !border-0 !p-0 !m-0 text-xs md:text-base">
-                                  <span>📝</span>
-                                  <span>{`المحور 0${mNum}: ${levelModules.foundation[mNum - 1]?.title[lang] || ''}`}</span>
-                                </h3>
-                                <span className="text-[10px] font-bold text-accent-yellow bg-white/10 px-2 py-0.5 rounded border border-white/15 shrink-0">
-                                  {lang === 'ar' ? '5 أسئلة مقالية' : '5 Questions'}
-                                </span>
-                              </div>
-
                               <div className="space-y-3.5 text-start">
                                 {(finalExamQuestions[`m${mNum}`] || finalExamQuestions.m1).map((item, qIdx) => (
                                   <div key={qIdx} className="fe-form-group">
@@ -3010,7 +2995,7 @@ export default function EduPathPage() {
                           </div>
                         </div>
                       ];
-                      return lang === 'ar' ? [...allPanels].reverse() : allPanels;
+                      return allPanels;
                     })()}
                   </div>
                 </div>

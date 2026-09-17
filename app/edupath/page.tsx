@@ -633,174 +633,445 @@ export default function EduPathPage() {
     });
   };
 
-  // Download Final Report as PDF using html2pdf
+  // Download Final Report as PDF using high-resolution offscreen rendering with html2canvas & jsPDF
   const downloadReportPDF = async () => {
     if (typeof window === 'undefined') return;
-    let tempWrapper: HTMLElement | null = null;
+    let renderIframe: HTMLIFrameElement | null = null;
     try {
       setIsDownloadingReport(true);
       // Auto-generate fresh unique code on every file download
       const freshCode = generateNewReportCode();
 
-      // @ts-ignore
-      const html2pdfModule: any = await import('html2pdf.js');
-      const html2pdf = html2pdfModule.default || html2pdfModule;
+      // Dynamic import of html2canvas and jsPDF for maximum performance and zero conflict
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default || html2canvasModule;
+      const { jsPDF } = await import('jspdf');
 
-      const sourceElement = document.getElementById('final-quiz-report-card');
+      const sourceElement = document.getElementById('tot-academic-print-document') || document.getElementById('final-quiz-report-card');
       if (!sourceElement) {
         alert(lang === 'ar' ? 'تعذر العثور على بطاقة التقرير' : 'Report card not found');
         setIsDownloadingReport(false);
         return;
       }
 
-      // Wait 100ms for freshCode state update
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Create an isolated, completely off-screen rendering iframe (ZERO on-screen glitch or screen flash)
+      renderIframe = document.createElement('iframe');
+      renderIframe.style.position = 'fixed';
+      renderIframe.style.left = '-9999px';
+      renderIframe.style.top = '0';
+      renderIframe.style.width = '794px';
+      renderIframe.style.height = '1200px';
+      renderIframe.style.opacity = '0';
+      renderIframe.style.pointerEvents = 'none';
+      renderIframe.style.border = 'none';
+      renderIframe.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(renderIframe);
 
-      // Create a dedicated clean export container in normal viewport flow so html2canvas renders it completely
-      tempWrapper = document.createElement('div');
-      tempWrapper.id = 'pdf-export-active-container';
-      tempWrapper.className = 'report-paper-doc pdf-export-mode';
-      tempWrapper.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
-      tempWrapper.style.position = 'fixed';
-      tempWrapper.style.top = '0';
-      tempWrapper.style.left = '0';
-      tempWrapper.style.width = '794px';
-      tempWrapper.style.minWidth = '794px';
-      tempWrapper.style.maxWidth = '794px';
-      tempWrapper.style.backgroundColor = '#ffffff';
-      tempWrapper.style.color = '#0f172a';
-      tempWrapper.style.zIndex = '9999999';
-      tempWrapper.style.padding = '16px';
-      tempWrapper.style.boxSizing = 'border-box';
-      tempWrapper.style.boxShadow = 'none';
-      tempWrapper.style.border = 'none';
-      tempWrapper.style.borderRadius = '0';
-      tempWrapper.style.overflow = 'visible';
-      tempWrapper.innerHTML = sourceElement.innerHTML;
-      document.body.appendChild(tempWrapper);
+      const frameDoc = renderIframe.contentDocument || renderIframe.contentWindow?.document;
+      if (!frameDoc) {
+        throw new Error('Unable to access export rendering context');
+      }
 
-      // Brief pause for browser layout of the cloned container
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      // Write isolated, pristine HTML and CSS into iframe (no Tailwind conflict, no oklch, full typography and colors)
+      frameDoc.open();
+      frameDoc.write(`
+        <!DOCTYPE html>
+        <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}" lang="${lang}">
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              background: #ffffff !important;
+              color: #0f172a !important;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              width: 794px;
+              min-width: 794px;
+              max-width: 794px;
+              padding: 16px;
+              direction: ${lang === 'ar' ? 'rtl' : 'ltr'};
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .report-paper-doc {
+              background: #ffffff !important;
+              color: #0f172a !important;
+              border: 1px solid #cbd5e1 !important;
+              border-radius: 8px !important;
+              padding: 14px !important;
+              box-sizing: border-box !important;
+              width: 100% !important;
+            }
+            .report-header-banner {
+              border-bottom: 2px solid #0f172a !important;
+              padding-bottom: 8px !important;
+              margin-bottom: 10px !important;
+            }
+            .report-badge-top {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              margin-bottom: 4px !important;
+            }
+            .report-logo-text {
+              font-size: 11px !important;
+              font-weight: 800 !important;
+              color: #0f172a !important;
+            }
+            .report-type-badge {
+              font-size: 9px !important;
+              font-weight: 700 !important;
+              background: #f1f5f9 !important;
+              border: 1px solid #cbd5e1 !important;
+              padding: 2px 8px !important;
+              border-radius: 999px !important;
+              color: #475569 !important;
+            }
+            .report-main-title {
+              font-size: 14px !important;
+              font-weight: 900 !important;
+              color: #0f172a !important;
+              margin: 4px 0 6px 0 !important;
+              text-align: center !important;
+            }
+            .report-track-row {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              flex-wrap: wrap !important;
+              gap: 6px !important;
+              font-size: 9.5px !important;
+              background: #f8fafc !important;
+              padding: 6px 8px !important;
+              border-radius: 6px !important;
+              border: 1px solid #e2e8f0 !important;
+            }
+            .report-level-pill {
+              display: inline-block !important;
+              background: #0284c7 !important;
+              color: #fff !important;
+              font-size: 8px !important;
+              font-weight: 700 !important;
+              padding: 2px 6px !important;
+              border-radius: 4px !important;
+              margin-inline-start: 4px !important;
+            }
+            .report-ref-code strong {
+              color: #b45309 !important;
+              font-family: monospace !important;
+              font-size: 10px !important;
+              margin-inline-start: 4px !important;
+            }
+            .report-track-prominent-header {
+              background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+              color: #ffffff !important;
+              border-radius: 8px !important;
+              padding: 10px 14px !important;
+              margin-bottom: 12px !important;
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              border: 1px solid #334155 !important;
+            }
+            .report-prominent-subtitle {
+              font-size: 8.5px !important;
+              color: #94a3b8 !important;
+              font-weight: 600 !important;
+              display: block !important;
+              margin-bottom: 2px !important;
+            }
+            .report-prominent-main-title {
+              font-size: 13px !important;
+              font-weight: 900 !important;
+              color: #f8fafc !important;
+            }
+            .report-prominent-badges {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: flex-end !important;
+              gap: 4px !important;
+            }
+            .report-badge-level-highlight {
+              background: #0284c7 !important;
+              color: #ffffff !important;
+              font-size: 8px !important;
+              font-weight: 700 !important;
+              padding: 2px 8px !important;
+              border-radius: 4px !important;
+            }
+            .report-badge-score-highlight {
+              background: #10b981 !important;
+              color: #ffffff !important;
+              font-size: 8.5px !important;
+              font-weight: 800 !important;
+              padding: 2px 8px !important;
+              border-radius: 4px !important;
+            }
+            .report-stats-grid {
+              display: grid !important;
+              grid-template-columns: repeat(4, 1fr) !important;
+              gap: 8px !important;
+              margin-bottom: 12px !important;
+            }
+            .report-stat-card {
+              background: #f8fafc !important;
+              border: 1px solid #e2e8f0 !important;
+              border-radius: 6px !important;
+              padding: 8px !important;
+              text-align: center !important;
+            }
+            .report-stat-card-highlight {
+              background: #ecfdf5 !important;
+              border-color: #a7f3d0 !important;
+            }
+            .stat-label {
+              font-size: 8.5px !important;
+              color: #64748b !important;
+              font-weight: 700 !important;
+              margin-bottom: 2px !important;
+            }
+            .stat-value {
+              font-size: 16px !important;
+              font-weight: 900 !important;
+              line-height: 1.2 !important;
+            }
+            .stat-sub {
+              font-size: 9.5px !important;
+              color: #94a3b8 !important;
+              font-weight: 600 !important;
+            }
+            .report-mini-bar-wrap {
+              background: #e2e8f0 !important;
+              height: 4px !important;
+              border-radius: 2px !important;
+              margin-top: 4px !important;
+              overflow: hidden !important;
+            }
+            .report-mini-bar-fill {
+              background: #0284c7 !important;
+              height: 100% !important;
+            }
+            .report-table-wrap {
+              margin-bottom: 12px !important;
+            }
+            .report-table-title {
+              font-size: 10.5px !important;
+              font-weight: 800 !important;
+              color: #0f172a !important;
+              margin-bottom: 6px !important;
+              border-bottom: 1px dashed #cbd5e1 !important;
+              padding-bottom: 3px !important;
+            }
+            .report-table-container {
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            .report-axis-block {
+              background: #ffffff !important;
+              border: 1px solid #cbd5e1 !important;
+              border-radius: 6px !important;
+              padding: 8px 10px !important;
+              margin-bottom: 10px !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .report-axis-header {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              margin-bottom: 6px !important;
+              padding-bottom: 4px !important;
+              border-bottom: 1px solid #e2e8f0 !important;
+            }
+            .report-axis-title {
+              font-size: 9.5px !important;
+              font-weight: 800 !important;
+              color: #1e293b !important;
+            }
+            .status-pill {
+              font-size: 7.5px !important;
+              font-weight: 700 !important;
+              padding: 2px 6px !important;
+              border-radius: 3px !important;
+            }
+            .status-done {
+              background: #dcfce7 !important;
+              color: #166534 !important;
+            }
+            .status-pending {
+              background: #fef3c7 !important;
+              color: #92400e !important;
+            }
+            .report-axis-score-badge {
+              font-size: 8px !important;
+              font-weight: 700 !important;
+              color: #475569 !important;
+              background: #f1f5f9 !important;
+              padding: 2px 6px !important;
+              border-radius: 3px !important;
+            }
+            .report-questions-subtable {
+              width: 100% !important;
+              border-collapse: collapse !important;
+              font-size: 8px !important;
+            }
+            .report-questions-subtable th {
+              background: #f8fafc !important;
+              color: #334155 !important;
+              padding: 4px 6px !important;
+              font-weight: 700 !important;
+              border-bottom: 1px solid #cbd5e1 !important;
+              border-top: 1px solid #e2e8f0 !important;
+            }
+            .report-questions-subtable td {
+              padding: 4px 6px !important;
+              border-bottom: 1px solid #f1f5f9 !important;
+              color: #1e293b !important;
+            }
+            .report-questions-subtable tr:nth-child(even) {
+              background: #fafafa !important;
+            }
+            .q-status-correct {
+              display: inline-block !important;
+              color: #15803d !important;
+              font-weight: 700 !important;
+              background: #dcfce7 !important;
+              padding: 1px 5px !important;
+              border-radius: 3px !important;
+              font-size: 7.5px !important;
+            }
+            .q-status-wrong {
+              display: inline-block !important;
+              color: #b91c1c !important;
+              font-weight: 700 !important;
+              background: #fee2e2 !important;
+              padding: 1px 5px !important;
+              border-radius: 3px !important;
+              font-size: 7.5px !important;
+            }
+            .q-status-pending {
+              display: inline-block !important;
+              color: #64748b !important;
+              font-weight: 600 !important;
+              background: #f1f5f9 !important;
+              padding: 1px 5px !important;
+              border-radius: 3px !important;
+              font-size: 7.5px !important;
+            }
+            .report-official-seal {
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              background: #f8fafc !important;
+              border: 1px solid #e2e8f0 !important;
+              border-radius: 6px !important;
+              padding: 8px 12px !important;
+              margin-top: 14px !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .seal-badge {
+              font-size: 8.5px !important;
+              font-weight: 800 !important;
+              color: #0f172a !important;
+              margin-bottom: 2px !important;
+            }
+            .seal-code-box {
+              text-align: center !important;
+            }
+            .barcode-mock {
+              font-family: monospace !important;
+              font-size: 11px !important;
+              letter-spacing: 2px !important;
+              color: #334155 !important;
+              line-height: 1 !important;
+            }
+            .seal-code-str {
+              font-size: 7.5px !important;
+              font-family: monospace !important;
+              color: #b45309 !important;
+              font-weight: 700 !important;
+            }
+            .text-emerald-600 { color: #059669 !important; }
+            .text-rose-600 { color: #e11d48 !important; }
+            .text-emerald-700 { color: #047857 !important; }
+            .text-slate-800 { color: #1e293b !important; }
+            .text-slate-500 { color: #64748b !important; }
+          </style>
+        </head>
+        <body>
+          <div id="capture-container">
+            ${sourceElement.innerHTML}
+          </div>
+        </body>
+        </html>
+      `);
+      frameDoc.close();
 
-      const opt = {
-        margin: [6, 6, 6, 6],
-        filename: `TOT_Assessment_Report_${freshCode}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          scrollY: 0,
-          scrollX: 0,
-          windowWidth: 820,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      };
+      // Allow browser to calculate layout and render fonts cleanly
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
-      await html2pdf().set(opt).from(tempWrapper).save();
+      const captureTarget = frameDoc.getElementById('capture-container');
+      if (!captureTarget) throw new Error('Render target missing');
+
+      const canvas = await html2canvas(captureTarget, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 800,
+      });
+
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error('Canvas rendering generated empty result');
+      }
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 8;
+      const contentWidth = pageWidth - (margin * 2); // 194mm
+      const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+      let heightLeft = contentHeight;
+      let position = margin;
+
+      // Add first page
+      pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight, undefined, 'FAST');
+      heightLeft -= (pageHeight - margin * 2);
+
+      // Add subsequent pages if report exceeds A4 height
+      while (heightLeft > 0) {
+        position -= (pageHeight - margin * 2);
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, position, contentWidth, contentHeight, undefined, 'FAST');
+        heightLeft -= (pageHeight - margin * 2);
+      }
+
+      pdf.save(`TOT_Assessment_Report_${freshCode}.pdf`);
     } catch (err) {
-      console.error('PDF export error, falling back to print dialog:', err);
+      console.error('PDF export error, triggering print dialog fallback:', err);
       printReport();
     } finally {
-      if (tempWrapper && tempWrapper.parentNode) {
-        tempWrapper.parentNode.removeChild(tempWrapper);
+      if (renderIframe && renderIframe.parentNode) {
+        renderIframe.parentNode.removeChild(renderIframe);
       }
       setIsDownloadingReport(false);
     }
   };
 
-  // Print Report (Prints ONLY the Complete Summary + Detailed Assessment Report)
+  // Print Report (Prints ONLY the Complete Assessment Report Document cleanly via @media print)
   const printReport = () => {
-    const reportElement = document.getElementById('final-quiz-report-card');
-    if (!reportElement) {
-      window.print();
-      return;
-    }
-
-    // Create an isolated hidden iframe for printing ONLY the assessment report
-    const printFrame = document.createElement('iframe');
-    printFrame.style.position = 'fixed';
-    printFrame.style.right = '0';
-    printFrame.style.bottom = '0';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = '0';
-    printFrame.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(printFrame);
-
-    const frameDoc = printFrame.contentWindow?.document;
-    if (!frameDoc) {
-      window.print();
-      return;
-    }
-
-    // Extract all styles so colors, tables, badges, and fonts are preserved
-    let styles = '';
-    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
-      styles += el.outerHTML;
-    });
-
-    frameDoc.open();
-    frameDoc.write(`
-      <!DOCTYPE html>
-      <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}" lang="${lang}">
-      <head>
-        <title>${lang === 'ar' ? 'تقرير التقييم النهائي والتفصيلي - أكاديمية TOT' : 'Assessment Report - TOT Academy'}</title>
-        <meta charset="utf-8" />
-        ${styles}
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 8mm;
-          }
-          html, body {
-            background: #ffffff !important;
-            color: #0f172a !important;
-            margin: 0 !important;
-            padding: 8px !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            font-family: inherit;
-          }
-          .report-paper-doc {
-            display: block !important;
-            position: static !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .report-table-container {
-            max-height: none !important;
-            overflow: visible !important;
-          }
-          .report-axis-block {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            margin-bottom: 8px !important;
-          }
-        </style>
-      </head>
-      <body>
-        ${reportElement.innerHTML}
-      </body>
-      </html>
-    `);
-    frameDoc.close();
-
-    setTimeout(() => {
-      printFrame.contentWindow?.focus();
-      printFrame.contentWindow?.print();
-      setTimeout(() => {
-        if (printFrame.parentNode) {
-          printFrame.parentNode.removeChild(printFrame);
-        }
-      }, 2000);
-    }, 400);
+    window.print();
   };
 
   // Reset Quizzes and return smoothly to page 1 (Axis Overview)
@@ -2665,6 +2936,11 @@ export default function EduPathPage() {
             </form>
           </div>
         </section>
+      </div>
+
+      {/* Dedicated Clean Academic Document for Native Printing and PDF Export */}
+      <div id="tot-academic-print-document" aria-hidden="true">
+        {renderFullDetailedReport()}
       </div>
     </div>
   );

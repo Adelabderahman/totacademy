@@ -99,6 +99,34 @@ export default function EduPathPage() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState<boolean>(false);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+
+  // Open & Close Detailed Report Modal with Back-Button Sync
+  const openReportModal = () => {
+    try {
+      window.history.pushState({ modal: 'report_modal' }, '');
+    } catch {}
+    setShowReportModal(true);
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    try {
+      if (window.history.state && window.history.state.modal === 'report_modal') {
+        window.history.back();
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setShowReportModal(false);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Load completion states from localStorage on mount
   useEffect(() => {
@@ -124,13 +152,8 @@ export default function EduPathPage() {
       setCompletedLessons(storedLessons);
       setCompletedQuizzes(storedQuizzes);
 
-      // Unique report code
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = 'TOT-';
-      for (let i = 0; i < 8; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      setReportCode(code);
+      // Initial unique report code
+      generateNewReportCode();
     } catch {
       // ignore
     }
@@ -319,21 +342,18 @@ export default function EduPathPage() {
     if (tabIdx >= 1 && tabIdx <= 6) {
       setActiveQuizIndex(tabIdx - 1);
     }
-    const container = panelsWrapperRef.current;
     const target = panelElementsRef.current[tabIdx];
-    if (container && target) {
+    if (target) {
       isProgrammaticScrollRef.current = true;
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const deltaX = targetRect.left - containerRect.left;
-      container.scrollBy({
-        left: deltaX,
+      target.scrollIntoView({
         behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
       });
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       scrollTimeoutRef.current = setTimeout(() => {
         isProgrammaticScrollRef.current = false;
-      }, 450);
+      }, 500);
     }
   };
 
@@ -535,6 +555,9 @@ export default function EduPathPage() {
     if (typeof window === 'undefined') return;
     try {
       setIsDownloadingReport(true);
+      // Auto-generate fresh unique code on every file download
+      const freshCode = generateNewReportCode();
+
       // @ts-ignore
       const html2pdfModule: any = await import('html2pdf.js');
       const html2pdf = html2pdfModule.default || html2pdfModule;
@@ -546,9 +569,12 @@ export default function EduPathPage() {
         return;
       }
 
+      // Wait 80ms for DOM re-render with fresh code
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
       const opt = {
         margin: [6, 6, 6, 6],
-        filename: `TOT_Assessment_Report_${reportCode}.pdf`,
+        filename: `TOT_Assessment_Report_${freshCode}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -598,9 +624,12 @@ export default function EduPathPage() {
     window.print();
   };
 
-  // Reset Quizzes
+  // Reset Quizzes and return smoothly to page 1 (Axis Overview)
   const resetQuizzes = () => {
-    if (confirm(lang === 'ar' ? 'هل أنت متأكد من تصفير نتائج الاختبارات؟' : 'Reset quiz scores?')) {
+    if (confirm(lang === 'ar' ? 'هل أنت متأكد من تصفير نتائج الاختبارات والبدء من جديد؟' : 'Reset all quiz scores and start over?')) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+
       setQuizHistory({});
       setCompletedQuizzes((prev) => {
         const next = { ...prev, [activeModule.id]: [] };
@@ -609,11 +638,220 @@ export default function EduPathPage() {
         } catch {}
         return next;
       });
+
+      setQuestionIndex(0);
+      setQuizScore(0);
+      setSelectedOption(null);
+      setIsAnswered(false);
+      setShowHint(false);
+      setTimeLeft(15);
       setQuizScreen('intro');
       setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
       generateNewReportCode();
-      setActiveQuizTab(0);
+      scrollToQuizSlide(0);
     }
+  };
+
+  // Reusable Detailed Report Component for PDF and Modal
+  const renderFullDetailedReport = () => {
+    const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
+    const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
+    const totalWrong = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0);
+    const overallPct = completedCount === 0 ? 0 : Math.round((totalCorrect / (completedCount * 6)) * 100);
+
+    return (
+      <div className="report-paper-doc">
+        {/* Official Document Header */}
+        <div className="report-header-banner">
+          <div className="report-badge-top">
+            <span className="report-logo-text">🎓 {lang === 'ar' ? 'أكاديمية TOT للتدريب والتأهيل' : 'TOT Academy Training'}</span>
+            <span className="report-type-badge">{lang === 'ar' ? 'وثيقة تقييم أداء رسمي' : 'Official Evaluation'}</span>
+          </div>
+          <h3 className="report-main-title">
+            {lang === 'ar' ? 'تقرير التقييم النهائي ونتائج المحصلة الأكاديمية' : 'Final Assessment & Performance Report'}
+          </h3>
+          <div className="report-track-row">
+            <div>
+              <span className="font-bold">{lang === 'ar' ? 'المسار التعليمي:' : 'Track:'}</span>{' '}
+              <span>{activeModule.title[lang]}</span>
+              <span className="report-level-pill">
+                {activeLevel === 'foundation'
+                  ? (lang === 'ar' ? 'المسار التأصيلي' : 'Foundation')
+                  : activeLevel === 'empowerment'
+                  ? (lang === 'ar' ? 'مسار التمكين' : 'Empowerment')
+                  : (lang === 'ar' ? 'مسار الترسيخ' : 'Consolidation')}
+              </span>
+            </div>
+            <div className="report-ref-code">
+              <span>{lang === 'ar' ? 'رمز الاعتماد:' : 'Ref Code:'}</span>
+              <strong>{reportCode}</strong>
+            </div>
+            <div className="text-[7.5px] text-slate-500">
+              <span>{lang === 'ar' ? 'تاريخ التقييم:' : 'Date:'}</span> {new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+            </div>
+          </div>
+        </div>
+
+        {/* Prominent Track Banner */}
+        <div className="report-track-prominent-header">
+          <div className="report-prominent-title-wrap">
+            <span className="report-prominent-subtitle">
+              {lang === 'ar' ? 'المسار التعليمي والمهني المعتمد:' : 'Accredited Track:'}
+            </span>
+            <div className="report-prominent-main-title">
+              {activeModule.title[lang]}
+            </div>
+          </div>
+          <div className="report-prominent-badges">
+            <span className="report-badge-level-highlight">
+              {activeLevel === 'foundation'
+                ? (lang === 'ar' ? 'المسار التأصيلي — المستوى الأول' : 'Foundation Track — Level 1')
+                : activeLevel === 'empowerment'
+                ? (lang === 'ar' ? 'مسار التمكين — المستوى الثاني' : 'Empowerment Track — Level 2')
+                : (lang === 'ar' ? 'مسار الترسيخ — المستوى الثالث' : 'Consolidation Track — Level 3')}
+            </span>
+            <span className="report-badge-score-highlight">
+              {lang === 'ar' ? `المعدل الإجمالي للاختبار ككل: ${overallPct}%` : `Overall Score: ${overallPct}%`}
+            </span>
+          </div>
+        </div>
+
+        {/* Overall Summary Stats */}
+        <div className="report-stats-grid">
+          <div className="report-stat-card">
+            <div className="stat-label">{lang === 'ar' ? 'الاختبارات المنجزة' : 'Completed Quizzes'}</div>
+            <div className="stat-value text-slate-800">
+              {completedCount}
+              <span className="stat-sub"> / 6</span>
+            </div>
+            <div className="report-mini-bar-wrap">
+              <div
+                className="report-mini-bar-fill"
+                style={{ width: `${(completedCount / 6) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="report-stat-card">
+            <div className="stat-label">{lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct Answers'}</div>
+            <div className="stat-value text-emerald-600">
+              {totalCorrect}
+              <span className="stat-sub"> / 36</span>
+            </div>
+          </div>
+
+          <div className="report-stat-card">
+            <div className="stat-label">{lang === 'ar' ? 'الإجابات الخاطئة' : 'Wrong Answers'}</div>
+            <div className="stat-value text-rose-600">
+              {totalWrong}
+              <span className="stat-sub"> / 36</span>
+            </div>
+          </div>
+
+          <div className="report-stat-card report-stat-card-highlight">
+            <div className="stat-label">{lang === 'ar' ? 'المعدل التراكمي الإجمالي' : 'Overall Score'}</div>
+            <div className="stat-value text-emerald-700">
+              {overallPct}%
+            </div>
+            <div className="text-[7.5px] font-bold text-slate-600 mt-0.5">
+              {overallPct >= 90
+                ? (lang === 'ar' ? '🌟 تقدير: ممتاز مرتفع' : '🌟 High Distinction')
+                : overallPct >= 80
+                ? (lang === 'ar' ? '✨ تقدير: جيد جداً' : '✨ Very Good')
+                : overallPct >= 65
+                ? (lang === 'ar' ? '👍 تقدير: جيد' : '👍 Good')
+                : (lang === 'ar' ? '⏳ بحاجة لتحسين المعدل' : '⏳ Needs Improvement')}
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Breakdown per Axis with the 6 Questions Under Each Axis */}
+        <div className="report-table-wrap">
+          <div className="report-table-title">
+            📋 {lang === 'ar' ? 'تفاصيل محاور التقييم والأسئلة الستة لكل محور:' : 'Assessment Axes & Questions Breakdown (1-6):'}
+          </div>
+          <div className="report-table-container">
+            {activeQuizzesList.map((q, idx) => {
+              const hist = quizHistory[idx];
+              const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+              const correctCount = hist ? hist.correct : (isDone ? 6 : 0);
+              const axisPct = hist ? Math.round((hist.correct / 6) * 100) : (isDone ? 100 : 0);
+
+              return (
+                <div key={idx} className="report-axis-block">
+                  <div className="report-axis-header">
+                    <span className="report-axis-title">
+                      {lang === 'ar' ? `المحور ${idx + 1}: ${q.title}` : `Axis ${idx + 1}: ${q.title}`}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`status-pill ${isDone ? 'status-done' : 'status-pending'}`}>
+                        {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Done') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Pending')}
+                      </span>
+                      <span className="report-axis-score-badge">
+                        {lang === 'ar' ? `النسبة المئوية للمحور: ${axisPct}% (${correctCount}/6)` : `Axis Score: ${axisPct}% (${correctCount}/6)`}
+                      </span>
+                    </div>
+                  </div>
+                  <table className="report-questions-subtable">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '28px' }}>#</th>
+                        <th style={{ textAlign: 'start' }}>{lang === 'ar' ? 'نص السؤال' : 'Question Text'}</th>
+                        <th style={{ width: '85px' }}>{lang === 'ar' ? 'حالة الإجابة' : 'Answer Status'}</th>
+                        <th style={{ width: '55px' }}>{lang === 'ar' ? 'المدة' : 'Duration'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {q.questions.map((questionItem, qNum) => {
+                        const qHist = hist?.questions[qNum];
+                        const hasAnswered = qHist !== undefined;
+                        const isCorrect = hasAnswered ? qHist.isCorrect : isDone;
+                        const timeStr = hasAnswered ? `${qHist.time}ث` : (isDone ? '~10ث' : '-');
+
+                        return (
+                          <tr key={qNum}>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{qNum + 1}</td>
+                            <td style={{ textAlign: 'start' }}>{questionItem.q}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              {hasAnswered || isDone ? (
+                                isCorrect ? (
+                                  <span className="q-status-correct">{lang === 'ar' ? '✅ صحيحة' : '✅ Correct'}</span>
+                                ) : (
+                                  <span className="q-status-wrong">{lang === 'ar' ? '❌ خاطئة' : '❌ Wrong'}</span>
+                                )
+                              ) : (
+                                <span className="q-status-pending">{lang === 'ar' ? '⏳ لم يُختبر' : '⏳ Pending'}</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{timeStr}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Official Verification Seal & Authenticity Footer */}
+        <div className="report-official-seal">
+          <div>
+            <div className="seal-badge">
+              🏛️ {lang === 'ar' ? 'وثيقة إلكترونية معتمدة رسميًا من الأكاديمية' : 'Officially Accredited E-Document'}
+            </div>
+            <div className="text-[6.5px] text-slate-500">
+              {lang === 'ar' ? 'تحتفظ المنصة بسجل درجات هذا التقييم لأغراض إصدار الشهادة الرسمية' : 'Scores are recorded for official certificate accreditation'}
+            </div>
+          </div>
+          <div className="seal-code-box">
+            <div className="barcode-mock">||||| | |||| ||||| || |</div>
+            <div className="seal-code-str">VERIFY: {reportCode}</div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1319,7 +1557,7 @@ export default function EduPathPage() {
                               className="btn-outline text-xs py-2 px-4"
                               onClick={() => returnToQuizStart(qIdx)}
                             >
-                              🔄 {lang === 'ar' ? 'إعادة الاختبار' : 'Retry Quiz'}
+                              🔄 {lang === 'ar' ? 'إعادة التقييم' : 'Retry Evaluation'}
                             </button>
                             {qIdx < 5 ? (
                               <button
@@ -1378,7 +1616,8 @@ export default function EduPathPage() {
                   ref={(el) => { panelElementsRef.current[7] = el; }}
                   className={`qz-panel qz-report-panel ${activeQuizTab === 7 ? 'active' : ''}`}
                 >
-                  <div id="final-quiz-report-card" className="report-paper-doc">
+                  {/* ON-SCREEN VIEW: Summary Only in Small Boxes */}
+                  <div id="screen-quiz-summary-card" className="report-paper-doc">
                     {/* Official Document Header */}
                     <div className="report-header-banner">
                       <div className="report-badge-top">
@@ -1480,50 +1719,12 @@ export default function EduPathPage() {
                       </div>
                     </div>
 
-                    {/* Prominent Track & Level Header Above Evaluations */}
-                    <div className="report-track-prominent-header">
-                      <div className="report-track-main-title">
-                        <span className="report-track-tag">
-                          {lang === 'ar' ? 'المسار التعليمي والمهني المعتمد:' : 'Accredited Track:'}
-                        </span>
-                        <span className="report-track-text">{activeModule.title[lang]}</span>
-                        <span className="report-track-badge">
-                          {activeLevel === 'foundation'
-                            ? (lang === 'ar' ? 'المسار التأصيلي — المستوى الأول' : 'Foundation Track — Level 1')
-                            : activeLevel === 'empowerment'
-                            ? (lang === 'ar' ? 'مسار التمكين — المستوى الثاني' : 'Empowerment Track — Level 2')
-                            : (lang === 'ar' ? 'مسار الترسيخ — المستوى الثالث' : 'Consolidation Track — Level 3')}
-                        </span>
-                      </div>
-                      <div className="report-track-meta-row">
-                        <div className="report-track-meta-item">
-                          <span>{lang === 'ar' ? 'رمز الاعتماد الموحد:' : 'Ref Code:'}</span>
-                          <strong className="font-mono text-amber-700">{reportCode}</strong>
-                        </div>
-                        <div className="report-track-meta-item">
-                          <span>{lang === 'ar' ? 'تاريخ التقييم:' : 'Date:'}</span>
-                          <strong>{new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</strong>
-                        </div>
-                        <div className="report-track-meta-item">
-                          <span>{lang === 'ar' ? 'المعدل التراكمي للاختبار ككل:' : 'Overall Track Score:'}</span>
-                          <strong className="text-emerald-700 font-bold">
-                            {(() => {
-                              const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
-                              if (completedCount === 0) return '0%';
-                              const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
-                              return `${Math.round((totalCorrect / (completedCount * 6)) * 100)}%`;
-                            })()}
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Detailed Breakdown per Axis with the 6 Questions Under Each Axis */}
+                    {/* ملخص المحاور الستة في مربعات صغيرة للشاشة */}
                     <div className="report-table-wrap">
                       <div className="report-table-title">
-                        📋 {lang === 'ar' ? 'تفاصيل محاور التقييم والأسئلة الستة لكل محور:' : 'Assessment Axes & Questions Breakdown (1-6):'}
+                        📊 {lang === 'ar' ? 'ملخص محاور التقييم الستة:' : 'Assessment Axes Summary (1-6):'}
                       </div>
-                      <div className="report-table-container">
+                      <div className="report-axis-summary-grid">
                         {activeQuizzesList.map((q, idx) => {
                           const hist = quizHistory[idx];
                           const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
@@ -1531,57 +1732,19 @@ export default function EduPathPage() {
                           const axisPct = hist ? Math.round((hist.correct / 6) * 100) : (isDone ? 100 : 0);
 
                           return (
-                            <div key={idx} className="report-axis-block">
-                              <div className="report-axis-header">
-                                <span className="report-axis-title">
-                                  {lang === 'ar' ? `المحور ${idx + 1}: ${q.title}` : `Axis ${idx + 1}: ${q.title}`}
+                            <div key={idx} className="report-summary-mini-card">
+                              <div className="summary-mini-header">
+                                <span className="summary-mini-title" title={q.title}>
+                                  {idx + 1}. {q.title}
                                 </span>
-                                <div className="flex items-center gap-2">
-                                  <span className={`status-pill ${isDone ? 'status-done' : 'status-pending'}`}>
-                                    {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Done') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Pending')}
-                                  </span>
-                                  <span className="report-axis-score-badge">
-                                    {lang === 'ar' ? `النسبة المئوية للمحور: ${axisPct}% (${correctCount}/6)` : `Axis Score: ${axisPct}% (${correctCount}/6)`}
-                                  </span>
-                                </div>
+                                <span className={`summary-mini-status-dot ${isDone ? 'done' : 'pending'}`} />
                               </div>
-                              <table className="report-questions-subtable">
-                                <thead>
-                                  <tr>
-                                    <th style={{ width: '28px' }}>#</th>
-                                    <th style={{ textAlign: 'start' }}>{lang === 'ar' ? 'نص السؤال' : 'Question Text'}</th>
-                                    <th style={{ width: '85px' }}>{lang === 'ar' ? 'حالة الإجابة' : 'Answer Status'}</th>
-                                    <th style={{ width: '55px' }}>{lang === 'ar' ? 'المدة' : 'Duration'}</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {q.questions.map((questionItem, qNum) => {
-                                    const qHist = hist?.questions[qNum];
-                                    const hasAnswered = qHist !== undefined;
-                                    const isCorrect = hasAnswered ? qHist.isCorrect : isDone;
-                                    const timeStr = hasAnswered ? `${qHist.time}ث` : (isDone ? '~10ث' : '-');
-
-                                    return (
-                                      <tr key={qNum}>
-                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{qNum + 1}</td>
-                                        <td style={{ textAlign: 'start' }}>{questionItem.q}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                          {hasAnswered || isDone ? (
-                                            isCorrect ? (
-                                              <span className="q-status-correct">{lang === 'ar' ? '✅ صحيحة' : '✅ Correct'}</span>
-                                            ) : (
-                                              <span className="q-status-wrong">{lang === 'ar' ? '❌ خاطئة' : '❌ Wrong'}</span>
-                                            )
-                                          ) : (
-                                            <span className="q-status-pending">{lang === 'ar' ? '⏳ لم يُختبر' : '⏳ Pending'}</span>
-                                          )}
-                                        </td>
-                                        <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{timeStr}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
+                              <div className="summary-mini-stats">
+                                <span className="summary-mini-pct">{axisPct}%</span>
+                                <span className="summary-mini-count">
+                                  {correctCount}/6 {lang === 'ar' ? 'صحيحة' : 'correct'}
+                                </span>
+                              </div>
                             </div>
                           );
                         })}
@@ -1605,7 +1768,12 @@ export default function EduPathPage() {
                     </div>
                   </div>
 
-                  {/* Action Buttons: Prominent PDF Download, Copy, Print, New Code, Reset */}
+                  {/* Hidden Detailed Report Source for PDF Download */}
+                  <div id="final-quiz-report-card" className="print-report-source-detailed">
+                    {renderFullDetailedReport()}
+                  </div>
+
+                  {/* Action Buttons: Prominent PDF Download, View Modal, Copy, Print, Reset */}
                   <div className="mt-3">
                     <button
                       type="button"
@@ -1617,11 +1785,20 @@ export default function EduPathPage() {
                       <span>
                         {isDownloadingReport
                           ? (lang === 'ar' ? 'جارٍ إنشاء وتحميل ملف PDF...' : 'Generating & Downloading PDF...')
-                          : (lang === 'ar' ? 'تحميل التقرير النهائي (PDF)' : 'Download Final Report (PDF)')}
+                          : (lang === 'ar' ? 'تحميل التقرير النهائي بالتفاصيل (PDF)' : 'Download Detailed Report (PDF)')}
                       </span>
                     </button>
 
                     <div className="qz-report-actions-row">
+                      <button
+                        type="button"
+                        className="qz-report-action-btn btn-view-report"
+                        onClick={openReportModal}
+                        title={lang === 'ar' ? 'الاطلاع على التقرير التفصيلي' : 'View Full Report'}
+                      >
+                        <span>👁️</span>
+                        <span>{lang === 'ar' ? 'الاطلاع' : 'View'}</span>
+                      </button>
                       <button
                         type="button"
                         className="qz-report-action-btn"
@@ -1640,15 +1817,6 @@ export default function EduPathPage() {
                       </button>
                       <button
                         type="button"
-                        className="qz-report-action-btn"
-                        onClick={generateNewReportCode}
-                        title={lang === 'ar' ? 'توليد كود عشوائي جديد للاختبار' : 'Generate New Code'}
-                      >
-                        <span>🎲</span>
-                        <span>{lang === 'ar' ? 'كود جديد' : 'New Code'}</span>
-                      </button>
-                      <button
-                        type="button"
                         className="qz-report-action-btn btn-reset"
                         onClick={resetQuizzes}
                       >
@@ -1658,6 +1826,48 @@ export default function EduPathPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Pop-Up Modal for Viewing Detailed Report */}
+                {showReportModal && (
+                  <div
+                    className="report-modal-backdrop"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) {
+                        closeReportModal();
+                      }
+                    }}
+                  >
+                    <div className="report-modal-container">
+                      <div className="report-modal-header">
+                        <div className="report-modal-title">
+                          <span>📄</span>
+                          <span>{lang === 'ar' ? 'معاينة التقرير التفصيلي المعتمد' : 'Detailed Assessment Report'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={downloadReportPDF}
+                            className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <span>📥</span>
+                            <span>{lang === 'ar' ? 'تحميل PDF' : 'Download PDF'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={closeReportModal}
+                            className="report-modal-close-btn"
+                            title={lang === 'ar' ? 'إغلاق المعاينة' : 'Close'}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                      <div className="report-modal-body">
+                        {renderFullDetailedReport()}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Mobile Swipe Pagination Dots */}

@@ -1528,6 +1528,166 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     font-size: 7px !important;
     color: #475569 !important;
   }
+
+  /* Compact 6-Axis Summary Cards for On-Screen View */
+  .report-axis-summary-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 5px !important;
+    margin-top: 4px !important;
+    margin-bottom: 6px !important;
+  }
+  .report-summary-mini-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 7px !important;
+    padding: 5px 6px !important;
+    text-align: start !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  }
+  .summary-mini-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    margin-bottom: 3px !important;
+  }
+  .summary-mini-title {
+    font-size: 8.5px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 110px !important;
+  }
+  .summary-mini-status-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+  }
+  .summary-mini-status-dot.done {
+    background-color: #10b981 !important;
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.5) !important;
+  }
+  .summary-mini-status-dot.pending {
+    background-color: #f59e0b !important;
+  }
+  .summary-mini-stats {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+  }
+  .summary-mini-pct {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #047857 !important;
+    font-family: monospace !important;
+  }
+  .summary-mini-count {
+    font-size: 8px !important;
+    color: #64748b !important;
+    font-family: monospace !important;
+  }
+
+  /* Off-screen Source for html2pdf Detailed File Download */
+  .print-report-source-detailed {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 794px !important;
+    background: #ffffff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    z-index: -999 !important;
+  }
+
+  /* Pop-Up Modal for Viewing Detailed Report */
+  .report-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px !important;
+    animation: fadeInModal 0.2s ease-out !important;
+  }
+  .report-modal-container {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    max-height: 92vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+    animation: slideUpModal 0.25s ease-out !important;
+  }
+  .report-modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 12px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+  }
+  .report-modal-title {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #facc15 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+  .report-modal-close-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: none !important;
+    color: #ffffff !important;
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    transition: all 0.15s !important;
+  }
+  .report-modal-close-btn:hover {
+    background: #ef4444 !important;
+  }
+  .report-modal-body {
+    padding: 8px !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    background: #f1f5f9 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .report-modal-body .report-paper-doc {
+    margin: 0 auto !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  @keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUpModal {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   .seal-badge {
     font-weight: 800 !important;
     color: #0f172a !important;
@@ -1596,6 +1756,16 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   }
   .qz-panel:not(.qz-report-panel) {
     display: none !important;
+  }
+  #screen-quiz-summary-card {
+    display: none !important;
+  }
+  .print-report-source-detailed {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: auto !important;
+    width: 100% !important;
   }
   #final-quiz-report-card {
     display: block !important;

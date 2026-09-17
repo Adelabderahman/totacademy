@@ -36,11 +36,34 @@ export default function EduPathPage() {
   // 2. Progress Persistence
   const [completedLessons, setCompletedLessons] = useState<Record<string, string[]>>({});
   const [completedQuizzes, setCompletedQuizzes] = useState<Record<string, string[]>>({});
-  const [reportCode, setReportCode] = useState<string>('TOT-7894561230');
+  const [reportCode, setReportCode] = useState<string>('TOT-7894-K92M');
+
+  // Random Report Code Generator
+  const generateNewReportCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'TOT-';
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    code += '-';
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setReportCode(code);
+    return code;
+  };
 
   // 3. Quiz Engine State
   const [activeQuizTab, setActiveQuizTab] = useState<number>(0);
   const [quizScreen, setQuizScreen] = useState<'intro' | 'active' | 'result'>('intro');
+  const [quizStates, setQuizStates] = useState<Record<number, 'intro' | 'active' | 'result'>>({
+    0: 'intro',
+    1: 'intro',
+    2: 'intro',
+    3: 'intro',
+    4: 'intro',
+    5: 'intro',
+  });
   const [activeQuizIndex, setActiveQuizIndex] = useState<number>(0);
   const [questionIndex, setQuestionIndex] = useState<number>(0);
   const [quizScore, setQuizScore] = useState<number>(0);
@@ -202,6 +225,7 @@ export default function EduPathPage() {
     }
     setActiveQuizTab(0);
     setQuizScreen('intro');
+    setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
   };
 
   // Select Module Handler
@@ -210,6 +234,7 @@ export default function EduPathPage() {
     setActiveVideoCard(null);
     setActiveQuizTab(0);
     setQuizScreen('intro');
+    setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
 
     // Smooth scroll to lessons section
     const el = document.getElementById('axis1-group');
@@ -250,6 +275,7 @@ export default function EduPathPage() {
     setShowHint(false);
     setTimeLeft(15);
     setQuizScreen('active');
+    setQuizStates((prev) => ({ ...prev, [quizIdx]: 'active' }));
     setActiveQuizTab(quizIdx + 1);
 
     setQuizHistory((prev) => ({
@@ -262,9 +288,8 @@ export default function EduPathPage() {
       },
     }));
 
-    const targetEl = panelElementsRef.current[quizIdx + 1];
-    if (targetEl && panelsWrapperRef.current) {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    if (activeQuizTab !== quizIdx + 1) {
+      scrollToQuizSlide(quizIdx + 1);
     }
   };
 
@@ -392,6 +417,7 @@ export default function EduPathPage() {
     } else {
       // Completed Quiz
       setQuizScreen('result');
+      setQuizStates((prev) => ({ ...prev, [activeQuizIndex]: 'result' }));
       const qKey = `qz_${activeQuizIndex}`;
       const list = completedQuizzes[activeModule.id] || [];
       if (!list.includes(qKey)) {
@@ -480,10 +506,10 @@ export default function EduPathPage() {
       }
 
       const opt = {
-        margin: [8, 8, 8, 8],
-        filename: `TOT_Final_Report_${reportCode}.pdf`,
+        margin: [6, 6, 6, 6],
+        filename: `TOT_Assessment_Report_${reportCode}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
 
@@ -543,6 +569,8 @@ export default function EduPathPage() {
         return next;
       });
       setQuizScreen('intro');
+      setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
+      generateNewReportCode();
       setActiveQuizTab(0);
     }
   };
@@ -1066,6 +1094,7 @@ export default function EduPathPage() {
                 {/* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */}
                 {activeQuizzesList.map((quiz, qIdx) => {
                   const isCurrentActive = activeQuizIndex === qIdx;
+                  const slideState = isCurrentActive ? quizScreen : (quizStates[qIdx] || 'intro');
 
                   return (
                     <div
@@ -1074,14 +1103,15 @@ export default function EduPathPage() {
                       className={`qz-panel ${activeQuizTab === qIdx + 1 ? 'active' : ''}`}
                     >
                       {/* State A: Running Active Questions */}
-                      {isCurrentActive && quizScreen === 'active' && (
+                      {slideState === 'active' && isCurrentActive && (
                         <div>
                           {/* Mobile dynamic header with top next button */}
                           <div className="mobile-quiz-header-wrap">
                             <h4 className="mobile-quiz-dynamic-title">
                               {quiz.title}
                             </h4>
-                            <div
+                            <button
+                              type="button"
                               className="mobile-quiz-next-top"
                               onClick={advanceNextQuestion}
                             >
@@ -1091,7 +1121,7 @@ export default function EduPathPage() {
                                   : (lang === 'ar' ? 'النتيجة' : 'Result')}
                               </span>
                               <span>➔</span>
-                            </div>
+                            </button>
                           </div>
 
                           {/* Top progress bar & countdown */}
@@ -1224,25 +1254,25 @@ export default function EduPathPage() {
                       )}
 
                       {/* State B: Quiz Result Screen */}
-                      {isCurrentActive && quizScreen === 'result' && (
-                        <div className="text-center py-8">
-                          <div className="text-5xl mb-3">🏆</div>
-                          <h3 className="text-2xl font-bold text-white mb-2">
+                      {slideState === 'result' && isCurrentActive && (
+                        <div className="text-center py-5">
+                          <div className="text-4xl mb-2">🏆</div>
+                          <h3 className="text-xl font-bold text-white mb-1">
                             {lang === 'ar' ? 'اكتمل التقييم بنجاح!' : 'Quiz Completed!'}
                           </h3>
-                          <div className="qz-score-number text-4xl mb-4">
-                            {quizScore} <span className="text-lg opacity-60">/ 6</span>
+                          <div className="qz-score-number text-3xl mb-3">
+                            {quizScore} <span className="text-base opacity-60">/ 6</span>
                           </div>
-                          <p className="text-sm text-white/80 max-w-md mx-auto mb-6">
+                          <p className="text-xs text-white/80 max-w-md mx-auto mb-5 leading-relaxed">
                             {quizScore >= 4
-                              ? (lang === 'ar' ? 'تهانينا! لقد حققت درجة النجاح في هذا الاختبار.' : 'Congratulations! You passed this quiz.')
-                              : (lang === 'ar' ? 'يمكنك إعادة المحاولة في أي وقت لتحسين النتيجة.' : 'You can retry at any time to improve your score.')}
+                              ? (lang === 'ar' ? 'تهانينا! لقد حققت درجة النجاح في هذا الاختبار بنجاح.' : 'Congratulations! You passed this quiz.')
+                              : (lang === 'ar' ? 'يمكنك إعادة المحاولة في أي وقت لتحسين النتيجة والمعدل.' : 'You can retry at any time to improve your score.')}
                           </p>
 
-                          <div className="flex flex-wrap justify-center gap-3">
+                          <div className="flex flex-wrap justify-center gap-2">
                             <button
                               type="button"
-                              className="btn-outline"
+                              className="btn-outline text-xs py-2 px-4"
                               onClick={() => startQuiz(qIdx)}
                             >
                               🔄 {lang === 'ar' ? 'إعادة الاختبار' : 'Retry Quiz'}
@@ -1250,18 +1280,15 @@ export default function EduPathPage() {
                             {qIdx < 5 ? (
                               <button
                                 type="button"
-                                className="btn-primary"
-                                onClick={() => {
-                                  switchQuizTab(qIdx + 2);
-                                  setQuizScreen('intro');
-                                }}
+                                className="btn-primary text-xs py-2 px-4"
+                                onClick={() => startQuiz(qIdx + 1)}
                               >
-                                {lang === 'ar' ? 'الاختبار التالي ➔' : 'Next Quiz ➔'}
+                                {lang === 'ar' ? 'الانتقال للاختبار التالي ➔' : 'Next Quiz ➔'}
                               </button>
                             ) : (
                               <button
                                 type="button"
-                                className="btn-primary"
+                                className="btn-primary text-xs py-2 px-4"
                                 onClick={() => switchQuizTab(7)}
                               >
                                 {lang === 'ar' ? 'عرض التقرير النهائي ➔' : 'View Report ➔'}
@@ -1272,22 +1299,22 @@ export default function EduPathPage() {
                       )}
 
                       {/* State C: Quiz Start Screen */}
-                      {(!isCurrentActive || quizScreen === 'intro') && (
-                        <div className="qz-start-screen text-center py-6">
-                          <h3 className="text-accent-yellow text-xl font-bold mb-3">
+                      {(slideState === 'intro' || !isCurrentActive) && (
+                        <div className="qz-start-screen text-center py-5">
+                          <h3 className="text-accent-yellow text-lg font-bold mb-2">
                             {quiz.title}
                           </h3>
-                          <p className="text-sm text-white/90 max-w-lg mx-auto mb-6 leading-relaxed">
+                          <p className="text-xs text-white/90 max-w-lg mx-auto mb-4 leading-relaxed">
                             {lang === 'ar'
                               ? 'يتكون هذا الاختبار من 6 أسئلة اختيار من متعدد، ولديك 15 ثانية لكل سؤال. ركز جيداً قبل البدء!'
                               : 'This quiz has 6 multiple-choice questions (15 seconds per question). Focus and give your best!'}
                           </p>
-                          <div className="text-2xl font-black text-white mb-6">
+                          <div className="text-xl font-black text-white mb-4">
                             ⏱️ {lang === 'ar' ? 'المدة الكلية: 90 ثانية' : 'Total Duration: 90s'}
                           </div>
                           <button
                             type="button"
-                            className="btn-primary w-full max-w-md mx-auto"
+                            className="btn-primary w-full max-w-md mx-auto py-2 text-sm"
                             onClick={() => startQuiz(qIdx)}
                           >
                             {lang === 'ar' ? 'بدء الاختبار الآن' : 'Start Quiz Now'}
@@ -1303,37 +1330,86 @@ export default function EduPathPage() {
                   ref={(el) => { panelElementsRef.current[7] = el; }}
                   className={`qz-panel qz-report-panel ${activeQuizTab === 7 ? 'active' : ''}`}
                 >
-                  <div id="final-quiz-report-card" className="qz-report-card-inner">
-                    <div className="text-center border-b border-white/15 pb-3 mb-3">
-                      <div className="text-2xl mb-1">📊</div>
-                      <h3 className="text-lg md:text-xl font-bold text-accent-yellow">
-                        {lang === 'ar' ? 'التقرير النهائي للمحصلة والأداء' : 'Final Performance & Score Report'}
+                  <div id="final-quiz-report-card" className="report-paper-doc">
+                    {/* Official Document Header */}
+                    <div className="report-header-banner">
+                      <div className="report-badge-top">
+                        <span className="report-logo-text">🎓 {lang === 'ar' ? 'أكاديمية TOT للتدريب والتأهيل' : 'TOT Academy Training'}</span>
+                        <span className="report-type-badge">{lang === 'ar' ? 'وثيقة تقييم أداء رسمي' : 'Official Evaluation'}</span>
+                      </div>
+                      <h3 className="report-main-title">
+                        {lang === 'ar' ? 'تقرير التقييم النهائي ونتائج المحصلة الأكاديمية' : 'Final Assessment & Performance Report'}
                       </h3>
-                      <p className="qz-report-meta">
-                        {activeModule.title[lang]} · Ref: <span className="font-bold text-accent-yellow">{reportCode}</span>
-                      </p>
+                      <div className="report-track-row">
+                        <div>
+                          <span className="font-bold">{lang === 'ar' ? 'المسار التعليمي:' : 'Track:'}</span>{' '}
+                          <span>{activeModule.title[lang]}</span>
+                          <span className="report-level-pill">
+                            {activeLevel === 'foundation'
+                              ? (lang === 'ar' ? 'المسار التأصيلي' : 'Foundation')
+                              : activeLevel === 'empowerment'
+                              ? (lang === 'ar' ? 'مسار التمكين' : 'Empowerment')
+                              : (lang === 'ar' ? 'مسار الترسيخ' : 'Consolidation')}
+                          </span>
+                        </div>
+                        <div className="report-ref-code">
+                          <span>{lang === 'ar' ? 'رمز الاعتماد:' : 'Ref Code:'}</span>
+                          <strong>{reportCode}</strong>
+                        </div>
+                        <div className="text-[7.5px] text-slate-500">
+                          <span>{lang === 'ar' ? 'تاريخ التقييم:' : 'Date:'}</span> {new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Summary Cards */}
-                    <div className="qz-report-summary-cards">
-                      <div className="qz-report-summary-box">
-                        <div className="qz-report-summary-val">
-                          {activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length} / 6
+                    {/* Overall Summary Stats (الاختبارات ككل) */}
+                    <div className="report-stats-grid">
+                      <div className="report-stat-card">
+                        <div className="stat-label">{lang === 'ar' ? 'الاختبارات المنجزة' : 'Completed Quizzes'}</div>
+                        <div className="stat-value text-slate-800">
+                          {activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length}
+                          <span className="stat-sub"> / 6</span>
                         </div>
-                        <div className="qz-report-summary-lbl">
-                          {lang === 'ar' ? 'الاختبارات المنجزة' : 'Completed Quizzes'}
+                        <div className="stat-bar">
+                          <div
+                            className="stat-fill bg-blue-600"
+                            style={{
+                              width: `${(activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length / 6) * 100}%`
+                            }}
+                          />
                         </div>
                       </div>
-                      <div className="qz-report-summary-box">
-                        <div className="qz-report-summary-val !text-emerald-400">
-                          {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0)} / 36
+
+                      <div className="report-stat-card">
+                        <div className="stat-label">{lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct Answers'}</div>
+                        <div className="stat-value text-emerald-600">
+                          {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0)}
+                          <span className="stat-sub"> / 36</span>
                         </div>
-                        <div className="qz-report-summary-lbl">
-                          {lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct Answers'}
+                        <div className="stat-bar">
+                          <div
+                            className="stat-fill bg-emerald-500"
+                            style={{
+                              width: `${(Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0) / 36) * 100}%`
+                            }}
+                          />
                         </div>
                       </div>
-                      <div className="qz-report-summary-box">
-                        <div className="qz-report-summary-val">
+
+                      <div className="report-stat-card">
+                        <div className="stat-label">{lang === 'ar' ? 'الإجابات الخاطئة' : 'Wrong Answers'}</div>
+                        <div className="stat-value text-rose-600">
+                          {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0)}
+                          <span className="stat-sub"> / 36</span>
+                        </div>
+                        <div className="stat-note text-slate-400">
+                          {lang === 'ar' ? 'إجمالي الأخطاء' : 'Total Mistakes'}
+                        </div>
+                      </div>
+
+                      <div className="report-stat-card">
+                        <div className="stat-label">{lang === 'ar' ? 'المعدل التراكمي' : 'Avg Score'}</div>
+                        <div className="stat-value text-amber-600">
                           {(() => {
                             const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
                             if (completedCount === 0) return '0%';
@@ -1341,47 +1417,90 @@ export default function EduPathPage() {
                             return `${Math.round((totalCorrect / (completedCount * 6)) * 100)}%`;
                           })()}
                         </div>
-                        <div className="qz-report-summary-lbl">
-                          {lang === 'ar' ? 'المعدل التراكمي' : 'Avg Score'}
+                        <div className="stat-note font-bold text-emerald-700">
+                          {(() => {
+                            const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
+                            if (completedCount === 0) return lang === 'ar' ? 'قيد البدء' : 'Pending';
+                            const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
+                            const pct = Math.round((totalCorrect / (completedCount * 6)) * 100);
+                            if (pct >= 90) return lang === 'ar' ? 'تقدير: ممتاز' : 'Grade: Excellent';
+                            if (pct >= 75) return lang === 'ar' ? 'تقدير: جيد جداً' : 'Grade: Very Good';
+                            if (pct >= 60) return lang === 'ar' ? 'تقدير: جيد' : 'Grade: Good';
+                            return lang === 'ar' ? 'يحتاج تحسين' : 'Needs Review';
+                          })()}
                         </div>
                       </div>
                     </div>
 
-                    {/* Breakdown List */}
-                    <div className="qz-report-items-list">
-                      {activeQuizzesList.map((q, idx) => {
-                        const hist = quizHistory[idx];
-                        const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                    {/* Detailed Breakdown Table (مع عنوان كل اختبار والإجابات الصحيحة والخاطئة والنسب والمدة) */}
+                    <div className="report-table-wrap">
+                      <div className="report-table-title">
+                        📋 {lang === 'ar' ? 'تفاصيل محصلة ونتائج الاختبارات التدريبية الستة:' : 'Assessment Details per Quiz (1-6):'}
+                      </div>
+                      <div className="report-table-container">
+                        <table className="report-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '22px' }}>#</th>
+                              <th style={{ textAlign: 'start' }}>{lang === 'ar' ? 'عنوان الاختبار' : 'Quiz Title'}</th>
+                              <th>{lang === 'ar' ? 'الحالة' : 'Status'}</th>
+                              <th>{lang === 'ar' ? 'صحيحة' : 'Correct'}</th>
+                              <th>{lang === 'ar' ? 'خاطئة' : 'Wrong'}</th>
+                              <th>{lang === 'ar' ? 'النسبة' : 'Score'}</th>
+                              <th>{lang === 'ar' ? 'المدة' : 'Duration'}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {activeQuizzesList.map((q, idx) => {
+                              const hist = quizHistory[idx];
+                              const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                              return (
+                                <tr key={idx}>
+                                  <td>{idx + 1}</td>
+                                  <td style={{ textAlign: 'start', fontWeight: 600 }}>{q.title}</td>
+                                  <td>
+                                    <span className={`status-pill ${isDone ? 'status-done' : 'status-pending'}`}>
+                                      {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Done') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Pending')}
+                                    </span>
+                                  </td>
+                                  <td className="font-bold text-emerald-700">
+                                    {hist ? `${hist.correct} / 6` : (isDone ? '6 / 6' : '-')}
+                                  </td>
+                                  <td className="font-bold text-rose-600">
+                                    {hist ? `${hist.wrong} / 6` : (isDone ? '0 / 6' : '-')}
+                                  </td>
+                                  <td className="font-bold text-amber-700">
+                                    {hist ? `${Math.round((hist.correct / 6) * 100)}%` : (isDone ? '100%' : '-')}
+                                  </td>
+                                  <td className="text-slate-600 font-mono">
+                                    {hist ? `${hist.totalTime}s` : '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
 
-                        return (
-                          <div key={idx} className="qz-report-item-card">
-                            <div className="qz-report-item-head">
-                              <span className="truncate max-w-[70%]">
-                                {idx + 1}. {q.title}
-                              </span>
-                              <span className={isDone ? 'text-emerald-400 text-[10px]' : 'text-white/40 text-[10px]'}>
-                                {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Completed') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Incomplete')}
-                              </span>
-                            </div>
-                            {hist ? (
-                              <div className="qz-report-item-grid">
-                                <span className="text-emerald-400">{lang === 'ar' ? `صحيحة: ${hist.correct}` : `Correct: ${hist.correct}`}</span>
-                                <span className="text-rose-400">{lang === 'ar' ? `خاطئة: ${hist.wrong}` : `Wrong: ${hist.wrong}`}</span>
-                                <span className="text-accent-yellow">{lang === 'ar' ? `النسبة: ${Math.round((hist.correct / 6) * 100)}%` : `${Math.round((hist.correct / 6) * 100)}%`}</span>
-                                <span className="text-cyan-300">{lang === 'ar' ? `المدة: ${hist.totalTime}ث` : `${hist.totalTime}s`}</span>
-                              </div>
-                            ) : (
-                              <p className="text-[10px] text-white/40 mt-1">
-                                {lang === 'ar' ? 'لم يتم تسجيل محاولة حديثة لهذا الاختبار' : 'No recorded attempt yet'}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
+                    {/* Official Verification Seal & Authenticity Footer */}
+                    <div className="report-official-seal">
+                      <div>
+                        <div className="seal-badge">
+                          🏛️ {lang === 'ar' ? 'وثيقة إلكترونية معتمدة رسميًا من الأكاديمية' : 'Officially Accredited E-Document'}
+                        </div>
+                        <div className="text-[6.5px] text-slate-500">
+                          {lang === 'ar' ? 'تحتفظ المنصة بسجل درجات هذا التقييم لأغراض إصدار الشهادة الرسمية' : 'Scores are recorded for official certificate accreditation'}
+                        </div>
+                      </div>
+                      <div className="seal-code-box">
+                        <div className="barcode-mock">||||| | |||| ||||| || |</div>
+                        <div className="seal-code-str">VERIFY: {reportCode}</div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons: Prominent PDF Download, Copy, Print, Reset */}
+                  {/* Action Buttons: Prominent PDF Download, Copy, Print, New Code, Reset */}
                   <div className="mt-3">
                     <button
                       type="button"
@@ -1413,6 +1532,15 @@ export default function EduPathPage() {
                       >
                         <span>🖨️</span>
                         <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="qz-report-action-btn"
+                        onClick={generateNewReportCode}
+                        title={lang === 'ar' ? 'توليد كود عشوائي جديد للاختبار' : 'Generate New Code'}
+                      >
+                        <span>🎲</span>
+                        <span>{lang === 'ar' ? 'كود جديد' : 'New Code'}</span>
                       </button>
                       <button
                         type="button"

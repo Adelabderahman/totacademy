@@ -867,14 +867,21 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .quiz-section {
     padding: 10px 8px 12px 8px !important;
     border-radius: 14px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     margin-bottom: 16px !important;
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
   }
   .quiz-layout {
     display: block !important;
     margin-top: 2px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .quiz-sidebar {
     display: none !important;
@@ -885,11 +892,18 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     background: transparent !important;
     border: none !important;
     width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
   }
   .qz-panels-wrapper { 
     overflow: hidden !important; 
     width: 100% !important; 
+    max-width: 100% !important;
+    margin: 0 auto !important;
     position: relative !important; 
     padding: 0 !important; 
     border-radius: 14px !important; 
@@ -903,6 +917,8 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     flex-direction: row !important; 
     flex-wrap: nowrap !important;
     width: 100% !important; 
+    margin: 0 !important;
+    padding: 0 !important;
     direction: ltr !important; 
     will-change: transform !important; 
     box-sizing: border-box !important;
@@ -921,6 +937,7 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     padding: 10px 8px 12px 8px !important; 
     text-align: center !important; 
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important; 
+    margin: 0 auto !important;
   }
   
   .qz-panel h3 { font-size: 13.5px !important; margin-bottom: 2px !important; font-weight: 800 !important; }
@@ -1248,9 +1265,11 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 
   /* Mobile Slide 8: Final Report & Download */
   .qz-report-panel {
-    flex: 0 0 94% !important;
-    min-width: 94% !important;
-    max-width: 94% !important;
+    flex: 0 0 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
     scroll-snap-align: center !important;
     scroll-snap-stop: always !important;
     background: rgba(15, 23, 42, 0.97) !important;
@@ -1712,17 +1731,26 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     font-family: monospace !important;
   }
 
-  /* Off-screen Source for html2pdf Detailed File Download */
+  /* Source for detailed report (hidden on screen, visible during PDF export / print) */
   .print-report-source-detailed {
-    position: absolute !important;
-    left: -9999px !important;
-    top: -9999px !important;
-    width: 794px !important;
-    background: #ffffff !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: none !important;
-    z-index: -999 !important;
+    display: none !important;
+  }
+
+  /* Active PDF Export Container styling */
+  .pdf-export-mode {
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: #ffffff !important;
+  }
+  .pdf-export-mode .report-table-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .pdf-export-mode .report-axis-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 8px !important;
   }
 
   /* Pop-Up Modal for Viewing Detailed Report */
@@ -1838,11 +1866,11 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .grand-col-full { grid-column: span 1; }
 }
 
-/* Print Media Styles for Assessment Document */
+/* Print Media Styles for Assessment Document (Prints ONLY the report) */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 8mm;
   }
   body, html {
     background: #ffffff !important;
@@ -1852,51 +1880,38 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  /* Hide all app headers, footers, interactive elements */
-  header, footer, nav, .site-header, .site-footer, .nav-container,
-  .level-selection-bar, .pathway-section, .lessons-section, .consultant-bar,
-  .contact-section, .qz-action-pill, .qz-report-actions-row, .qz-btn-download-main,
-  .print-hide, .swipe-pagination-qz, .mobile-quiz-header-wrap, .swipe-navigation-pill,
-  button, .btn, .btn-primary, .btn-outline {
-    display: none !important;
+  /* Hide all elements on the entire page */
+  body * {
+    visibility: hidden !important;
   }
-  /* Ensure report document is full width and clean */
-  .quiz-section, .quiz-main, .qz-panels-wrapper, .qz-report-panel {
-    display: block !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-  }
-  .qz-panel:not(.qz-report-panel) {
-    display: none !important;
-  }
-  #screen-quiz-summary-card {
-    display: none !important;
-  }
-  .print-report-source-detailed {
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
-    z-index: auto !important;
-    width: 100% !important;
+  /* Show only the complete assessment report card and all its children */
+  #final-quiz-report-card,
+  #final-quiz-report-card * {
+    visibility: visible !important;
   }
   #final-quiz-report-card {
     display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    margin: 0 !important;
+    padding: 8px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
     box-shadow: none !important;
-    border: 1px solid #cbd5e1 !important;
-    padding: 15px !important;
-    page-break-inside: avoid !important;
+    border: none !important;
+    z-index: 999999 !important;
   }
   .report-table-container {
     max-height: none !important;
     overflow: visible !important;
+  }
+  .report-axis-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 8px !important;
   }
 }
 

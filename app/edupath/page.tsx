@@ -636,6 +636,7 @@ export default function EduPathPage() {
   // Download Final Report as PDF using html2pdf
   const downloadReportPDF = async () => {
     if (typeof window === 'undefined') return;
+    let tempWrapper: HTMLElement | null = null;
     try {
       setIsDownloadingReport(true);
       // Auto-generate fresh unique code on every file download
@@ -645,66 +646,161 @@ export default function EduPathPage() {
       const html2pdfModule: any = await import('html2pdf.js');
       const html2pdf = html2pdfModule.default || html2pdfModule;
 
-      const element = document.getElementById('final-quiz-report-card');
-      if (!element) {
+      const sourceElement = document.getElementById('final-quiz-report-card');
+      if (!sourceElement) {
         alert(lang === 'ar' ? 'تعذر العثور على بطاقة التقرير' : 'Report card not found');
         setIsDownloadingReport(false);
         return;
       }
 
-      // Wait 80ms for DOM re-render with fresh code
+      // Wait 100ms for freshCode state update
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create a dedicated clean export container in normal viewport flow so html2canvas renders it completely
+      tempWrapper = document.createElement('div');
+      tempWrapper.id = 'pdf-export-active-container';
+      tempWrapper.className = 'report-paper-doc pdf-export-mode';
+      tempWrapper.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      tempWrapper.style.position = 'fixed';
+      tempWrapper.style.top = '0';
+      tempWrapper.style.left = '0';
+      tempWrapper.style.width = '794px';
+      tempWrapper.style.minWidth = '794px';
+      tempWrapper.style.maxWidth = '794px';
+      tempWrapper.style.backgroundColor = '#ffffff';
+      tempWrapper.style.color = '#0f172a';
+      tempWrapper.style.zIndex = '9999999';
+      tempWrapper.style.padding = '16px';
+      tempWrapper.style.boxSizing = 'border-box';
+      tempWrapper.style.boxShadow = 'none';
+      tempWrapper.style.border = 'none';
+      tempWrapper.style.borderRadius = '0';
+      tempWrapper.style.overflow = 'visible';
+      tempWrapper.innerHTML = sourceElement.innerHTML;
+      document.body.appendChild(tempWrapper);
+
+      // Brief pause for browser layout of the cloned container
       await new Promise((resolve) => setTimeout(resolve, 80));
 
       const opt = {
         margin: [6, 6, 6, 6],
         filename: `TOT_Assessment_Report_${freshCode}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: 820,
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
 
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(tempWrapper).save();
     } catch (err) {
-      console.error('PDF export error, falling back:', err);
-      try {
-        let reportContent = `========================================================\n`;
-        reportContent += `       TOT ACADEMY - FINAL QUIZ PERFORMANCE REPORT      \n`;
-        reportContent += `========================================================\n\n`;
-        reportContent += `Module: ${activeModule.title[lang]}\n`;
-        reportContent += `Reference Code: ${reportCode}\n`;
-        reportContent += `Date: ${new Date().toLocaleDateString('ar-EG')}\n\n`;
-        reportContent += `--------------------------------------------------------\n`;
-        activeQuizzesList.forEach((q, idx) => {
-          const hist = quizHistory[idx];
-          const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
-          reportContent += `Quiz ${idx + 1}: ${q.title}\n`;
-          reportContent += `Status: ${isDone ? 'Completed' : 'Pending'}\n`;
-          if (hist) {
-            const pct = Math.round((hist.correct / 6) * 100);
-            reportContent += `Correct: ${hist.correct}/6 | Wrong: ${hist.wrong} | Score: ${pct}% | Time: ${hist.totalTime}s\n`;
-          }
-          reportContent += `--------------------------------------------------------\n`;
-        });
-        const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `TOT_Report_${reportCode}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } catch {
-        window.print();
-      }
+      console.error('PDF export error, falling back to print dialog:', err);
+      printReport();
     } finally {
+      if (tempWrapper && tempWrapper.parentNode) {
+        tempWrapper.parentNode.removeChild(tempWrapper);
+      }
       setIsDownloadingReport(false);
     }
   };
 
-  // Print Report / Save PDF
+  // Print Report (Prints ONLY the Complete Summary + Detailed Assessment Report)
   const printReport = () => {
-    window.print();
+    const reportElement = document.getElementById('final-quiz-report-card');
+    if (!reportElement) {
+      window.print();
+      return;
+    }
+
+    // Create an isolated hidden iframe for printing ONLY the assessment report
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    printFrame.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentWindow?.document;
+    if (!frameDoc) {
+      window.print();
+      return;
+    }
+
+    // Extract all styles so colors, tables, badges, and fonts are preserved
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}" lang="${lang}">
+      <head>
+        <title>${lang === 'ar' ? 'تقرير التقييم النهائي والتفصيلي - أكاديمية TOT' : 'Assessment Report - TOT Academy'}</title>
+        <meta charset="utf-8" />
+        ${styles}
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          html, body {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            padding: 8px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            font-family: inherit;
+          }
+          .report-paper-doc {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .report-table-container {
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          .report-axis-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-bottom: 8px !important;
+          }
+        </style>
+      </head>
+      <body>
+        ${reportElement.innerHTML}
+      </body>
+      </html>
+    `);
+    frameDoc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+      setTimeout(() => {
+        if (printFrame.parentNode) {
+          printFrame.parentNode.removeChild(printFrame);
+        }
+      }, 2000);
+    }, 400);
   };
 
   // Reset Quizzes and return smoothly to page 1 (Axis Overview)

@@ -419,7 +419,7 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
     line-height: 1.35 !important;
   }
 }
-.fe-input { width: 100%; padding: 11px 13px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.18); border-radius: 9px; font-family: inherit; font-size: 13px; color: #fff; transition: all 0.2s ease; }
+.fe-input { width: 100%; padding: 11px 13px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.18); border-radius: 9px; font-family: inherit; font-size: 13px; color: #fff; transition: all 0.2s ease; touch-action: pan-y !important; }
 .fe-textarea {
   width: 100%;
   max-width: 520px;
@@ -436,6 +436,7 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
   line-height: 1.55;
   field-sizing: content;
   display: block;
+  touch-action: pan-y !important;
 }
 .fe-input:focus, .fe-textarea:focus { background: rgba(0,0,0,0.4); border-color: var(--accent-yellow); box-shadow: 0 0 0 3px rgba(255, 171, 0, 0.12); outline: none; }
 .fe-section-title { font-size: 16px; font-weight: 800; color: var(--accent-yellow); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; text-align: start; }

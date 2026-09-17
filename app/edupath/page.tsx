@@ -556,7 +556,7 @@ export default function EduPathPage() {
   };
 
   const handleExamPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
     examPointerRef.current = {
       id: e.pointerId,
       startX: e.clientX,
@@ -593,8 +593,14 @@ export default function EduPathPage() {
 
     if (examPointerRef.current.isHorizontal) {
       let offset = dx;
-      if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
-        offset = dx * 0.2;
+      if (lang === 'ar') {
+        if ((examTab === 0 && dx < 0) || (examTab === 10 && dx > 0)) {
+          offset = dx * 0.2;
+        }
+      } else {
+        if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
+          offset = dx * 0.2;
+        }
       }
       examDragOffsetRef.current = offset;
       setExamDragOffset(offset);
@@ -628,10 +634,19 @@ export default function EduPathPage() {
       const isDrag = Math.abs(offset) > 40;
 
       if (isFlick || isDrag) {
-        if (offset < 0) {
-          handleExamNextSlide();
+        if (lang === 'ar') {
+          // In Arabic: drag from left to right (offset > 0) goes to Next slide
+          if (offset > 0) {
+            handleExamNextSlide();
+          } else {
+            handleExamPrevSlide();
+          }
         } else {
-          handleExamPrevSlide();
+          if (offset < 0) {
+            handleExamNextSlide();
+          } else {
+            handleExamPrevSlide();
+          }
         }
       }
     }
@@ -652,6 +667,115 @@ export default function EduPathPage() {
       setExamDragOffset(0);
     }
   };
+
+  // Robust Native Touch Listeners for Mobile Swiping (handles questions, inputs, textareas seamlessly)
+  useEffect(() => {
+    const el = examPanelsWrapperRef.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isHorizontal: boolean | null = null;
+    let currentOffset = 0;
+    let startTime = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+      isHorizontal = null;
+      currentOffset = 0;
+      examPointerRef.current.hasMoved = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+
+      if (isHorizontal === null) {
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+          isHorizontal = Math.abs(dx) >= Math.abs(dy);
+          if (isHorizontal) {
+            setIsExamDragging(true);
+            isExamDraggingRef.current = true;
+            examPointerRef.current.hasMoved = true;
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+              (document.activeElement as HTMLElement).blur();
+            }
+          }
+        }
+      }
+
+      if (isHorizontal) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        let offset = dx;
+        if (lang === 'ar') {
+          if ((examTab === 0 && dx < 0) || (examTab === 10 && dx > 0)) {
+            offset = dx * 0.2;
+          }
+        } else {
+          if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
+            offset = dx * 0.2;
+          }
+        }
+        currentOffset = offset;
+        examDragOffsetRef.current = offset;
+        setExamDragOffset(offset);
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (isHorizontal) {
+        const dt = Date.now() - startTime;
+        const offset = currentOffset;
+
+        setIsExamDragging(false);
+        isExamDraggingRef.current = false;
+        examDragOffsetRef.current = 0;
+        setExamDragOffset(0);
+
+        const isFlick = dt < 380 && Math.abs(offset) > 18;
+        const isDrag = Math.abs(offset) > 35;
+
+        if (isFlick || isDrag) {
+          if (lang === 'ar') {
+            // Drag from left to right (offset > 0) -> Next slide
+            if (offset > 0) {
+              handleExamNextSlide();
+            } else {
+              handleExamPrevSlide();
+            }
+          } else {
+            if (offset < 0) {
+              handleExamNextSlide();
+            } else {
+              handleExamPrevSlide();
+            }
+          }
+        }
+      }
+      setTimeout(() => {
+        examPointerRef.current.hasMoved = false;
+      }, 60);
+      isHorizontal = null;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [examTab, lang]);
 
   const handleExamCaptureClick = (e: React.MouseEvent) => {
     if (examPointerRef.current.hasMoved) {
@@ -2724,7 +2848,9 @@ export default function EduPathPage() {
                   <div
                     className="fe-panels-track"
                     style={{
-                      transform: `translateX(calc(-${examTab * 100}% + ${examDragOffset}px))`,
+                      transform: lang === 'ar'
+                        ? `translateX(calc(-${(10 - examTab) * 100}% + ${examDragOffset}px))`
+                        : `translateX(calc(-${examTab * 100}% + ${examDragOffset}px))`,
                       transition: isExamDragging ? 'none' : 'transform 0.38s cubic-bezier(0.2, 0.95, 0.35, 1)',
                     }}
                   >
@@ -2987,7 +3113,7 @@ export default function EduPathPage() {
                           </div>
                         </div>
                       ];
-                      return allPanels;
+                      return lang === 'ar' ? [...allPanels].reverse() : allPanels;
                     })()}
                   </div>
                 </div>

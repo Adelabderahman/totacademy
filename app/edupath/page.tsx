@@ -434,8 +434,18 @@ export default function EduPathPage() {
 
     if (pointerRef.current.isHorizontal) {
       let offset = dx;
-      if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
-        offset = dx * 0.25; // resistance at boundary
+      if (lang === 'ar') {
+        // In Arabic (RTL):
+        // Swiping starts from slide 0. Dragging towards the right (dx > 0) pulls the next slide in from left.
+        // Boundary resistance: on slide 0 dragging left (dx < 0), or on slide 7 dragging right (dx > 0)
+        if ((activeQuizTab === 0 && dx < 0) || (activeQuizTab === 7 && dx > 0)) {
+          offset = dx * 0.25;
+        }
+      } else {
+        // In English (LTR): dragging towards left (dx < 0) advances to next slide
+        if ((activeQuizTab === 0 && dx > 0) || (activeQuizTab === 7 && dx < 0)) {
+          offset = dx * 0.25;
+        }
       }
       dragOffsetRef.current = offset;
       setDragOffset(offset);
@@ -469,10 +479,21 @@ export default function EduPathPage() {
       const isDrag = Math.abs(offset) > 35;
 
       if (isFlick || isDrag) {
-        if (offset < 0) {
-          handleNextSlide();
+        if (lang === 'ar') {
+          // In Arabic: dragging from left towards right (offset > 0) advances to NEXT slide!
+          // Dragging from right towards left (offset < 0) goes back to PREV slide!
+          if (offset > 0) {
+            handleNextSlide();
+          } else {
+            handlePrevSlide();
+          }
         } else {
-          handlePrevSlide();
+          // In LTR: dragging from right towards left (offset < 0) advances to NEXT slide
+          if (offset < 0) {
+            handleNextSlide();
+          } else {
+            handlePrevSlide();
+          }
         }
       }
     }
@@ -1349,7 +1370,7 @@ export default function EduPathPage() {
                       : (lang === 'ar' ? `📝 اختبار ${activeQuizTab} من 6` : `📝 Quiz ${activeQuizTab} of 6`)}
                   </span>
                   <div className="text-[9px] text-white/60">
-                    {lang === 'ar' ? `شريحة ${activeQuizTab + 1} من 8 • اسحب للتنقل ↔` : `Slide ${activeQuizTab + 1} of 8 • Swipe ↔`}
+                    {lang === 'ar' ? `شريحة ${activeQuizTab + 1} من 8 • اسحب لليمين ➔` : `Slide ${activeQuizTab + 1} of 8 • Swipe ↔`}
                   </div>
                 </div>
                 <button
@@ -1374,15 +1395,20 @@ export default function EduPathPage() {
                 <div
                   className="qz-panels-track"
                   style={{
-                    transform: `translateX(calc(-${activeQuizTab * 100}% + ${dragOffset}px))`,
+                    transform: lang === 'ar'
+                      ? `translateX(calc(-${(7 - activeQuizTab) * 100}% + ${dragOffset}px))`
+                      : `translateX(calc(-${activeQuizTab * 100}% + ${dragOffset}px))`,
                     transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
                   }}
                 >
-                  {/* Tab 0: Overview - صفحة المحاور (8 boxes filling the slide) */}
-                  <div
-                    ref={(el) => { panelElementsRef.current[0] = el; }}
-                    className={`qz-panel ${activeQuizTab === 0 ? 'active' : ''}`}
-                  >
+                  {(() => {
+                    const allPanels = [
+                      /* Tab 0: Overview - صفحة المحاور (8 boxes filling the slide) */
+                      <div
+                        key="panel-0"
+                        ref={(el) => { panelElementsRef.current[0] = el; }}
+                        className={`qz-panel ${activeQuizTab === 0 ? 'active' : ''}`}
+                      >
                     <h3 className="text-accent-yellow text-sm md:text-xl font-bold mb-1">
                       {lang === 'ar' ? 'محاور وخطة التقييم' : 'Assessment Modules & Plan'}
                     </h3>
@@ -1489,19 +1515,19 @@ export default function EduPathPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div>,
 
-                {/* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */}
-                {activeQuizzesList.map((quiz, qIdx) => {
-                  const isCurrentActive = activeQuizIndex === qIdx;
-                  const slideState = quizStates[qIdx] || 'intro';
+                      /* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */
+                      ...activeQuizzesList.map((quiz, qIdx) => {
+                        const isCurrentActive = activeQuizIndex === qIdx;
+                        const slideState = quizStates[qIdx] || 'intro';
 
-                  return (
-                    <div
-                      key={qIdx}
-                      ref={(el) => { panelElementsRef.current[qIdx + 1] = el; }}
-                      className={`qz-panel ${activeQuizTab === qIdx + 1 ? 'active' : ''}`}
-                    >
+                        return (
+                          <div
+                            key={`panel-${qIdx + 1}`}
+                            ref={(el) => { panelElementsRef.current[qIdx + 1] = el; }}
+                            className={`qz-panel ${activeQuizTab === qIdx + 1 ? 'active' : ''}`}
+                          >
                       {/* State A: Running Active Questions */}
                       {slideState === 'active' && isCurrentActive && (
                         <div>
@@ -1727,13 +1753,14 @@ export default function EduPathPage() {
                       )}
                     </div>
                   );
-                })}
+                }),
 
-                {/* Tab 7: Comprehensive Report View (Slide 8) */}
-                <div
-                  ref={(el) => { panelElementsRef.current[7] = el; }}
-                  className={`qz-panel qz-report-panel ${activeQuizTab === 7 ? 'active' : ''}`}
-                >
+                  /* Tab 7: Comprehensive Report View (Slide 8) */
+                  <div
+                    key="panel-7"
+                    ref={(el) => { panelElementsRef.current[7] = el; }}
+                    className={`qz-panel qz-report-panel ${activeQuizTab === 7 ? 'active' : ''}`}
+                  >
                   {/* ON-SCREEN VIEW: Summary Only in Small Boxes */}
                   <div id="screen-quiz-summary-card" className="report-paper-doc">
                     {/* Official Document Header */}
@@ -1944,8 +1971,11 @@ export default function EduPathPage() {
                     </div>
                   </div>
                 </div>
+              ];
+              return lang === 'ar' ? [...allPanels].reverse() : allPanels;
+            })()}
+                </div>
               </div>
-            </div>
 
               {/* Pop-Up Modal for Viewing Detailed Report */}
               {showReportModal && (

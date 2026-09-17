@@ -110,6 +110,30 @@ export default function EduPathPage() {
     isHorizontal: boolean | null;
   }>({ startX: 0, startY: 0, startTime: 0, isHorizontal: null });
 
+  // Final Exam Swipe navigation state
+  const [examDragOffset, setExamDragOffset] = useState<number>(0);
+  const [isExamDragging, setIsExamDragging] = useState<boolean>(false);
+  const examDragOffsetRef = useRef<number>(0);
+  const isExamDraggingRef = useRef<boolean>(false);
+  const examPanelsWrapperRef = useRef<HTMLDivElement | null>(null);
+  const examPointerRef = useRef<{
+    id: number | null;
+    startX: number;
+    startY: number;
+    startTime: number;
+    isDown: boolean;
+    isHorizontal: boolean | null;
+    hasMoved: boolean;
+  }>({
+    id: null,
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    isDown: false,
+    isHorizontal: null,
+    hasMoved: false,
+  });
+
   // Open & Close Detailed Report Modal with Back-Button Sync
   const openReportModal = () => {
     try {
@@ -517,6 +541,131 @@ export default function EduPathPage() {
 
   const handleCaptureClick = (e: React.MouseEvent) => {
     if (pointerRef.current.hasMoved) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  // Final Exam Slide Helpers & Unified Pointer Swipe Handlers
+  const handleExamPrevSlide = () => {
+    setExamTab((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleExamNextSlide = () => {
+    setExamTab((prev) => Math.min(10, prev + 1));
+  };
+
+  const handleExamPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    examPointerRef.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: Date.now(),
+      isDown: true,
+      isHorizontal: null,
+      hasMoved: false,
+    };
+    examDragOffsetRef.current = 0;
+  };
+
+  const handleExamPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!examPointerRef.current.isDown || examPointerRef.current.id !== e.pointerId) return;
+    const dx = e.clientX - examPointerRef.current.startX;
+    const dy = e.clientY - examPointerRef.current.startY;
+
+    if (examPointerRef.current.isHorizontal === null) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+        examPointerRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
+        if (examPointerRef.current.isHorizontal) {
+          examPointerRef.current.hasMoved = true;
+          isExamDraggingRef.current = true;
+          setIsExamDragging(true);
+          try {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          } catch {}
+        }
+      }
+    }
+
+    if (examPointerRef.current.isHorizontal) {
+      let offset = dx;
+      if (lang === 'ar') {
+        if ((examTab === 0 && dx < 0) || (examTab === 10 && dx > 0)) {
+          offset = dx * 0.25;
+        }
+      } else {
+        if ((examTab === 0 && dx > 0) || (examTab === 10 && dx < 0)) {
+          offset = dx * 0.25;
+        }
+      }
+      examDragOffsetRef.current = offset;
+      setExamDragOffset(offset);
+    }
+  };
+
+  const handleExamPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!examPointerRef.current.isDown || examPointerRef.current.id !== e.pointerId) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const isHorizontal = examPointerRef.current.isHorizontal;
+    const dt = Date.now() - examPointerRef.current.startTime;
+    const offset = examDragOffsetRef.current;
+
+    examPointerRef.current.isDown = false;
+    examPointerRef.current.isHorizontal = null;
+    examPointerRef.current.id = null;
+    isExamDraggingRef.current = false;
+    examDragOffsetRef.current = 0;
+    setIsExamDragging(false);
+    setExamDragOffset(0);
+
+    setTimeout(() => {
+      examPointerRef.current.hasMoved = false;
+    }, 60);
+
+    if (isHorizontal) {
+      const isFlick = dt < 380 && Math.abs(offset) > 18;
+      const isDrag = Math.abs(offset) > 35;
+
+      if (isFlick || isDrag) {
+        if (lang === 'ar') {
+          if (offset > 0) {
+            handleExamNextSlide();
+          } else {
+            handleExamPrevSlide();
+          }
+        } else {
+          if (offset < 0) {
+            handleExamNextSlide();
+          } else {
+            handleExamPrevSlide();
+          }
+        }
+      }
+    }
+  };
+
+  const handleExamPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (examPointerRef.current.id === e.pointerId) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+      examPointerRef.current.isDown = false;
+      examPointerRef.current.isHorizontal = null;
+      examPointerRef.current.id = null;
+      examPointerRef.current.hasMoved = false;
+      isExamDraggingRef.current = false;
+      examDragOffsetRef.current = 0;
+      setIsExamDragging(false);
+      setExamDragOffset(0);
+    }
+  };
+
+  const handleExamCaptureClick = (e: React.MouseEvent) => {
+    if (examPointerRef.current.hasMoved) {
       e.stopPropagation();
       e.preventDefault();
     }
@@ -2500,19 +2649,26 @@ export default function EduPathPage() {
                 📋 {strings.fe_intro_header}
               </button>
 
+              <button
+                className={`fe-tab-btn ${examTab === 1 ? 'active' : ''}`}
+                onClick={() => setExamTab(1)}
+              >
+                👤 {strings.fe_tab_personal}
+              </button>
+
               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                 <button
                   key={num}
-                  className={`fe-tab-btn ${examTab === num ? 'active' : ''}`}
-                  onClick={() => setExamTab(num)}
+                  className={`fe-tab-btn ${examTab === num + 1 ? 'active' : ''}`}
+                  onClick={() => setExamTab(num + 1)}
                 >
                   📝 {strings[`fe_tab_m${num}`] || `المحور 0${num}`}
                 </button>
               ))}
 
               <button
-                className={`fe-tab-btn ${examTab === 9 ? 'active' : ''}`}
-                onClick={() => setExamTab(9)}
+                className={`fe-tab-btn ${examTab === 10 ? 'active' : ''}`}
+                onClick={() => setExamTab(10)}
               >
                 ✅ {strings.fe_end_title}
               </button>
@@ -2520,129 +2676,404 @@ export default function EduPathPage() {
 
             {/* Exam Content Panels */}
             <div className="fe-main">
+              {/* Mobile Slide Navigation & Swipe Bar */}
+              <div className="mobile-exam-swipe-bar flex items-center justify-between px-2 mb-2 py-1 md:hidden">
+                <button
+                  type="button"
+                  onClick={handleExamPrevSlide}
+                  disabled={examTab === 0}
+                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                >
+                  <span>{lang === 'ar' ? '➔ السابق' : '← Prev'}</span>
+                </button>
+                <div className="text-center px-1">
+                  <span className="text-[11px] font-bold text-accent-yellow font-mono block truncate max-w-[200px]">
+                    {examTab === 0
+                      ? (lang === 'ar' ? '📋 عناوين وفهرس الشرائح' : 'Slides Overview & Index')
+                      : examTab === 1
+                      ? (lang === 'ar' ? '👤 المعلومات الشخصية للمتدرب' : 'Personal Information')
+                      : examTab === 10
+                      ? (lang === 'ar' ? '✅ مراجعة وإرسال الامتحان' : '✅ Review & Submit')
+                      : (lang === 'ar' ? `📝 المحور 0${examTab - 1} من 8: ${levelModules.foundation[examTab - 2]?.title[lang] || ''}` : `📝 Module 0${examTab - 1} of 8`)}
+                  </span>
+                  <div className="text-[9px] text-white/60">
+                    {lang === 'ar' ? `شريحة ${examTab + 1} من 11 • اسحب لليمين ➔` : `Slide ${examTab + 1} of 11 • Swipe ↔`}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExamNextSlide}
+                  disabled={examTab === 10}
+                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                >
+                  <span>{lang === 'ar' ? 'التالي ⬅' : 'Next →'}</span>
+                </button>
+              </div>
+
               <form
+                id="final-pathway-exam-form"
+                className="w-full"
                 onSubmit={(e) => {
                   e.preventDefault();
                   setExamSubmitted(true);
-                  alert(lang === 'ar' ? 'تم استلام إجابات امتحان نهاية المسار بنجاح! سيتم فحصها من طرف اللجنة الأكاديمية.' : 'Final Exam submitted successfully!');
+                  alert(
+                    lang === 'ar'
+                      ? 'تم استلام إجابات امتحان نهاية المسار بنجاح! سيتم فحصها وتدقيقها من طرف اللجنة الأكاديمية والمشرف.'
+                      : 'Final Pathway Exam submitted successfully! It will be reviewed by the academic committee and supervisor.'
+                  );
                 }}
               >
-                {/* Tab 0: Personal Data */}
-                {examTab === 0 && (
-                  <div className="fe-panel active">
-                    <h3 className="fe-section-title">{strings.fe_tab_intro}</h3>
-                    <p className="text-xs text-white/90 mb-3 leading-relaxed">{strings.fe_intro_desc}</p>
-                    <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg text-xs text-red-200 mb-4">
-                      {strings.fe_intro_alert}
-                    </div>
+                <div
+                  className="fe-panels-wrapper"
+                  ref={examPanelsWrapperRef}
+                  onPointerDown={handleExamPointerDown}
+                  onPointerMove={handleExamPointerMove}
+                  onPointerUp={handleExamPointerUp}
+                  onPointerCancel={handleExamPointerCancel}
+                  onClickCapture={handleExamCaptureClick}
+                >
+                  <div
+                    className="fe-panels-track"
+                    style={{
+                      transform: lang === 'ar'
+                        ? `translateX(calc(-${(10 - examTab) * 100}% + ${examDragOffset}px))`
+                        : `translateX(calc(-${examTab * 100}% + ${examDragOffset}px))`,
+                      transition: isExamDragging ? 'none' : 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
+                  >
+                    {(() => {
+                      const allPanels = [
+                        /* Slide 01 (Index 0): Overview & 10 Titles/Boxes in 2 Columns */
+                        <div key="fe-panel-0" className={`fe-panel ${examTab === 0 ? 'active' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                          <h3 className="fe-section-title">
+                            <span>📋</span>
+                            <span>{strings.fe_tab_intro}</span>
+                          </h3>
+                          <div className="bg-red-500/10 border border-red-500/30 p-2.5 md:p-3 rounded-lg text-xs text-red-200 mb-3 text-start">
+                            {strings.fe_intro_alert}
+                          </div>
 
-                    <h4 className="text-accent-yellow font-bold text-sm mb-3">👤 {strings.fe_tab_personal}</h4>
-                    <div className="fe-form-grid">
-                      <div className="fe-form-group">
-                        <label>{strings.label_name}</label>
-                        <input type="text" required className="fe-input" placeholder={strings.ph_name} />
-                      </div>
-                      <div className="fe-form-group">
-                        <label>{strings.fe_label_id}</label>
-                        <input type="text" required className="fe-input" placeholder="..." />
-                      </div>
-                      <div className="fe-form-group">
-                        <label>{strings.label_email}</label>
-                        <input type="email" required className="fe-input" placeholder={strings.ph_email} />
-                      </div>
-                      <div className="fe-form-group">
-                        <label>{strings.fe_label_whatsapp}</label>
-                        <input type="tel" required className="fe-input" placeholder="+213..." dir="ltr" />
-                      </div>
-                      <div className="fe-form-group">
-                        <label>{strings.fe_label_pathway}</label>
-                        <input type="text" readOnly className="fe-input bg-slate-950/60" value={strings.pathway_name_value} />
-                      </div>
-                      <div className="fe-form-group">
-                        <label>{strings.fe_label_supervisor}</label>
-                        <input type="text" required className="fe-input" placeholder="الأستاذ بلال عويش" />
-                      </div>
-                    </div>
+                          {/* 10 Slide Titles in 2 Columns Grid - RTL ordering */}
+                          <div className="mb-2">
+                            <div
+                              className="fe-intro-modules-grid"
+                              dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                              style={{ direction: lang === 'ar' ? 'rtl' : 'ltr' }}
+                            >
+                              {/* Box 1: Personal Information (Slide 2) */}
+                              <div
+                                className="fe-intro-module-card personal"
+                                onClick={() => setExamTab(1)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setExamTab(1);
+                                  }
+                                }}
+                              >
+                                <div className="fe-intro-module-badge !text-sky-300">
+                                  <span className="font-mono font-bold">01. 👤 {lang === 'ar' ? 'الشريحة 02' : 'Slide 02'}</span>
+                                  <span className="fe-intro-module-qcount !bg-sky-500/20 !text-sky-200">{lang === 'ar' ? 'البيانات الشخصية' : 'Personal Info'}</span>
+                                </div>
+                                <div className="fe-intro-module-title">
+                                  {lang === 'ar' ? 'المعلومات الشخصية والبيانات الأكاديمية' : 'Personal & Academic Details'}
+                                </div>
+                                <div className="fe-intro-module-action !text-sky-300">
+                                  <span>{lang === 'ar' ? 'تعبئة البيانات ➔' : 'Fill Info ➔'}</span>
+                                </div>
+                              </div>
 
-                    <button
-                      type="button"
-                      className="btn-primary w-full mt-5 justify-center"
-                      onClick={() => setExamTab(1)}
-                    >
-                      {strings.fe_next_m1} ➔
-                    </button>
-                  </div>
-                )}
+                              {/* Boxes 2 to 9: The 8 Exam Modules (Slides 3 to 10) */}
+                              {levelModules.foundation.map((mod, idx) => (
+                                <div
+                                  key={mod.id}
+                                  className="fe-intro-module-card"
+                                  onClick={() => setExamTab(idx + 2)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setExamTab(idx + 2);
+                                    }
+                                  }}
+                                >
+                                  <div className="fe-intro-module-badge">
+                                    <span className="font-mono font-bold">{`0${idx + 2}. 📝 ${lang === 'ar' ? `الشريحة 0${idx + 3}` : `Slide 0${idx + 3}`}`}</span>
+                                    <span className="fe-intro-module-qcount">5 {lang === 'ar' ? 'أسئلة' : 'Q'}</span>
+                                  </div>
+                                  <div className="fe-intro-module-title">
+                                    {lang === 'ar' ? `المحور 0${idx + 1}: ${mod.title[lang]}` : `Module 0${idx + 1}: ${mod.title[lang]}`}
+                                  </div>
+                                  <div className="fe-intro-module-action">
+                                    <span>{lang === 'ar' ? 'بدء الإجابة ➔' : 'Answer ➔'}</span>
+                                  </div>
+                                </div>
+                              ))}
 
-                {/* Tabs 1 to 8: Module Essay Questions */}
-                {examTab >= 1 && examTab <= 8 && (
-                  <div className="fe-panel active">
-                    <h3 className="fe-section-title">
-                      📝 {levelModules.foundation[examTab - 1]?.title[lang]}
-                    </h3>
+                              {/* Box 10: Submit Exam (Slide 11) */}
+                              <div
+                                className="fe-intro-module-card submit"
+                                onClick={() => setExamTab(10)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setExamTab(10);
+                                  }
+                                }}
+                              >
+                                <div className="fe-intro-module-badge !text-emerald-300">
+                                  <span className="font-mono font-bold">10. ✅ {lang === 'ar' ? 'الشريحة 11' : 'Slide 11'}</span>
+                                  <span className="fe-intro-module-qcount !bg-emerald-500/25 !text-emerald-200">{lang === 'ar' ? 'الاعتماد' : 'Submit'}</span>
+                                </div>
+                                <div className="fe-intro-module-title">
+                                  {lang === 'ar' ? 'مراجعة وإرسال امتحان نهاية المسار' : 'Review & Submit Final Exam'}
+                                </div>
+                                <div className="fe-intro-module-action !text-emerald-400">
+                                  <span>{lang === 'ar' ? 'إرسال الامتحان ➔' : 'Submit ➔'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>,
 
-                    <div className="space-y-4">
-                      {(finalExamQuestions[`m${examTab}`] || finalExamQuestions.m1).map((item, qIdx) => (
-                        <div key={qIdx} className="fe-form-group">
-                          <label className="text-xs font-bold text-slate-200">
-                            {item[lang]}
-                          </label>
-                          <textarea
-                            required
-                            rows={3}
-                            className="fe-textarea"
-                            placeholder={strings.fe_placeholder_ans}
-                          />
+                        /* Slide 02 (Index 1): Personal Information ONLY */
+                        <div key="fe-panel-1" className={`fe-panel ${examTab === 1 ? 'active' : ''}`}>
+                          <h3 className="fe-section-title">
+                            <span>👤</span>
+                            <span>{strings.fe_tab_personal}</span>
+                          </h3>
+                          <p className="text-xs md:text-sm text-white/90 mb-3 leading-relaxed text-start">
+                            {lang === 'ar'
+                              ? 'يرجى تسجيل بياناتك الشخصية والأكاديمية بعناية ودقة، حيث سيتم اعتماد هذه البيانات رسمياً في كشف النقاط وشهادة التخرج من المسار.'
+                              : 'Please enter your personal and academic information accurately. These details will be used for your official completion certificate.'}
+                          </p>
+
+                          <div className="fe-form-grid">
+                            <div className="fe-form-group">
+                              <label>{strings.label_name}</label>
+                              <input type="text" name="fe_name" required className="fe-input" placeholder={strings.ph_name} />
+                            </div>
+                            <div className="fe-form-group">
+                              <label>{strings.fe_label_id}</label>
+                              <input type="text" name="fe_id" required className="fe-input" placeholder="..." />
+                            </div>
+                            <div className="fe-form-group">
+                              <label>{strings.label_email}</label>
+                              <input type="email" name="fe_email" required className="fe-input" placeholder={strings.ph_email} />
+                            </div>
+                            <div className="fe-form-group">
+                              <label>{strings.fe_label_whatsapp}</label>
+                              <input type="tel" name="fe_whatsapp" required className="fe-input" placeholder="+213..." dir="ltr" />
+                            </div>
+                            <div className="fe-form-group">
+                              <label>{strings.fe_label_pathway}</label>
+                              <input type="text" name="fe_pathway" readOnly className="fe-input bg-slate-950/60 text-accent-yellow font-bold" value={strings.pathway_name_value} />
+                            </div>
+                            <div className="fe-form-group">
+                              <label>{strings.fe_label_supervisor}</label>
+                              <input type="text" name="fe_supervisor" required className="fe-input" placeholder="الأستاذ بلال عويش" />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center gap-2 mt-5 pt-3 border-t border-white/10">
+                            <button
+                              type="button"
+                              className="btn-outline !text-xs py-2 px-3.5 flex items-center gap-1 cursor-pointer"
+                              onClick={() => setExamTab(0)}
+                            >
+                              <span>{lang === 'ar' ? '⬅ دليل الامتحان' : '← Overview'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-primary !text-xs py-2 px-4 flex items-center gap-1 cursor-pointer font-bold"
+                              onClick={() => setExamTab(2)}
+                            >
+                              <span>{strings.fe_next_m1} ➔</span>
+                            </button>
+                          </div>
+                        </div>,
+
+                        /* Slides 03 to 10 (Indices 2 to 9): The 8 Modules Essay Questions */
+                        ...[1, 2, 3, 4, 5, 6, 7, 8].map((mNum) => {
+                          const tabIndex = mNum + 1;
+                          return (
+                            <div key={`fe-panel-${mNum}`} className={`fe-panel ${examTab === tabIndex ? 'active' : ''}`}>
+                              <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                                <h3 className="fe-section-title !border-0 !p-0 !m-0 text-xs md:text-base">
+                                  <span>📝</span>
+                                  <span>{`المحور 0${mNum}: ${levelModules.foundation[mNum - 1]?.title[lang] || ''}`}</span>
+                                </h3>
+                                <span className="text-[10px] font-bold text-accent-yellow bg-white/10 px-2 py-0.5 rounded border border-white/15 shrink-0">
+                                  {lang === 'ar' ? '5 أسئلة مقالية' : '5 Questions'}
+                                </span>
+                              </div>
+
+                              <div className="space-y-3.5 text-start">
+                                {(finalExamQuestions[`m${mNum}`] || finalExamQuestions.m1).map((item, qIdx) => (
+                                  <div key={qIdx} className="fe-form-group">
+                                    <label className="text-[11.5px] md:text-xs font-bold text-slate-200 block mb-1 leading-snug">
+                                      <span className="text-accent-yellow font-mono font-bold me-1.5">{qIdx + 1}.</span>
+                                      {item[lang]}
+                                    </label>
+                                    <textarea
+                                      name={`fe_m${mNum}_q${qIdx + 1}`}
+                                      required
+                                      rows={3}
+                                      className="fe-textarea"
+                                      placeholder={strings.fe_placeholder_ans}
+                                    />
+                                  </div>
+                                ))}
+
+                                <div className="fe-file-upload mt-2">
+                                  <label htmlFor={`exam_file_${mNum}`}>
+                                    <span>📁 {strings.fe_file_upload_opt}</span>
+                                  </label>
+                                  <input id={`exam_file_${mNum}`} name={`exam_file_${mNum}`} type="file" className="hidden" />
+                                </div>
+                              </div>
+
+                              <div className="flex justify-between items-center gap-2 mt-5 pt-3 border-t border-white/10">
+                                <button
+                                  type="button"
+                                  className="btn-outline !text-xs py-2 px-3.5 flex items-center gap-1 cursor-pointer"
+                                  onClick={() => setExamTab(mNum === 1 ? 1 : mNum)}
+                                >
+                                  <span>{mNum === 1 ? (lang === 'ar' ? '⬅ البيانات الشخصية' : '← Personal Info') : (lang === 'ar' ? '⬅ المحور السابق' : '← Prev')}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-primary !text-xs py-2 px-4 flex items-center gap-1 cursor-pointer font-bold"
+                                  onClick={() => setExamTab(mNum === 8 ? 10 : tabIndex + 1)}
+                                >
+                                  <span>
+                                    {mNum === 8
+                                      ? `${strings.fe_next_end} ✅`
+                                      : `${strings[`fe_next_m${mNum + 1}`] || (lang === 'ar' ? 'المحور التالي' : 'Next Module')} ➔`}
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }),
+
+                        /* Slide 11 (Index 10): Final Review & Submit */
+                        <div key="fe-panel-10" className={`fe-panel ${examTab === 10 ? 'active' : ''} text-center py-4`}>
+                          <div className="text-3xl md:text-4xl mb-2">🎓</div>
+                          <h3 className="text-lg md:text-2xl font-extrabold text-accent-yellow mb-1">
+                            {strings.fe_end_title}
+                          </h3>
+                          <p className="text-xs md:text-sm text-white/90 max-w-lg mx-auto mb-3 leading-relaxed">
+                            {strings.fe_end_desc}
+                          </p>
+
+                          {/* Review Checklist of Personal Info + 8 Modules */}
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-3 max-w-lg mx-auto mb-4 text-start">
+                            <div className="text-xs font-bold text-accent-yellow mb-2 flex items-center justify-between">
+                              <span>📋 {lang === 'ar' ? 'ملخص محاور ومكونات الامتحان:' : 'Exam Modules & Checklist:'}</span>
+                              <span className="text-[10px] text-emerald-400 font-mono font-bold">8 / 8 {lang === 'ar' ? 'محاور' : 'Modules'}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {/* Jump to Personal Info */}
+                              <div
+                                className="flex items-center justify-between p-1.5 rounded bg-sky-950/40 border border-sky-500/30 text-[10px] cursor-pointer hover:border-sky-400 transition"
+                                onClick={() => setExamTab(1)}
+                                title={lang === 'ar' ? 'مراجعة البيانات الشخصية' : 'Review personal info'}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setExamTab(1);
+                                  }
+                                }}
+                              >
+                                <span className="text-sky-200 font-bold truncate max-w-[120px]">
+                                  👤 {lang === 'ar' ? 'البيانات الشخصية' : 'Personal Info'}
+                                </span>
+                                <span className="text-sky-400 font-bold shrink-0">✓ {lang === 'ar' ? 'مكتمل' : 'Done'}</span>
+                              </div>
+
+                              {/* Jump to Modules 1 to 8 */}
+                              {levelModules.foundation.map((mod, idx) => (
+                                <div
+                                  key={mod.id}
+                                  className="flex items-center justify-between p-1.5 rounded bg-black/25 border border-white/5 text-[10px] cursor-pointer hover:border-accent-yellow/40 transition"
+                                  onClick={() => setExamTab(idx + 2)}
+                                  title={lang === 'ar' ? 'مراجعة إجابات هذا المحور' : 'Review this module'}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setExamTab(idx + 2);
+                                    }
+                                  }}
+                                >
+                                  <span className="text-white font-medium truncate max-w-[120px]">
+                                    {`0${idx + 1}. ` + mod.title[lang]}
+                                  </span>
+                                  <span className="text-emerald-400 font-bold shrink-0">✓ {lang === 'ar' ? 'جاهز' : 'Ready'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-lg text-[11px] text-amber-200 max-w-lg mx-auto mb-4 leading-normal">
+                            {lang === 'ar'
+                              ? '⚠️ تأكيد: بالضغط على زر الإرسال، سيتم إرسال نموذج الامتحان بكافة محاوره الثمانية وبياناتك الشخصية مباشرة إلى الأستاذ المشرف واللجنة الأكاديمية لتقييم المكتسبات.'
+                              : '⚠️ Confirmation: Clicking submit sends the complete exam and personal details to the supervisor and academic committee.'}
+                          </div>
+
+                          <div className="flex flex-col gap-2 max-w-md mx-auto">
+                            <button
+                              type="submit"
+                              disabled={examSubmitted}
+                              className="btn-primary w-full py-3 text-sm md:text-base justify-center shadow-xl font-extrabold cursor-pointer"
+                            >
+                              {examSubmitted
+                                ? (lang === 'ar' ? '✔️ تم استلام إجابات الامتحان بنجاح' : '✔️ Final Exam Submitted')
+                                : strings.fe_btn_submit_exam}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-outline w-full py-2 text-xs justify-center cursor-pointer"
+                              onClick={() => setExamTab(9)}
+                            >
+                              <span>{lang === 'ar' ? '⬅ العودة إلى المحور الثامن' : '← Back to Module 08'}</span>
+                            </button>
+                          </div>
                         </div>
-                      ))}
-
-                      <div className="fe-file-upload mt-2">
-                        <label htmlFor={`exam_file_${examTab}`}>
-                          <span>📁 {strings.fe_file_upload_opt}</span>
-                        </label>
-                        <input id={`exam_file_${examTab}`} type="file" className="hidden" />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between gap-3 mt-6">
-                      <button
-                        type="button"
-                        className="btn-outline !text-xs py-2 px-4"
-                        onClick={() => setExamTab((prev) => prev - 1)}
-                      >
-                        ⬅ {lang === 'ar' ? 'السابق' : 'Previous'}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-primary !text-xs py-2 px-5"
-                        onClick={() => setExamTab((prev) => prev + 1)}
-                      >
-                        {examTab === 8 ? strings.fe_next_end : `${strings[`fe_next_m${examTab + 1}`] || 'التالي'} ➔`}
-                      </button>
-                    </div>
+                      ];
+                      return lang === 'ar' ? [...allPanels].reverse() : allPanels;
+                    })()}
                   </div>
-                )}
+                </div>
 
-                {/* Tab 9: Final Review & Submit */}
-                {examTab === 9 && (
-                  <div className="fe-panel active text-center py-6">
-                    <div className="text-4xl mb-3">✅</div>
-                    <h3 className="text-2xl font-extrabold text-accent-yellow mb-2">
-                      {strings.fe_end_title}
-                    </h3>
-                    <p className="text-sm text-white/90 max-w-lg mx-auto mb-6 leading-relaxed">
-                      {strings.fe_end_desc}
-                    </p>
-
-                    <button
-                      type="submit"
-                      disabled={examSubmitted}
-                      className="btn-primary w-full max-w-md mx-auto py-3 text-base justify-center shadow-xl"
-                    >
-                      {examSubmitted ? '✔️ تم إرسال الامتحان بنجاح' : strings.fe_btn_submit_exam}
-                    </button>
-                  </div>
-                )}
+                {/* Mobile Swipe Pagination Dots for the 11 Slides */}
+                <div className="swipe-pagination-fe flex items-center justify-center gap-1.5 mt-3 mb-1 md:hidden">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((tabIdx) => (
+                    <span
+                      key={tabIdx}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Slide ${tabIdx + 1}`}
+                      className={`swipe-dot-fe ${examTab === tabIdx ? 'active' : ''}`}
+                      onClick={() => setExamTab(tabIdx)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setExamTab(tabIdx);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
               </form>
             </div>
           </div>

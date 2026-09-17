@@ -366,9 +366,25 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 .fe-tab-btn.active { background: var(--primary-blue); border-color: var(--primary-blue); box-shadow: 0 4px 12px rgba(17,82,207,0.4); color: #fff; }
 
 .fe-main { flex: 1; min-width: 0; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 25px; position: relative; }
-.fe-panels-wrapper { width: 100%; }
-.fe-panel { display: none; }
-.fe-panel.active { display: block; animation: fadeInQz 0.3s ease; }
+.fe-panels-wrapper { width: 100%; position: relative; overflow: hidden; direction: ltr !important; user-select: none; touch-action: pan-y; }
+.fe-panels-track { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; direction: ltr !important; will-change: transform; }
+.fe-panel { display: block !important; flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; direction: rtl !important; }
+html[dir="ltr"] .fe-panel { direction: ltr !important; }
+
+.fe-intro-modules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 16px; width: 100%; box-sizing: border-box; direction: rtl !important; }
+.fe-intro-module-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 82px; cursor: pointer; transition: all 0.2s ease; text-align: right; direction: rtl !important; box-sizing: border-box; }
+.fe-intro-module-card:hover { background: rgba(14, 165, 233, 0.15); border-color: rgba(56, 189, 248, 0.4); transform: translateY(-2px); }
+.fe-intro-module-card.personal { background: rgba(14, 165, 233, 0.09); border-color: rgba(56, 189, 248, 0.3); }
+.fe-intro-module-card.personal:hover { background: rgba(14, 165, 233, 0.2); border-color: rgba(56, 189, 248, 0.55); }
+.fe-intro-module-card.submit { background: rgba(16, 185, 129, 0.09); border-color: rgba(52, 211, 153, 0.3); }
+.fe-intro-module-card.submit:hover { background: rgba(16, 185, 129, 0.2); border-color: rgba(52, 211, 153, 0.55); }
+.fe-intro-module-badge { display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 800; color: #38bdf8; direction: rtl !important; }
+.fe-intro-module-qcount { background: rgba(255, 255, 255, 0.1); color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 9px; }
+.fe-intro-module-title { font-size: 11.5px; font-weight: 700; color: #fff; line-height: 1.3; margin: 4px 0; text-align: right !important; }
+.fe-intro-module-action { font-size: 9.5px; font-weight: 700; color: var(--accent-yellow); text-align: right !important; }
+
+.mobile-exam-swipe-bar { display: none; }
+.swipe-pagination-fe { display: none; }
 .fe-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fe-full-width { grid-column: span 2; }
 .fe-form-group label { display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px; text-align: start; }
@@ -1862,6 +1878,243 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .form-submit-btn { grid-column: span 1; }
   .fe-form-grid { grid-template-columns: 1fr; }
   .fe-full-width { grid-column: span 1; }
+
+  /* 8. قسم امتحان نهاية المسار: تجربة شرائح وتمرير مخصصة للهاتف المحمول */
+  .final-exam-section {
+    padding: 14px 10px 16px 10px !important;
+    border-radius: 16px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .fe-layout {
+    display: block !important;
+    margin-top: 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .fe-sidebar {
+    display: none !important;
+  }
+  .fe-main {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .mobile-exam-swipe-bar {
+    display: flex !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .fe-panels-wrapper {
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    user-select: none !important;
+    touch-action: pan-y !important;
+    box-sizing: border-box !important;
+    direction: ltr !important;
+  }
+  .fe-panels-track {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    direction: ltr !important;
+    will-change: transform !important;
+    box-sizing: border-box !important;
+  }
+  .fe-panel {
+    flex: 0 0 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    direction: rtl !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 14px !important;
+    padding: 12px 10px 14px 10px !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22) !important;
+    margin: 0 auto !important;
+  }
+  html[dir="ltr"] .fe-panel {
+    direction: ltr !important;
+  }
+  .fe-intro-modules-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+    margin-top: 8px !important;
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    direction: rtl !important;
+  }
+  .fe-intro-module-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 10px !important;
+    padding: 8px 9px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 74px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-align: right !important;
+    direction: rtl !important;
+    box-sizing: border-box !important;
+  }
+  .fe-intro-module-card:active {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+    transform: scale(0.98) !important;
+  }
+  .fe-intro-module-badge {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    color: #38bdf8 !important;
+    direction: rtl !important;
+  }
+  .fe-intro-module-qcount {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    font-size: 8px !important;
+  }
+  .fe-intro-module-title {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    line-height: 1.25 !important;
+    margin: 3px 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-align: right !important;
+  }
+  .fe-intro-module-action {
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    color: var(--accent-yellow) !important;
+    text-align: right !important;
+  }
+  html[dir="ltr"] .fe-intro-modules-grid {
+    direction: ltr !important;
+  }
+  html[dir="ltr"] .fe-intro-module-card {
+    direction: ltr !important;
+    text-align: left !important;
+  }
+  html[dir="ltr"] .fe-intro-module-badge {
+    direction: ltr !important;
+  }
+  html[dir="ltr"] .fe-intro-module-title {
+    text-align: left !important;
+  }
+  html[dir="ltr"] .fe-intro-module-action {
+    text-align: left !important;
+  }
+  .fe-form-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .fe-form-group {
+    width: 100% !important;
+    margin-bottom: 6px !important;
+    box-sizing: border-box !important;
+  }
+  .fe-form-group label {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    margin-bottom: 4px !important;
+    text-align: start !important;
+  }
+  .fe-input, .fe-textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 9px 11px !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 8px !important;
+    font-size: 11.5px !important;
+    color: #fff !important;
+    line-height: 1.4 !important;
+  }
+  .fe-textarea {
+    min-height: 70px !important;
+    resize: vertical !important;
+  }
+  .fe-file-upload {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    border: 1.5px dashed rgba(255, 255, 255, 0.28) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    margin-top: 4px !important;
+  }
+  .fe-file-upload label {
+    font-size: 11px !important;
+    color: var(--accent-yellow) !important;
+    cursor: pointer !important;
+    display: block !important;
+    margin: 0 !important;
+  }
+  .swipe-pagination-fe {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    width: 100% !important;
+    margin: 10px auto 4px auto !important;
+  }
+  .swipe-dot-fe {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+  }
+  .swipe-dot-fe.active {
+    background: var(--accent-yellow) !important;
+    width: 18px !important;
+    border-radius: 4px !important;
+  }
+
   .grand-form-grid { grid-template-columns: 1fr; }
   .grand-col-full { grid-column: span 1; }
 }

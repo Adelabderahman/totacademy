@@ -24,6 +24,14 @@ export default function EduPathPage() {
   const [activeLevel, setActiveLevel] = useState<'foundation' | 'empowerment' | 'consolidation'>('foundation');
   const [activeModuleId, setActiveModuleId] = useState<string>('module_1');
   const [activeVideoCard, setActiveVideoCard] = useState<string | null>(null);
+  const [flippedModules, setFlippedModules] = useState<Record<string, boolean>>({});
+
+  const toggleFlipModule = (modId: string) => {
+    setFlippedModules((prev) => ({
+      ...prev,
+      [modId]: !prev[modId],
+    }));
+  };
 
   // 2. Progress Persistence
   const [completedLessons, setCompletedLessons] = useState<Record<string, string[]>>({});
@@ -714,40 +722,73 @@ export default function EduPathPage() {
         <div className="mb-12" id="modules-group">
           <h2 className="modules-section-title">{strings.modules_title}</h2>
           <div className="modules-grid" id="course-modules-grid">
-            {currentModulesList.map((m) => (
-              <div key={m.id} className="flip-module-card">
-                <div className="flip-module-inner">
-                  {/* Front */}
-                  <div className="flip-module-front" style={{ background: m.gradient }}>
-                    <div className="module-number">{m.num}</div>
-                    <div className="module-icon">{m.icon}</div>
-                    <div className="module-title-wrapper">
-                      <div className="module-subtitle">{m.moduleLabel[lang]}</div>
-                      <h4 className="module-title">{m.title[lang]}</h4>
+            {currentModulesList.map((m) => {
+              const isFlipped = !!flippedModules[m.id];
+              return (
+                <div
+                  key={m.id}
+                  className={`flip-module-card ${isFlipped ? 'flipped' : ''}`}
+                  onClick={() => toggleFlipModule(m.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleFlipModule(m.id);
+                    }
+                  }}
+                  aria-label={`${m.title[lang]} - ${lang === 'ar' ? 'انقر لقلب البطاقة' : 'Click to flip card'}`}
+                >
+                  <div className="flip-module-inner">
+                    {/* Front */}
+                    <div className="flip-module-front" style={{ background: m.gradient }}>
+                      <div className="module-number">{m.num}</div>
+                      <div className="module-icon">{m.icon}</div>
+                      <div className="module-title-wrapper">
+                        <div className="module-subtitle">{m.moduleLabel[lang]}</div>
+                        <h4 className="module-title">{m.title[lang]}</h4>
+                      </div>
+                      <div className="module-flip-hint md:hidden" aria-hidden="true">
+                        <span>↻</span>
+                      </div>
+                    </div>
+                    {/* Back */}
+                    <div className="flip-module-back">
+                      <div className="module-back-header">
+                        <h5 className="module-back-title">{m.title[lang]}</h5>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFlipModule(m.id);
+                          }}
+                          className="module-back-return-btn md:hidden"
+                          title={lang === 'ar' ? 'رجوع للواجهة' : 'Flip back'}
+                          aria-label={lang === 'ar' ? 'رجوع للواجهة' : 'Flip back'}
+                        >
+                          ↩
+                        </button>
+                      </div>
+                      <p className="module-desc">{m.desc[lang]}</p>
+                      <button
+                        type="button"
+                        className="btn-start-module"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectModule(m.id);
+                        }}
+                      >
+                        <span>{strings.btn_start_study}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
+                          <path d="M5 12h14" />
+                          <path d="M12 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  {/* Back */}
-                  <div className="flip-module-back">
-                    <h5 className="module-back-title">{m.title[lang]}</h5>
-                    <p className="module-desc">{m.desc[lang]}</p>
-                    <button
-                      type="button"
-                      className="btn-start-module"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectModule(m.id);
-                      }}
-                    >
-                      <span>{strings.btn_start_study}</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
-                        <path d="M5 12h14" />
-                        <path d="M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

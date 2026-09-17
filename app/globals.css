@@ -447,24 +447,472 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   .course-title { font-size: 24px; }
   .hero-actions { justify-content: center; width: 100%; }
   .btn-primary, .btn-outline { width: 100%; }
-  .modules-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .flip-module-card { height: 160px; }
-  .module-title { font-size: 13px; }
-  .module-desc { font-size: 10.5px; }
-  .btn-start-module { font-size: 11px; padding: 6px 10px; }
-  #axis1-lessons-wrapper { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
-  .lesson-card-container { flex: 0 0 88%; min-width: 88%; scroll-snap-align: center; }
-  .quiz-main { padding: 0; background: transparent; border: none; }
-  .qz-panels-wrapper { 
-      display: flex; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; 
-      scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch;
+
+  /* 1. المسار التأصيلي: الخلفية الخضراء ومحتواها بعرض 100% */
+  .learning-wrapper > .container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
-  .qz-panels-wrapper::-webkit-scrollbar { display: none; }
+  .pathway-section {
+    padding: 16px 8px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 14px !important;
+    margin-bottom: 25px !important;
+    box-sizing: border-box !important;
+  }
+  .pathway-intro-container {
+    flex-direction: column !important;
+    padding: 14px 10px !important;
+    gap: 12px !important;
+    border-radius: 12px !important;
+    margin-bottom: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pathway-text-col {
+    padding: 0 4px !important;
+    text-align: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pathway-main-title {
+    font-size: 16.5px !important;
+    margin-bottom: 6px !important;
+  }
+  .pathway-main-desc {
+    font-size: 12.5px !important;
+    line-height: 1.6 !important;
+  }
+  .pathway-doc-col {
+    width: 100% !important;
+    padding: 12px 10px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+  .pathway-video-col {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pathway-registration-layout {
+    flex-direction: column !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .reg-info-side {
+    padding: 16px 12px !important;
+    border-inline-end: none !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .reg-info-title {
+    font-size: 17.5px !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+  }
+  .reg-form-side {
+    padding: 16px 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. أزرار اختر المستوى المناسب: في صف واحد بحجم صغير */
+  .level-selector-container {
+    padding: 14px 8px !important;
+    margin-bottom: 20px !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+  }
+  .level-selector-title {
+    font-size: 13.5px !important;
+    margin-bottom: 10px !important;
+  }
+  .level-buttons-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  .level-btn {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: 1 1 0% !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    text-align: center !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  /* 3. بطاقات مقاييس المسار: Flip Cards على الهاتف */
+  .modules-section-title {
+    font-size: 18px !important;
+    margin: 25px 0 15px !important;
+  }
+  .modules-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    perspective: 1400px !important;
+    -webkit-perspective: 1400px !important;
+  }
+  .flip-module-card {
+    height: 165px !important;
+    perspective: 1400px !important;
+    -webkit-perspective: 1400px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none !important;
+    cursor: pointer !important;
+    background: transparent !important;
+    position: relative !important;
+  }
+  .flip-module-inner {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    transform-style: preserve-3d !important;
+    -webkit-transform-style: preserve-3d !important;
+    border-radius: 12px !important;
+  }
+  .flip-module-card.flipped .flip-module-inner {
+    transform: rotateY(-180deg) !important;
+    -webkit-transform: rotateY(-180deg) !important;
+  }
+  [dir="ltr"] .flip-module-card.flipped .flip-module-inner {
+    transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
+  }
+  .flip-module-front, .flip-module-back {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 12px !important;
+    padding: 10px 8px !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .flip-module-front {
+    justify-content: center !important;
+    align-items: center !important;
+    transform: rotateY(0deg) !important;
+    -webkit-transform: rotateY(0deg) !important;
+    z-index: 2 !important;
+  }
+  .flip-module-back {
+    transform: rotateY(-180deg) !important;
+    -webkit-transform: rotateY(-180deg) !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
+    z-index: 1 !important;
+  }
+  [dir="ltr"] .flip-module-back {
+    transform: rotateY(180deg) !important;
+    -webkit-transform: rotateY(180deg) !important;
+  }
+  .flip-module-card.flipped .flip-module-front {
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+  .flip-module-card.flipped .flip-module-back {
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
+  .flip-module-card:not(.flipped) .flip-module-front {
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
+  .flip-module-card:not(.flipped) .flip-module-back {
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+  .module-icon {
+    font-size: 20px !important;
+    top: 8px !important;
+    inset-inline-start: 8px !important;
+  }
+  .module-number {
+    font-size: 11px !important;
+    top: 8px !important;
+    inset-inline-end: 8px !important;
+  }
+  .module-title-wrapper {
+    margin-top: 14px !important;
+    gap: 2px !important;
+    width: 100% !important;
+    padding: 0 2px !important;
+    text-align: center !important;
+  }
+  .module-subtitle {
+    font-size: 8.5px !important;
+    margin-bottom: 2px !important;
+    letter-spacing: 0.2px !important;
+  }
+  .module-title {
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    word-break: break-word !important;
+    padding: 0 1px !important;
+  }
+  .module-back-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 3px !important;
+    padding-bottom: 3px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  .module-back-title {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+    word-break: break-word !important;
+    text-align: center !important;
+    flex: 1 1 auto !important;
+  }
+  .module-back-return-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 12px !important;
+    color: var(--accent-yellow) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+    padding: 1px 4px !important;
+    margin-inline-start: 4px !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+  }
+  .module-flip-hint {
+    position: absolute !important;
+    bottom: 5px !important;
+    inset-inline-end: 6px !important;
+    font-size: 11px !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    width: 17px !important;
+    height: 17px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+  }
+  .module-desc {
+    font-size: 8.8px !important;
+    line-height: 1.35 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  .btn-start-module {
+    font-size: 9.5px !important;
+    padding: 5px 6px !important;
+    margin-top: auto !important;
+    border-radius: 6px !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  /* 4. قسم الدروس والبروغراس: حذف النص الشارح */
+  .edu-progress-note {
+    display: none !important;
+  }
+  #edu-global-progress {
+    padding: 12px 14px !important;
+    margin-bottom: 18px !important;
+    border-radius: 12px !important;
+  }
+  .edu-progress-head {
+    margin-bottom: 8px !important;
+    font-size: 13px !important;
+  }
+  .edu-progress-title {
+    font-size: 13px !important;
+  }
+  .edu-progress-percent {
+    font-size: 14px !important;
+  }
+
+  /* 5. شرائح الدروس: أقل في الارتفاع وأكثر عرضاً وبدون شريط تمرير */
+  #module-master-container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .axis-section {
+    padding: 20px 8px !important;
+    border-radius: 16px !important;
+    margin-bottom: 25px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .swipe-container {
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .swipe-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  #axis1-lessons-wrapper {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-behavior: smooth !important;
+    gap: 12px !important;
+    padding: 6px 4px 14px 4px !important;
+    margin: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  #axis1-lessons-wrapper::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+  .lesson-card-container {
+    flex: 0 0 94% !important;
+    min-width: 94% !important;
+    max-width: 94% !important;
+    scroll-snap-align: center !important;
+    scroll-snap-stop: always !important;
+    box-sizing: border-box !important;
+  }
+  .lesson-card {
+    width: 100% !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18) !important;
+  }
+  .lesson-thumb {
+    height: 155px !important; /* أقل في الارتفاع */
+  }
+  .lesson-body {
+    padding: 12px 14px !important;
+  }
+  .lesson-title {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.35 !important;
+  }
+  .lesson-desc {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    margin-bottom: 8px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  .lesson-footer {
+    padding-top: 8px !important;
+    gap: 6px !important;
+  }
+  .btn-lesson {
+    padding: 8px !important;
+    font-size: 12px !important;
+  }
+  .lesson-progress {
+    padding: 7px !important;
+    font-size: 11px !important;
+  }
+
+  /* 6. قسم الاختبارات: 8 شرائح بنفس حجم ومنطق شرائح الدروس (عرض 94% وبدون شريط تمرير) */
+  .quiz-section {
+    padding: 20px 8px !important;
+    border-radius: 16px !important;
+    margin-bottom: 30px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .quiz-layout {
+    display: block !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+  }
+  .quiz-sidebar {
+    display: none !important;
+  }
+
+  .quiz-main {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .qz-panels-wrapper { 
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-behavior: smooth !important;
+    gap: 12px !important; 
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 6px 4px 14px 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .qz-panels-wrapper::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
   
   .qz-panel { 
-      flex: 0 0 100% !important; max-width: 100% !important; scroll-snap-align: center; 
-      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; 
-      padding: 15px 10px !important; display: block !important; text-align: center !important; 
+    flex: 0 0 94% !important;
+    min-width: 94% !important;
+    max-width: 94% !important;
+    scroll-snap-align: center !important;
+    scroll-snap-stop: always !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important; 
+    padding: 15px 12px !important;
+    display: block !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2) !important;
   }
   
   .qz-panel h3 { font-size: 15px !important; margin-bottom: 8px !important; }
@@ -472,10 +920,9 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   
   .qz-intro-list { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin-top: 10px !important; }
   .qz-intro-item { padding: 8px !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; text-align: center !important; gap: 6px !important; }
-  .qz-intro-item div { font-size: 9px !important; }
+  .qz-intro-item div { font-size: 9.5px !important; }
   
   .qz-intro-meta { flex-direction: column !important; align-items: center !important; gap: 6px !important; }
-  
   .qz-intro-item .lesson-progress { padding: 4px 6px !important; margin: 0 !important; font-size: 8px !important; }
 
   .qz-start-screen h3 { display: none !important; } 
@@ -520,13 +967,19 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 
   /* Mobile Slide 8: Final Report & Download */
   .qz-report-panel {
+    flex: 0 0 94% !important;
+    min-width: 94% !important;
+    max-width: 94% !important;
+    scroll-snap-align: center !important;
+    scroll-snap-stop: always !important;
     background: rgba(15, 23, 42, 0.97) !important;
     border: 1px solid rgba(255, 171, 0, 0.35) !important;
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     padding: 16px 12px !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
     color: #fff !important;
     text-align: start !important;
+    box-sizing: border-box !important;
   }
   .qz-report-panel h3 {
     font-size: 15px !important;

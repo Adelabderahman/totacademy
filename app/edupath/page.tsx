@@ -2902,7 +2902,7 @@ export default function EduPathPage() {
                               <div className="space-y-3.5 text-start">
                                 {(finalExamQuestions[`m${mNum}`] || finalExamQuestions.m1).map((item, qIdx) => (
                                   <div key={qIdx} className="fe-form-group">
-                                    <label className="text-[11.5px] md:text-xs font-bold text-slate-200 block mb-1 leading-snug">
+                                    <label className="fe-exam-q-label">
                                       <span className="text-accent-yellow font-mono font-bold me-1.5">{qIdx + 1}.</span>
                                       {item[lang].replace(/^\s*\d+[\.\-\)]\s*/, '')}
                                     </label>

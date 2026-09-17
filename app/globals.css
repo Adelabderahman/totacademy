@@ -400,6 +400,21 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
 .fe-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fe-full-width { grid-column: span 2; }
 .fe-form-group label { display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px; text-align: start; }
+.fe-exam-q-label {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+  margin-bottom: 4px !important;
+  line-height: 1.4 !important;
+  text-align: start !important;
+}
+@media (max-width: 768px) {
+  .fe-exam-q-label {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+}
 .fe-input { width: 100%; padding: 11px 13px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.18); border-radius: 9px; font-family: inherit; font-size: 13px; color: #fff; transition: all 0.2s ease; }
 .fe-textarea {
   width: 100%;

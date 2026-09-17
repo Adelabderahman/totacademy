@@ -243,9 +243,10 @@ export default function EduPathPage() {
     }
   };
 
-  // 15-Second Quiz Timer
+  // 15-Second Quiz Timer (Only runs when current active quiz is in 'active' state)
   useEffect(() => {
-    if (quizScreen === 'active' && !isAnswered) {
+    const isRunning = quizStates[activeQuizIndex] === 'active';
+    if (isRunning && !isAnswered) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -260,9 +261,27 @@ export default function EduPathPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [quizScreen, questionIndex, isAnswered]);
+  }, [quizStates, activeQuizIndex, questionIndex, isAnswered]);
 
-  // Start Specific Quiz
+  // Return specific quiz to its own start/intro screen
+  const returnToQuizStart = (quizIdx: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+
+    setQuestionIndex(0);
+    setQuizScore(0);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setShowHint(false);
+    setTimeLeft(15);
+    setQuizScreen('intro');
+
+    setQuizStates((prev) => ({ ...prev, [quizIdx]: 'intro' }));
+    setActiveQuizIndex(quizIdx);
+    scrollToQuizSlide(quizIdx + 1);
+  };
+
+  // Start Specific Quiz - Only activated when user clicks "بدء الاختبار الآن"
   const startQuiz = (quizIdx: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
@@ -472,20 +491,42 @@ export default function EduPathPage() {
 
   // Copy Full PDF/Report text to clipboard
   const copyReport = () => {
-    let reportText = `${strings.course_title}\n${strings.module_prefix}: ${activeModule.title[lang]}\nCode: ${reportCode}\n\n`;
+    let reportText = `========================================================\n`;
+    reportText += `       ${strings.course_title}\n`;
+    reportText += `   ${lang === 'ar' ? 'تقرير التقييم النهائي ونتائج المحصلة الأكاديمية' : 'Final Assessment & Performance Report'}\n`;
+    reportText += `========================================================\n\n`;
+    reportText += `${lang === 'ar' ? 'المسار التعليمي والمهني المعتمد:' : 'Accredited Track:'} ${activeModule.title[lang]}\n`;
+    reportText += `${lang === 'ar' ? 'المستوى:' : 'Level:'} ${activeLevel === 'foundation' ? (lang === 'ar' ? 'المسار التأصيلي' : 'Foundation') : activeLevel === 'empowerment' ? (lang === 'ar' ? 'مسار التمكين' : 'Empowerment') : (lang === 'ar' ? 'مسار الترسيخ' : 'Consolidation')}\n`;
+    reportText += `${lang === 'ar' ? 'رمز الاعتماد:' : 'Reference Code:'} ${reportCode}\n`;
+    reportText += `${lang === 'ar' ? 'تاريخ التقييم:' : 'Date:'} ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}\n\n`;
+
+    const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
+    const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
+    const overallPct = completedCount === 0 ? 0 : Math.round((totalCorrect / (completedCount * 6)) * 100);
+    reportText += `${lang === 'ar' ? 'المعدل التراكمي الإجمالي للاختبار ككل:' : 'Overall Track Score:'} ${overallPct}%\n`;
+    reportText += `--------------------------------------------------------\n\n`;
+
     activeQuizzesList.forEach((q, i) => {
       const hist = quizHistory[i];
-      reportText += `${i + 1}. ${q.title}\n`;
-      if (hist && hist.questions.length > 0) {
-        const pct = Math.round((hist.correct / (hist.correct + hist.wrong)) * 100);
-        reportText += `Correct: ${hist.correct} | Wrong: ${hist.wrong} | Percent: ${pct}% | Time: ${hist.totalTime}s\n\n`;
-      } else {
-        reportText += `Status: ${completedQuizzes[activeModule.id]?.includes(`qz_${i}`) ? 'Completed' : 'Not completed'}\n\n`;
-      }
+      const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`);
+      const axisPct = hist ? Math.round((hist.correct / 6) * 100) : (isDone ? 100 : 0);
+      reportText += `[${lang === 'ar' ? 'المحور' : 'Axis'} ${i + 1}]: ${q.title}\n`;
+      reportText += `${lang === 'ar' ? 'النسبة المئوية للمحور:' : 'Axis Score:'} ${axisPct}% | ${lang === 'ar' ? 'الحالة:' : 'Status:'} ${isDone ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'قيد الإنجاز' : 'Pending')}\n`;
+      reportText += `${lang === 'ar' ? 'الأسئلة الستة:' : '6 Questions:'}\n`;
+
+      q.questions.forEach((questionItem, qNum) => {
+        const qHist = hist?.questions[qNum];
+        const hasAns = qHist !== undefined;
+        const isCorr = hasAns ? qHist.isCorrect : isDone;
+        const timeStr = hasAns ? `${qHist.time}s` : (isDone ? '~10s' : '-');
+        const statusLabel = (hasAns || isDone) ? (isCorr ? (lang === 'ar' ? 'صحيحة' : 'Correct') : (lang === 'ar' ? 'خاطئة' : 'Wrong')) : (lang === 'ar' ? 'لم يُختبر' : 'Pending');
+        reportText += `  - س${qNum + 1}: ${questionItem.q}\n    [${statusLabel} | ${timeStr}]\n`;
+      });
+      reportText += `\n`;
     });
 
     navigator.clipboard.writeText(reportText).then(() => {
-      alert(lang === 'ar' ? 'تم نسخ التقرير بنجاح!' : 'Report copied successfully!');
+      alert(lang === 'ar' ? 'تم نسخ التقرير التفصيلي بنجاح!' : 'Report copied successfully!');
     });
   };
 
@@ -945,7 +986,7 @@ export default function EduPathPage() {
 
         {/* ================= 6. Quizzes Section ================= */}
         <section className="quiz-section" id="quiz-group">
-          <h2 className="text-xl md:text-2xl font-extrabold text-accent-yellow mb-4 flex items-center gap-2">
+          <h2 className="text-lg md:text-xl font-bold text-accent-yellow mb-2 flex items-center gap-2">
             <span>🎯</span>
             <span>{strings.quiz_section_title}</span>
           </h2>
@@ -958,7 +999,6 @@ export default function EduPathPage() {
                 className={`qz-tab-btn ${activeQuizTab === 0 ? 'active' : ''}`}
                 onClick={() => {
                   switchQuizTab(0);
-                  setQuizScreen('intro');
                 }}
               >
                 📋 {lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}
@@ -970,8 +1010,7 @@ export default function EduPathPage() {
                   type="button"
                   className={`qz-tab-btn ${activeQuizTab === idx + 1 ? 'active' : ''}`}
                   onClick={() => {
-                    switchQuizTab(idx + 1);
-                    setQuizScreen('intro');
+                    scrollToQuizSlide(idx + 1);
                   }}
                 >
                   📝 {lang === 'ar' ? `تقييم ${idx + 1}` : `Quiz ${idx + 1}`}
@@ -982,8 +1021,7 @@ export default function EduPathPage() {
                 type="button"
                 className={`qz-tab-btn ${activeQuizTab === 7 ? 'active' : ''}`}
                 onClick={() => {
-                  switchQuizTab(7);
-                  setQuizScreen('intro');
+                  scrollToQuizSlide(7);
                 }}
               >
                 📊 {lang === 'ar' ? 'المحصلة والتقرير' : 'Score & Report'}
@@ -993,7 +1031,7 @@ export default function EduPathPage() {
             {/* Main Quiz Area */}
             <div className="quiz-main">
               {/* Mobile Slide Navigation & Swipe Bar */}
-              <div className="mobile-quiz-swipe-bar flex items-center justify-between px-2 mb-2 md:hidden">
+              <div className="mobile-quiz-swipe-bar flex items-center justify-between px-2 mb-1 py-0.5 md:hidden">
                 <button
                   type="button"
                   onClick={handlePrevSlide}
@@ -1052,7 +1090,10 @@ export default function EduPathPage() {
                         <div key={idx} className="qz-intro-item">
                           <div
                             className="font-bold text-accent-yellow hover:underline cursor-pointer flex items-center gap-2"
-                            onClick={() => startQuiz(idx)}
+                            onClick={() => {
+                              setQuizStates((prev) => ({ ...prev, [idx]: 'intro' }));
+                              scrollToQuizSlide(idx + 1);
+                            }}
                           >
                             <span>{idx + 1}. {q.title}</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
@@ -1083,7 +1124,10 @@ export default function EduPathPage() {
                   <div className="mt-3 md:hidden">
                     <button
                       type="button"
-                      onClick={() => switchQuizTab(1)}
+                      onClick={() => {
+                        setQuizStates((prev) => ({ ...prev, [0]: 'intro' }));
+                        scrollToQuizSlide(1);
+                      }}
                       className="mobile-quiz-next-bottom"
                     >
                       <span>{lang === 'ar' ? 'الانتقال للاختبار الأول (1 من 6) ➔' : 'Start First Quiz (1 of 6) ➔'}</span>
@@ -1094,7 +1138,7 @@ export default function EduPathPage() {
                 {/* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */}
                 {activeQuizzesList.map((quiz, qIdx) => {
                   const isCurrentActive = activeQuizIndex === qIdx;
-                  const slideState = isCurrentActive ? quizScreen : (quizStates[qIdx] || 'intro');
+                  const slideState = quizStates[qIdx] || 'intro';
 
                   return (
                     <div
@@ -1244,7 +1288,7 @@ export default function EduPathPage() {
                               <button
                                 type="button"
                                 className="qz-retry-mini-btn"
-                                onClick={() => startQuiz(qIdx)}
+                                onClick={() => returnToQuizStart(qIdx)}
                               >
                                 🔄 {lang === 'ar' ? 'إعادة التقييم' : 'Retry'}
                               </button>
@@ -1273,7 +1317,7 @@ export default function EduPathPage() {
                             <button
                               type="button"
                               className="btn-outline text-xs py-2 px-4"
-                              onClick={() => startQuiz(qIdx)}
+                              onClick={() => returnToQuizStart(qIdx)}
                             >
                               🔄 {lang === 'ar' ? 'إعادة الاختبار' : 'Retry Quiz'}
                             </button>
@@ -1281,7 +1325,11 @@ export default function EduPathPage() {
                               <button
                                 type="button"
                                 className="btn-primary text-xs py-2 px-4"
-                                onClick={() => startQuiz(qIdx + 1)}
+                                onClick={() => {
+                                  const nextIdx = qIdx + 1;
+                                  setQuizStates((prev) => ({ ...prev, [nextIdx]: 'intro' }));
+                                  scrollToQuizSlide(nextIdx + 1);
+                                }}
                               >
                                 {lang === 'ar' ? 'الانتقال للاختبار التالي ➔' : 'Next Quiz ➔'}
                               </button>
@@ -1289,7 +1337,7 @@ export default function EduPathPage() {
                               <button
                                 type="button"
                                 className="btn-primary text-xs py-2 px-4"
-                                onClick={() => switchQuizTab(7)}
+                                onClick={() => scrollToQuizSlide(7)}
                               >
                                 {lang === 'ar' ? 'عرض التقرير النهائي ➔' : 'View Report ➔'}
                               </button>
@@ -1299,7 +1347,7 @@ export default function EduPathPage() {
                       )}
 
                       {/* State C: Quiz Start Screen */}
-                      {(slideState === 'intro' || !isCurrentActive) && (
+                      {(slideState === 'intro' || (!isCurrentActive && slideState !== 'result')) && (
                         <div className="qz-start-screen text-center py-5">
                           <h3 className="text-accent-yellow text-lg font-bold mb-2">
                             {quiz.title}
@@ -1432,54 +1480,111 @@ export default function EduPathPage() {
                       </div>
                     </div>
 
-                    {/* Detailed Breakdown Table (مع عنوان كل اختبار والإجابات الصحيحة والخاطئة والنسب والمدة) */}
+                    {/* Prominent Track & Level Header Above Evaluations */}
+                    <div className="report-track-prominent-header">
+                      <div className="report-track-main-title">
+                        <span className="report-track-tag">
+                          {lang === 'ar' ? 'المسار التعليمي والمهني المعتمد:' : 'Accredited Track:'}
+                        </span>
+                        <span className="report-track-text">{activeModule.title[lang]}</span>
+                        <span className="report-track-badge">
+                          {activeLevel === 'foundation'
+                            ? (lang === 'ar' ? 'المسار التأصيلي — المستوى الأول' : 'Foundation Track — Level 1')
+                            : activeLevel === 'empowerment'
+                            ? (lang === 'ar' ? 'مسار التمكين — المستوى الثاني' : 'Empowerment Track — Level 2')
+                            : (lang === 'ar' ? 'مسار الترسيخ — المستوى الثالث' : 'Consolidation Track — Level 3')}
+                        </span>
+                      </div>
+                      <div className="report-track-meta-row">
+                        <div className="report-track-meta-item">
+                          <span>{lang === 'ar' ? 'رمز الاعتماد الموحد:' : 'Ref Code:'}</span>
+                          <strong className="font-mono text-amber-700">{reportCode}</strong>
+                        </div>
+                        <div className="report-track-meta-item">
+                          <span>{lang === 'ar' ? 'تاريخ التقييم:' : 'Date:'}</span>
+                          <strong>{new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</strong>
+                        </div>
+                        <div className="report-track-meta-item">
+                          <span>{lang === 'ar' ? 'المعدل التراكمي للاختبار ككل:' : 'Overall Track Score:'}</span>
+                          <strong className="text-emerald-700 font-bold">
+                            {(() => {
+                              const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
+                              if (completedCount === 0) return '0%';
+                              const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
+                              return `${Math.round((totalCorrect / (completedCount * 6)) * 100)}%`;
+                            })()}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detailed Breakdown per Axis with the 6 Questions Under Each Axis */}
                     <div className="report-table-wrap">
                       <div className="report-table-title">
-                        📋 {lang === 'ar' ? 'تفاصيل محصلة ونتائج الاختبارات التدريبية الستة:' : 'Assessment Details per Quiz (1-6):'}
+                        📋 {lang === 'ar' ? 'تفاصيل محاور التقييم والأسئلة الستة لكل محور:' : 'Assessment Axes & Questions Breakdown (1-6):'}
                       </div>
                       <div className="report-table-container">
-                        <table className="report-table">
-                          <thead>
-                            <tr>
-                              <th style={{ width: '22px' }}>#</th>
-                              <th style={{ textAlign: 'start' }}>{lang === 'ar' ? 'عنوان الاختبار' : 'Quiz Title'}</th>
-                              <th>{lang === 'ar' ? 'الحالة' : 'Status'}</th>
-                              <th>{lang === 'ar' ? 'صحيحة' : 'Correct'}</th>
-                              <th>{lang === 'ar' ? 'خاطئة' : 'Wrong'}</th>
-                              <th>{lang === 'ar' ? 'النسبة' : 'Score'}</th>
-                              <th>{lang === 'ar' ? 'المدة' : 'Duration'}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {activeQuizzesList.map((q, idx) => {
-                              const hist = quizHistory[idx];
-                              const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
-                              return (
-                                <tr key={idx}>
-                                  <td>{idx + 1}</td>
-                                  <td style={{ textAlign: 'start', fontWeight: 600 }}>{q.title}</td>
-                                  <td>
-                                    <span className={`status-pill ${isDone ? 'status-done' : 'status-pending'}`}>
-                                      {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Done') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Pending')}
-                                    </span>
-                                  </td>
-                                  <td className="font-bold text-emerald-700">
-                                    {hist ? `${hist.correct} / 6` : (isDone ? '6 / 6' : '-')}
-                                  </td>
-                                  <td className="font-bold text-rose-600">
-                                    {hist ? `${hist.wrong} / 6` : (isDone ? '0 / 6' : '-')}
-                                  </td>
-                                  <td className="font-bold text-amber-700">
-                                    {hist ? `${Math.round((hist.correct / 6) * 100)}%` : (isDone ? '100%' : '-')}
-                                  </td>
-                                  <td className="text-slate-600 font-mono">
-                                    {hist ? `${hist.totalTime}s` : '-'}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                        {activeQuizzesList.map((q, idx) => {
+                          const hist = quizHistory[idx];
+                          const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                          const correctCount = hist ? hist.correct : (isDone ? 6 : 0);
+                          const axisPct = hist ? Math.round((hist.correct / 6) * 100) : (isDone ? 100 : 0);
+
+                          return (
+                            <div key={idx} className="report-axis-block">
+                              <div className="report-axis-header">
+                                <span className="report-axis-title">
+                                  {lang === 'ar' ? `المحور ${idx + 1}: ${q.title}` : `Axis ${idx + 1}: ${q.title}`}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`status-pill ${isDone ? 'status-done' : 'status-pending'}`}>
+                                    {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Done') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Pending')}
+                                  </span>
+                                  <span className="report-axis-score-badge">
+                                    {lang === 'ar' ? `النسبة المئوية للمحور: ${axisPct}% (${correctCount}/6)` : `Axis Score: ${axisPct}% (${correctCount}/6)`}
+                                  </span>
+                                </div>
+                              </div>
+                              <table className="report-questions-subtable">
+                                <thead>
+                                  <tr>
+                                    <th style={{ width: '28px' }}>#</th>
+                                    <th style={{ textAlign: 'start' }}>{lang === 'ar' ? 'نص السؤال' : 'Question Text'}</th>
+                                    <th style={{ width: '85px' }}>{lang === 'ar' ? 'حالة الإجابة' : 'Answer Status'}</th>
+                                    <th style={{ width: '55px' }}>{lang === 'ar' ? 'المدة' : 'Duration'}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {q.questions.map((questionItem, qNum) => {
+                                    const qHist = hist?.questions[qNum];
+                                    const hasAnswered = qHist !== undefined;
+                                    const isCorrect = hasAnswered ? qHist.isCorrect : isDone;
+                                    const timeStr = hasAnswered ? `${qHist.time}ث` : (isDone ? '~10ث' : '-');
+
+                                    return (
+                                      <tr key={qNum}>
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{qNum + 1}</td>
+                                        <td style={{ textAlign: 'start' }}>{questionItem.q}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                          {hasAnswered || isDone ? (
+                                            isCorrect ? (
+                                              <span className="q-status-correct">{lang === 'ar' ? '✅ صحيحة' : '✅ Correct'}</span>
+                                            ) : (
+                                              <span className="q-status-wrong">{lang === 'ar' ? '❌ خاطئة' : '❌ Wrong'}</span>
+                                            )
+                                          ) : (
+                                            <span className="q-status-pending">{lang === 'ar' ? '⏳ لم يُختبر' : '⏳ Pending'}</span>
+                                          )}
+                                        </td>
+                                        <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{timeStr}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 

@@ -852,17 +852,17 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     font-size: 11px !important;
   }
 
-  /* 6. قسم الاختبارات: 8 شرائح بنفس حجم ومنطق شرائح الدروس (عرض 94% وبدون شريط تمرير) */
+  /* 6. قسم الاختبارات: تقليل الارتفاع العام للقسم والعنوان والنقاط السفلية */
   .quiz-section {
-    padding: 20px 8px !important;
-    border-radius: 16px !important;
-    margin-bottom: 30px !important;
+    padding: 10px 8px 12px 8px !important;
+    border-radius: 14px !important;
+    margin-bottom: 16px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
   .quiz-layout {
     display: block !important;
-    margin-top: 10px !important;
+    margin-top: 2px !important;
     width: 100% !important;
   }
   .quiz-sidebar {
@@ -1124,9 +1124,9 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
   
   .mobile-quiz-next-bottom { display: flex !important; justify-content: center !important; align-items: center !important; gap: 4px !important; font-size: 9.5px !important; font-weight: 700 !important; color: #000 !important; cursor: pointer !important; margin-top: 6px !important; padding: 6px 10px !important; background: var(--accent-yellow) !important; border-radius: 7px !important; width: 100% !important; border: none !important; }
 
-  .swipe-pagination-qz { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
-  .swipe-dot-qz { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); transition: 0.3s; cursor: pointer; }
-  .swipe-dot-qz.active { background: var(--accent-yellow); width: 24px; border-radius: 10px; }
+  .swipe-pagination-qz { display: flex !important; justify-content: center !important; gap: 6px !important; margin-top: 5px !important; margin-bottom: 2px !important; }
+  .swipe-dot-qz { width: 6px !important; height: 6px !important; border-radius: 50% !important; background: rgba(255, 255, 255, 0.3) !important; transition: 0.3s !important; cursor: pointer !important; }
+  .swipe-dot-qz.active { background: var(--accent-yellow) !important; width: 16px !important; border-radius: 8px !important; }
 
   /* Mobile Slide 8: Final Report & Download */
   .qz-report-panel {
@@ -1328,6 +1328,138 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     background: #10b981 !important;
   }
 
+  /* Prominent Track Header Above Assessment Table */
+  .report-track-prominent-header {
+    background: #f8fafc !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 6px !important;
+    padding: 6px 8px !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  }
+  .report-track-main-title {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    border-bottom: 1px dashed #cbd5e1 !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 4px !important;
+  }
+  .report-track-tag {
+    font-size: 8px !important;
+    font-weight: 800 !important;
+    color: #475569 !important;
+  }
+  .report-track-text {
+    font-size: 9.5px !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+  }
+  .report-track-badge {
+    display: inline-block !important;
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-size: 7.5px !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+    margin-inline-start: auto !important;
+  }
+  .report-track-meta-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 7.5px !important;
+    color: #334155 !important;
+  }
+  .report-track-meta-item strong {
+    font-size: 8px !important;
+    margin-inline-start: 2px !important;
+  }
+
+  /* Axis Block with its 6 Questions */
+  .report-axis-block {
+    margin-bottom: 7px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+  }
+  .report-axis-header {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    padding: 4px 6px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 8px !important;
+    font-weight: 800 !important;
+  }
+  .report-axis-title {
+    color: #ffffff !important;
+  }
+  .report-axis-score-badge {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+    font-size: 7.5px !important;
+    color: #38bdf8 !important;
+    font-weight: 700 !important;
+  }
+  .report-questions-subtable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 7.5px !important;
+  }
+  .report-questions-subtable th {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    padding: 3px 4px !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    text-align: center !important;
+  }
+  .report-questions-subtable td {
+    padding: 3px 4px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: #1e293b !important;
+  }
+  .report-questions-subtable tr:nth-child(even) {
+    background: #fafafa !important;
+  }
+  .q-status-correct {
+    display: inline-block !important;
+    color: #15803d !important;
+    font-weight: 700 !important;
+    background: #dcfce7 !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    font-size: 7px !important;
+  }
+  .q-status-wrong {
+    display: inline-block !important;
+    color: #b91c1c !important;
+    font-weight: 700 !important;
+    background: #fee2e2 !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    font-size: 7px !important;
+  }
+  .q-status-pending {
+    display: inline-block !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    background: #f1f5f9 !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    font-size: 7px !important;
+  }
+
   .report-table-wrap {
     margin-bottom: 8px !important;
   }
@@ -1338,7 +1470,7 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
     margin-bottom: 3px !important;
   }
   .report-table-container {
-    max-height: 140px !important;
+    max-height: 240px !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
     border: 1px solid #cbd5e1 !important;

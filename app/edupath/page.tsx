@@ -2676,18 +2676,21 @@ export default function EduPathPage() {
 
             {/* Exam Content Panels */}
             <div className="fe-main">
-              {/* Mobile Slide Navigation & Swipe Bar */}
-              <div className="mobile-exam-swipe-bar flex items-center justify-between px-2 mb-2 py-1 md:hidden">
+              {/* Top Slide Navigation Bar */}
+              <div
+                className="fe-exam-top-nav flex items-center justify-between px-3 py-2.5 mb-3 rounded-xl bg-black/35 border border-white/12 w-full"
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+              >
                 <button
                   type="button"
                   onClick={handleExamPrevSlide}
                   disabled={examTab === 0}
-                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white disabled:opacity-25 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
                 >
-                  <span>{lang === 'ar' ? '➔ السابق' : '← Prev'}</span>
+                  <span>{lang === 'ar' ? 'السابق ➔' : '← Prev'}</span>
                 </button>
-                <div className="text-center px-1">
-                  <span className="text-[11px] font-bold text-accent-yellow font-mono block truncate max-w-[200px]">
+                <div className="text-center px-2">
+                  <span className="text-xs md:text-sm font-bold text-accent-yellow font-mono block truncate max-w-[260px] md:max-w-md">
                     {examTab === 0
                       ? (lang === 'ar' ? '📋 عناوين وفهرس الشرائح' : 'Slides Overview & Index')
                       : examTab === 1
@@ -2696,17 +2699,17 @@ export default function EduPathPage() {
                       ? (lang === 'ar' ? '✅ مراجعة وإرسال الامتحان' : '✅ Review & Submit')
                       : (lang === 'ar' ? `📝 المحور 0${examTab - 1} من 8: ${levelModules.foundation[examTab - 2]?.title[lang] || ''}` : `📝 Module 0${examTab - 1} of 8`)}
                   </span>
-                  <div className="text-[9px] text-white/60">
-                    {lang === 'ar' ? `شريحة ${examTab + 1} من 11 • اسحب لليمين ➔` : `Slide ${examTab + 1} of 11 • Swipe ↔`}
+                  <div className="text-[10px] text-white/60">
+                    {lang === 'ar' ? `شريحة ${examTab + 1} من 11` : `Slide ${examTab + 1} of 11`}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleExamNextSlide}
                   disabled={examTab === 10}
-                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-white disabled:opacity-25 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
                 >
-                  <span>{lang === 'ar' ? 'التالي ⬅' : 'Next →'}</span>
+                  <span>{lang === 'ar' ? '⬅ التالي' : 'Next →'}</span>
                 </button>
               </div>
 
@@ -2774,7 +2777,7 @@ export default function EduPathPage() {
                                 }}
                               >
                                 <div className="fe-intro-module-badge !text-sky-300">
-                                  <span className="font-mono font-bold">01. 👤 {lang === 'ar' ? 'الشريحة 02' : 'Slide 02'}</span>
+                                  <span className="font-mono font-bold">01. 👤</span>
                                   <span className="fe-intro-module-qcount !bg-sky-500/20 !text-sky-200">{lang === 'ar' ? 'البيانات الشخصية' : 'Personal Info'}</span>
                                 </div>
                                 <div className="fe-intro-module-title">
@@ -2801,7 +2804,7 @@ export default function EduPathPage() {
                                   }}
                                 >
                                   <div className="fe-intro-module-badge">
-                                    <span className="font-mono font-bold">{`0${idx + 2}. 📝 ${lang === 'ar' ? `الشريحة 0${idx + 3}` : `Slide 0${idx + 3}`}`}</span>
+                                    <span className="font-mono font-bold">{`0${idx + 2}. 📝`}</span>
                                     <span className="fe-intro-module-qcount">5 {lang === 'ar' ? 'أسئلة' : 'Q'}</span>
                                   </div>
                                   <div className="fe-intro-module-title">
@@ -2827,7 +2830,7 @@ export default function EduPathPage() {
                                 }}
                               >
                                 <div className="fe-intro-module-badge !text-emerald-300">
-                                  <span className="font-mono font-bold">10. ✅ {lang === 'ar' ? 'الشريحة 11' : 'Slide 11'}</span>
+                                  <span className="font-mono font-bold">10. ✅</span>
                                   <span className="fe-intro-module-qcount !bg-emerald-500/25 !text-emerald-200">{lang === 'ar' ? 'الاعتماد' : 'Submit'}</span>
                                 </div>
                                 <div className="fe-intro-module-title">
@@ -2879,23 +2882,6 @@ export default function EduPathPage() {
                               <input type="text" name="fe_supervisor" required className="fe-input" placeholder="الأستاذ بلال عويش" />
                             </div>
                           </div>
-
-                          <div className="flex justify-between items-center gap-2 mt-5 pt-3 border-t border-white/10">
-                            <button
-                              type="button"
-                              className="btn-outline !text-xs py-2 px-3.5 flex items-center gap-1 cursor-pointer"
-                              onClick={() => setExamTab(0)}
-                            >
-                              <span>{lang === 'ar' ? '⬅ دليل الامتحان' : '← Overview'}</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-primary !text-xs py-2 px-4 flex items-center gap-1 cursor-pointer font-bold"
-                              onClick={() => setExamTab(2)}
-                            >
-                              <span>{strings.fe_next_m1} ➔</span>
-                            </button>
-                          </div>
                         </div>,
 
                         /* Slides 03 to 10 (Indices 2 to 9): The 8 Modules Essay Questions */
@@ -2918,14 +2904,19 @@ export default function EduPathPage() {
                                   <div key={qIdx} className="fe-form-group">
                                     <label className="text-[11.5px] md:text-xs font-bold text-slate-200 block mb-1 leading-snug">
                                       <span className="text-accent-yellow font-mono font-bold me-1.5">{qIdx + 1}.</span>
-                                      {item[lang]}
+                                      {item[lang].replace(/^\s*\d+[\.\-\)]\s*/, '')}
                                     </label>
                                     <textarea
                                       name={`fe_m${mNum}_q${qIdx + 1}`}
                                       required
-                                      rows={3}
+                                      rows={2}
                                       className="fe-textarea"
                                       placeholder={strings.fe_placeholder_ans}
+                                      onInput={(e) => {
+                                        const el = e.currentTarget;
+                                        el.style.height = 'auto';
+                                        el.style.height = `${Math.max(56, el.scrollHeight)}px`;
+                                      }}
                                     />
                                   </div>
                                 ))}
@@ -2936,27 +2927,6 @@ export default function EduPathPage() {
                                   </label>
                                   <input id={`exam_file_${mNum}`} name={`exam_file_${mNum}`} type="file" className="hidden" />
                                 </div>
-                              </div>
-
-                              <div className="flex justify-between items-center gap-2 mt-5 pt-3 border-t border-white/10">
-                                <button
-                                  type="button"
-                                  className="btn-outline !text-xs py-2 px-3.5 flex items-center gap-1 cursor-pointer"
-                                  onClick={() => setExamTab(mNum === 1 ? 1 : mNum)}
-                                >
-                                  <span>{mNum === 1 ? (lang === 'ar' ? '⬅ البيانات الشخصية' : '← Personal Info') : (lang === 'ar' ? '⬅ المحور السابق' : '← Prev')}</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn-primary !text-xs py-2 px-4 flex items-center gap-1 cursor-pointer font-bold"
-                                  onClick={() => setExamTab(mNum === 8 ? 10 : tabIndex + 1)}
-                                >
-                                  <span>
-                                    {mNum === 8
-                                      ? `${strings.fe_next_end} ✅`
-                                      : `${strings[`fe_next_m${mNum + 1}`] || (lang === 'ar' ? 'المحور التالي' : 'Next Module')} ➔`}
-                                  </span>
-                                </button>
                               </div>
                             </div>
                           );
@@ -3039,13 +3009,6 @@ export default function EduPathPage() {
                               {examSubmitted
                                 ? (lang === 'ar' ? '✔️ تم استلام إجابات الامتحان بنجاح' : '✔️ Final Exam Submitted')
                                 : strings.fe_btn_submit_exam}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-outline w-full py-2 text-xs justify-center cursor-pointer"
-                              onClick={() => setExamTab(9)}
-                            >
-                              <span>{lang === 'ar' ? '⬅ العودة إلى المحور الثامن' : '← Back to Module 08'}</span>
                             </button>
                           </div>
                         </div>

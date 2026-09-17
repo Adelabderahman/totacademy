@@ -24,14 +24,6 @@ export default function EduPathPage() {
   const [activeLevel, setActiveLevel] = useState<'foundation' | 'empowerment' | 'consolidation'>('foundation');
   const [activeModuleId, setActiveModuleId] = useState<string>('module_1');
   const [activeVideoCard, setActiveVideoCard] = useState<string | null>(null);
-  const [flippedModules, setFlippedModules] = useState<Record<string, boolean>>({});
-
-  const toggleFlipModule = (modId: string) => {
-    setFlippedModules((prev) => ({
-      ...prev,
-      [modId]: !prev[modId],
-    }));
-  };
 
   // 2. Progress Persistence
   const [completedLessons, setCompletedLessons] = useState<Record<string, string[]>>({});
@@ -69,9 +61,13 @@ export default function EduPathPage() {
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [activeLessonSlide, setActiveLessonSlide] = useState<number>(0);
-  const lessonsSliderRef = useRef<HTMLDivElement>(null);
-  const lessonItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const panelsWrapperRef = useRef<HTMLDivElement>(null);
+  const panelElementsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const isProgrammaticScrollRef = useRef<boolean>(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const [isDownloadingReport, setIsDownloadingReport] = useState<boolean>(false);
 
   // Load completion states from localStorage on mount
   useEffect(() => {
@@ -151,52 +147,6 @@ export default function EduPathPage() {
     return allLessonsDB[activeModule.id] || allLessonsDB.module_1;
   }, [activeModule.id]);
 
-  // Reset mobile lesson slider position when active module changes
-  useEffect(() => {
-    setActiveLessonSlide(0);
-    if (lessonsSliderRef.current) {
-      lessonsSliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-    }
-  }, [activeModule.id]);
-
-  // Synchronize active lesson slide on touch scroll
-  useEffect(() => {
-    const container = lessonsSliderRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const containerRect = container.getBoundingClientRect();
-      const containerCenter = containerRect.left + containerRect.width / 2;
-
-      let closestIdx = 0;
-      let minDistance = Infinity;
-
-      lessonItemRefs.current.forEach((card, idx) => {
-        if (!card) return;
-        const cardRect = card.getBoundingClientRect();
-        const cardCenter = cardRect.left + cardRect.width / 2;
-        const dist = Math.abs(cardCenter - containerCenter);
-        if (dist < minDistance) {
-          minDistance = dist;
-          closestIdx = idx;
-        }
-      });
-
-      setActiveLessonSlide(closestIdx);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [activeLessons]);
-
-  const scrollToLessonSlide = (index: number) => {
-    const target = lessonItemRefs.current[index];
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      setActiveLessonSlide(index);
-    }
-  };
-
   // Current Active Quizzes for this module and language
   const activeQuizzesList = useMemo(() => {
     return getQuizzesForModule(activeModule.id, lang);
@@ -244,7 +194,6 @@ export default function EduPathPage() {
     }
     setActiveQuizTab(0);
     setQuizScreen('intro');
-    setFlippedModules({});
   };
 
   // Select Module Handler
@@ -282,6 +231,9 @@ export default function EduPathPage() {
 
   // Start Specific Quiz
   const startQuiz = (quizIdx: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+
     setActiveQuizIndex(quizIdx);
     setQuestionIndex(0);
     setQuizScore(0);
@@ -301,12 +253,154 @@ export default function EduPathPage() {
         questions: [],
       },
     }));
+
+    const targetEl = panelElementsRef.current[quizIdx + 1];
+    if (targetEl && panelsWrapperRef.current) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
+  // Scroll Quiz Slide on touch/swipe/click
+  const scrollToQuizSlide = (tabIdx: number) => {
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    setActiveQuizTab(tabIdx);
+    if (tabIdx >= 1 && tabIdx <= 6) {
+      setActiveQuizIndex(tabIdx - 1);
+    }
+    const container = panelsWrapperRef.current;
+    const target = panelElementsRef.current[tabIdx];
+    if (container && target) {
+      isProgrammaticScrollRef.current = true;
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const deltaX = targetRect.left - containerRect.left;
+      container.scrollBy({
+        left: deltaX,
+        behavior: 'smooth',
+      });
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 450);
+    }
+  };
+
+  // Switch Quiz Tab and scroll to panel on mobile
+  const switchQuizTab = (tabIdx: number) => {
+    scrollToQuizSlide(tabIdx);
+  };
+
+  const handlePrevSlide = () => {
+    const prevIdx = Math.max(0, activeQuizTab - 1);
+    scrollToQuizSlide(prevIdx);
+  };
+
+  const handleNextSlide = () => {
+    const nextIdx = Math.min(7, activeQuizTab + 1);
+    scrollToQuizSlide(nextIdx);
+  };
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartPosRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || e.changedTouches.length === 0) return;
+    const touchEnd = e.changedTouches[0];
+    const dx = touchEnd.clientX - touchStartPosRef.current.x;
+    const dy = touchEnd.clientY - touchStartPosRef.current.y;
+    const dt = Date.now() - touchStartPosRef.current.time;
+
+    // Minimum swipe threshold: 35px horizontal and not predominantly vertical
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) && dt < 800) {
+      if (lang === 'ar') {
+        if (dx < 0) {
+          handleNextSlide();
+        } else {
+          handlePrevSlide();
+        }
+      } else {
+        if (dx < 0) {
+          handleNextSlide();
+        } else {
+          handlePrevSlide();
+        }
+      }
+    }
+    touchStartPosRef.current = null;
+  };
+
+  // Handle Carousel Scroll on Touch/Swipe
+  const handlePanelsScroll = () => {
+    if (isProgrammaticScrollRef.current) return;
+    const container = panelsWrapperRef.current;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = (containerRect.left + containerRect.right) / 2;
+
+    let closestIdx = activeQuizTab;
+    let minDiff = Infinity;
+
+    panelElementsRef.current.forEach((el, idx) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const elCenter = (rect.left + rect.right) / 2;
+      const diff = Math.abs(containerCenter - elCenter);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = idx;
+      }
+    });
+
+    if (closestIdx !== activeQuizTab && closestIdx >= 0 && closestIdx <= 7) {
+      setActiveQuizTab(closestIdx);
+      if (closestIdx >= 1 && closestIdx <= 6) {
+        setActiveQuizIndex(closestIdx - 1);
+      }
+    }
+  };
+
+  // Advance to next question or complete quiz
+  const advanceNextQuestion = () => {
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    const currentQuizData = activeQuizzesList[activeQuizIndex];
+    if (!currentQuizData) return;
+
+    if (questionIndex + 1 < currentQuizData.questions.length) {
+      setQuestionIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      setIsAnswered(false);
+      setShowHint(false);
+      setTimeLeft(15);
+    } else {
+      // Completed Quiz
+      setQuizScreen('result');
+      const qKey = `qz_${activeQuizIndex}`;
+      const list = completedQuizzes[activeModule.id] || [];
+      if (!list.includes(qKey)) {
+        const updated = [...list, qKey];
+        setCompletedQuizzes((prev) => ({ ...prev, [activeModule.id]: updated }));
+        try {
+          localStorage.setItem(`tot_quizzes_progress_${activeModule.id}`, JSON.stringify(updated));
+        } catch {}
+      }
+    }
   };
 
   // Handle Option Click
   const handleSelectAnswer = (optionIdx: number) => {
     if (isAnswered) return;
     if (timerRef.current) clearInterval(timerRef.current);
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
 
     setIsAnswered(true);
     setSelectedOption(optionIdx);
@@ -336,29 +430,10 @@ export default function EduPathPage() {
       };
     });
 
-    // Automatically transition to next question after 2 seconds
-    setTimeout(() => {
-      if (questionIndex + 1 < currentQuizData.questions.length) {
-        setQuestionIndex((prev) => prev + 1);
-        setSelectedOption(null);
-        setIsAnswered(false);
-        setShowHint(false);
-        setTimeLeft(15);
-      } else {
-        // Completed Quiz
-        setQuizScreen('result');
-        // Mark quiz completed in localStorage
-        const qKey = `qz_${activeQuizIndex}`;
-        const list = completedQuizzes[activeModule.id] || [];
-        if (!list.includes(qKey)) {
-          const updated = [...list, qKey];
-          setCompletedQuizzes((prev) => ({ ...prev, [activeModule.id]: updated }));
-          try {
-            localStorage.setItem(`tot_quizzes_progress_${activeModule.id}`, JSON.stringify(updated));
-          } catch {}
-        }
-      }
-    }, 2000);
+    // Automatically transition to next question after 2.5 seconds (or user can click next buttons immediately)
+    advanceTimeoutRef.current = setTimeout(() => {
+      advanceNextQuestion();
+    }, 2500);
   };
 
   // Copy Full PDF/Report text to clipboard
@@ -378,6 +453,69 @@ export default function EduPathPage() {
     navigator.clipboard.writeText(reportText).then(() => {
       alert(lang === 'ar' ? 'تم نسخ التقرير بنجاح!' : 'Report copied successfully!');
     });
+  };
+
+  // Download Final Report as PDF using html2pdf
+  const downloadReportPDF = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      setIsDownloadingReport(true);
+      // @ts-ignore
+      const html2pdfModule: any = await import('html2pdf.js');
+      const html2pdf = html2pdfModule.default || html2pdfModule;
+
+      const element = document.getElementById('final-quiz-report-card');
+      if (!element) {
+        alert(lang === 'ar' ? 'تعذر العثور على بطاقة التقرير' : 'Report card not found');
+        setIsDownloadingReport(false);
+        return;
+      }
+
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `TOT_Final_Report_${reportCode}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('PDF export error, falling back:', err);
+      try {
+        let reportContent = `========================================================\n`;
+        reportContent += `       TOT ACADEMY - FINAL QUIZ PERFORMANCE REPORT      \n`;
+        reportContent += `========================================================\n\n`;
+        reportContent += `Module: ${activeModule.title[lang]}\n`;
+        reportContent += `Reference Code: ${reportCode}\n`;
+        reportContent += `Date: ${new Date().toLocaleDateString('ar-EG')}\n\n`;
+        reportContent += `--------------------------------------------------------\n`;
+        activeQuizzesList.forEach((q, idx) => {
+          const hist = quizHistory[idx];
+          const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+          reportContent += `Quiz ${idx + 1}: ${q.title}\n`;
+          reportContent += `Status: ${isDone ? 'Completed' : 'Pending'}\n`;
+          if (hist) {
+            const pct = Math.round((hist.correct / 6) * 100);
+            reportContent += `Correct: ${hist.correct}/6 | Wrong: ${hist.wrong} | Score: ${pct}% | Time: ${hist.totalTime}s\n`;
+          }
+          reportContent += `--------------------------------------------------------\n`;
+        });
+        const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `TOT_Report_${reportCode}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch {
+        window.print();
+      }
+    } finally {
+      setIsDownloadingReport(false);
+    }
   };
 
   // Print Report / Save PDF
@@ -576,73 +714,40 @@ export default function EduPathPage() {
         <div className="mb-12" id="modules-group">
           <h2 className="modules-section-title">{strings.modules_title}</h2>
           <div className="modules-grid" id="course-modules-grid">
-            {currentModulesList.map((m) => {
-              const isFlipped = !!flippedModules[m.id];
-              return (
-                <div
-                  key={m.id}
-                  className={`flip-module-card ${isFlipped ? 'flipped' : ''}`}
-                  onClick={() => toggleFlipModule(m.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      toggleFlipModule(m.id);
-                    }
-                  }}
-                  aria-label={`${m.title[lang]} - ${lang === 'ar' ? 'انقر لقلب البطاقة' : 'Click to flip card'}`}
-                >
-                  <div className="flip-module-inner">
-                    {/* Front */}
-                    <div className="flip-module-front" style={{ background: m.gradient }}>
-                      <div className="module-number">{m.num}</div>
-                      <div className="module-icon">{m.icon}</div>
-                      <div className="module-title-wrapper">
-                        <div className="module-subtitle">{m.moduleLabel[lang]}</div>
-                        <h4 className="module-title">{m.title[lang]}</h4>
-                      </div>
-                      <div className="module-flip-hint md:hidden" aria-hidden="true">
-                        <span>↻</span>
-                      </div>
-                    </div>
-                    {/* Back */}
-                    <div className="flip-module-back">
-                      <div className="module-back-header">
-                        <h5 className="module-back-title">{m.title[lang]}</h5>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFlipModule(m.id);
-                          }}
-                          className="module-back-return-btn md:hidden"
-                          title={lang === 'ar' ? 'رجوع للواجهة' : 'Flip back'}
-                          aria-label={lang === 'ar' ? 'رجوع للواجهة' : 'Flip back'}
-                        >
-                          ↩
-                        </button>
-                      </div>
-                      <p className="module-desc">{m.desc[lang]}</p>
-                      <button
-                        type="button"
-                        className="btn-start-module"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectModule(m.id);
-                        }}
-                      >
-                        <span>{strings.btn_start_study}</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
-                          <path d="M5 12h14" />
-                          <path d="M12 5l7 7-7 7" />
-                        </svg>
-                      </button>
+            {currentModulesList.map((m) => (
+              <div key={m.id} className="flip-module-card">
+                <div className="flip-module-inner">
+                  {/* Front */}
+                  <div className="flip-module-front" style={{ background: m.gradient }}>
+                    <div className="module-number">{m.num}</div>
+                    <div className="module-icon">{m.icon}</div>
+                    <div className="module-title-wrapper">
+                      <div className="module-subtitle">{m.moduleLabel[lang]}</div>
+                      <h4 className="module-title">{m.title[lang]}</h4>
                     </div>
                   </div>
+                  {/* Back */}
+                  <div className="flip-module-back">
+                    <h5 className="module-back-title">{m.title[lang]}</h5>
+                    <p className="module-desc">{m.desc[lang]}</p>
+                    <button
+                      type="button"
+                      className="btn-start-module"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectModule(m.id);
+                      }}
+                    >
+                      <span>{strings.btn_start_study}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
+                        <path d="M5 12h14" />
+                        <path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -669,19 +774,13 @@ export default function EduPathPage() {
 
           {/* Lessons Horizontal Swipe / Grid */}
           <div className="swipe-container mt-6">
-            <div id="axis1-lessons-wrapper" ref={lessonsSliderRef}>
-              {activeLessons.map((lesson, idx) => {
+            <div id="axis1-lessons-wrapper">
+              {activeLessons.map((lesson) => {
                 const isFinished = (completedLessons[activeModule.id] || []).includes(lesson.id);
                 const isPlaying = activeVideoCard === lesson.id;
 
                 return (
-                  <div
-                    key={lesson.id}
-                    ref={(el) => {
-                      lessonItemRefs.current[idx] = el;
-                    }}
-                    className="lesson-card-container"
-                  >
+                  <div key={lesson.id} className="lesson-card-container">
                     <div className="lesson-card">
                       <div className="lesson-thumb">
                         {isPlaying ? (
@@ -772,51 +871,6 @@ export default function EduPathPage() {
                 );
               })}
             </div>
-
-            {/* Mobile Slider Controls & Dots */}
-            {activeLessons.length > 1 && (
-              <div className="flex md:hidden items-center justify-between mt-4 px-2 select-none" dir="ltr">
-                <button
-                  type="button"
-                  onClick={() => scrollToLessonSlide(Math.max(0, activeLessonSlide - 1))}
-                  disabled={activeLessonSlide === 0}
-                  className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center disabled:opacity-25 disabled:pointer-events-none hover:bg-white/30 active:scale-95 transition shadow-sm"
-                  aria-label="Previous lesson"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                </button>
-
-                <div className="flex items-center gap-1.5">
-                  {activeLessons.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => scrollToLessonSlide(idx)}
-                      className={`transition-all duration-300 rounded-full ${
-                        activeLessonSlide === idx
-                          ? 'w-7 h-2.5 bg-accent-yellow shadow-md'
-                          : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
-                      }`}
-                      aria-label={`Slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => scrollToLessonSlide(Math.min(activeLessons.length - 1, activeLessonSlide + 1))}
-                  disabled={activeLessonSlide === activeLessons.length - 1}
-                  className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center disabled:opacity-25 disabled:pointer-events-none hover:bg-white/30 active:scale-95 transition shadow-sm"
-                  aria-label="Next lesson"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-              </div>
-            )}
           </div>
         </section>
 
@@ -831,9 +885,10 @@ export default function EduPathPage() {
             {/* Sidebar Tabs */}
             <div className="quiz-sidebar">
               <button
+                type="button"
                 className={`qz-tab-btn ${activeQuizTab === 0 ? 'active' : ''}`}
                 onClick={() => {
-                  setActiveQuizTab(0);
+                  switchQuizTab(0);
                   setQuizScreen('intro');
                 }}
               >
@@ -843,10 +898,10 @@ export default function EduPathPage() {
               {activeQuizzesList.map((q, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   className={`qz-tab-btn ${activeQuizTab === idx + 1 ? 'active' : ''}`}
                   onClick={() => {
-                    setActiveQuizTab(idx + 1);
-                    setActiveQuizIndex(idx);
+                    switchQuizTab(idx + 1);
                     setQuizScreen('intro');
                   }}
                 >
@@ -855,9 +910,10 @@ export default function EduPathPage() {
               ))}
 
               <button
+                type="button"
                 className={`qz-tab-btn ${activeQuizTab === 7 ? 'active' : ''}`}
                 onClick={() => {
-                  setActiveQuizTab(7);
+                  switchQuizTab(7);
                   setQuizScreen('intro');
                 }}
               >
@@ -867,313 +923,486 @@ export default function EduPathPage() {
 
             {/* Main Quiz Area */}
             <div className="quiz-main">
-              <div className="qz-panels-wrapper">
-                {/* Tab 0: Overview */}
-                {activeQuizTab === 0 && (
-                  <div className="qz-panel active">
-                    <h3 className="text-accent-yellow text-xl font-bold mb-3">
-                      {lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}
-                    </h3>
-                    <p className="text-sm text-white/90 mb-4 leading-relaxed">
-                      {lang === 'ar'
-                        ? 'يحتوي هذا المقياس على 6 اختبارات تأصيلية لتقييم استيعابك للمفاهيم الأساسية، مدة كل سؤال 15 ثانية.'
-                        : 'This module features 6 foundational quizzes to test your core mastery (15s per question).'}
-                    </p>
-
-                    <div className="qz-intro-list">
-                      {activeQuizzesList.map((q, idx) => {
-                        const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
-                        return (
-                          <div key={idx} className="qz-intro-item">
-                            <div
-                              className="font-bold text-accent-yellow hover:underline cursor-pointer flex items-center gap-2"
-                              onClick={() => startQuiz(idx)}
-                            >
-                              <span>{idx + 1}. {q.title}</span>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
-                                <polyline points="9 18 15 12 9 6" />
-                              </svg>
-                            </div>
-
-                            <div className="qz-intro-meta">
-                              <span className="text-xs text-accent-yellow font-mono">
-                                ⏳ {lang === 'ar' ? 'المدة الكلية: 90s' : 'Duration: 90s'}
-                              </span>
-                              <label className={`lesson-progress ${isDone ? 'completed' : ''}`}>
-                                <input
-                                  type="checkbox"
-                                  checked={isDone}
-                                  onChange={() => toggleQuizCompletion(idx)}
-                                />
-                                <span className="prog-text">
-                                  {isDone ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'تحديد كمكتمل' : 'Mark Done')}
-                                </span>
-                              </label>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              {/* Mobile Slide Navigation & Swipe Bar */}
+              <div className="mobile-quiz-swipe-bar flex items-center justify-between px-2 mb-2 md:hidden">
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  disabled={activeQuizTab === 0}
+                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                >
+                  <span>{lang === 'ar' ? '➔ السابق' : '← Prev'}</span>
+                </button>
+                <div className="text-center">
+                  <span className="text-[11px] font-bold text-accent-yellow font-mono">
+                    {activeQuizTab === 0
+                      ? (lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview')
+                      : activeQuizTab === 7
+                      ? (lang === 'ar' ? '📊 التقرير النهائي' : '📊 Final Report')
+                      : (lang === 'ar' ? `📝 اختبار ${activeQuizTab} من 6` : `📝 Quiz ${activeQuizTab} of 6`)}
+                  </span>
+                  <div className="text-[9px] text-white/60">
+                    {lang === 'ar' ? `شريحة ${activeQuizTab + 1} من 8 • اسحب للتنقل ↔` : `Slide ${activeQuizTab + 1} of 8 • Swipe ↔`}
                   </div>
-                )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  disabled={activeQuizTab === 7}
+                  className="px-2.5 py-1 rounded-md bg-white/10 text-[11px] font-bold text-white disabled:opacity-25 flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                >
+                  <span>{lang === 'ar' ? 'التالي ⬅' : 'Next →'}</span>
+                </button>
+              </div>
 
-                {/* Tabs 1-6: Actual Quiz Views */}
-                {activeQuizTab >= 1 && activeQuizTab <= 6 && (
-                  <div className="qz-panel active">
-                    {/* Screen 1: Start Quiz Prompt */}
-                    {quizScreen === 'intro' && (
-                      <div className="qz-start-screen text-center py-6">
-                        <h3 className="text-accent-yellow text-xl font-bold mb-3">
-                          {activeQuizzesList[activeQuizTab - 1]?.title}
-                        </h3>
-                        <p className="text-sm text-white/90 max-w-lg mx-auto mb-6 leading-relaxed">
-                          {lang === 'ar'
-                            ? 'يتكون هذا الاختبار من 6 أسئلة اختيار من متعدد، ولديك 15 ثانية لكل سؤال. ركز جيداً قبل البدء!'
-                            : 'This quiz has 6 multiple-choice questions (15 seconds per question). Focus and give your best!'}
-                        </p>
-                        <div className="text-2xl font-black text-white mb-6">
-                          ⏱️ {lang === 'ar' ? 'المدة الكلية: 90 ثانية' : 'Total Duration: 90s'}
+              <div
+                className="qz-panels-wrapper"
+                ref={panelsWrapperRef}
+                onScroll={handlePanelsScroll}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {/* Tab 0: Overview */}
+                <div
+                  ref={(el) => { panelElementsRef.current[0] = el; }}
+                  className={`qz-panel ${activeQuizTab === 0 ? 'active' : ''}`}
+                >
+                  <h3 className="text-accent-yellow text-xl font-bold mb-3">
+                    {lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}
+                  </h3>
+                  <p className="text-sm text-white/90 mb-4 leading-relaxed">
+                    {lang === 'ar'
+                      ? 'يحتوي هذا المقياس على 6 اختبارات تأصيلية لتقييم استيعابك للمفاهيم الأساسية، مدة كل سؤال 15 ثانية.'
+                      : 'This module features 6 foundational quizzes to test your core mastery (15s per question).'}
+                  </p>
+
+                  <div className="qz-intro-list">
+                    {activeQuizzesList.map((q, idx) => {
+                      const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                      return (
+                        <div key={idx} className="qz-intro-item">
+                          <div
+                            className="font-bold text-accent-yellow hover:underline cursor-pointer flex items-center gap-2"
+                            onClick={() => startQuiz(idx)}
+                          >
+                            <span>{idx + 1}. {q.title}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
+                              <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                          </div>
+
+                          <div className="qz-intro-meta">
+                            <span className="text-xs text-accent-yellow font-mono">
+                              ⏳ {lang === 'ar' ? 'المدة الكلية: 90s' : 'Duration: 90s'}
+                            </span>
+                            <label className={`lesson-progress ${isDone ? 'completed' : ''}`}>
+                              <input
+                                type="checkbox"
+                                checked={isDone}
+                                onChange={() => toggleQuizCompletion(idx)}
+                              />
+                              <span className="prog-text">
+                                {isDone ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'تحديد كمكتمل' : 'Mark Done')}
+                              </span>
+                            </label>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          className="btn-primary w-full max-w-md mx-auto"
-                          onClick={() => startQuiz(activeQuizTab - 1)}
-                        >
-                          {lang === 'ar' ? 'بدء الاختبار الآن' : 'Start Quiz Now'}
-                        </button>
-                      </div>
-                    )}
+                      );
+                    })}
+                  </div>
 
-                    {/* Screen 2: Active Question */}
-                    {quizScreen === 'active' && (
-                      <div>
-                        {/* Top progress bar & countdown */}
-                        <div className="qz-top-progress">
-                          <div className="qz-meta">
-                            <span className="qz-muted">{questionIndex + 1} / 6</span>
-                            <div className="qz-timer-wrap">
-                              <div className="qz-timer-bar">
-                                <i style={{ width: `${(timeLeft / 15) * 100}%` }} />
-                              </div>
-                              <span className="qz-timer-num">{timeLeft}s</span>
+                  <div className="mt-3 md:hidden">
+                    <button
+                      type="button"
+                      onClick={() => switchQuizTab(1)}
+                      className="mobile-quiz-next-bottom"
+                    >
+                      <span>{lang === 'ar' ? 'الانتقال للاختبار الأول (1 من 6) ➔' : 'Start First Quiz (1 of 6) ➔'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tabs 1-6: Actual Quiz Views (All rendered for smooth mobile swipe & carousel navigation) */}
+                {activeQuizzesList.map((quiz, qIdx) => {
+                  const isCurrentActive = activeQuizIndex === qIdx;
+
+                  return (
+                    <div
+                      key={qIdx}
+                      ref={(el) => { panelElementsRef.current[qIdx + 1] = el; }}
+                      className={`qz-panel ${activeQuizTab === qIdx + 1 ? 'active' : ''}`}
+                    >
+                      {/* State A: Running Active Questions */}
+                      {isCurrentActive && quizScreen === 'active' && (
+                        <div>
+                          {/* Mobile dynamic header with top next button */}
+                          <div className="mobile-quiz-header-wrap">
+                            <h4 className="mobile-quiz-dynamic-title">
+                              {quiz.title}
+                            </h4>
+                            <div
+                              className="mobile-quiz-next-top"
+                              onClick={advanceNextQuestion}
+                            >
+                              <span>
+                                {questionIndex < 5
+                                  ? (lang === 'ar' ? 'التالي' : 'Next')
+                                  : (lang === 'ar' ? 'النتيجة' : 'Result')}
+                              </span>
+                              <span>➔</span>
                             </div>
                           </div>
-                          <div className="qz-progress">
-                            <i style={{ width: `${((questionIndex + 1) / 6) * 100}%` }} />
+
+                          {/* Top progress bar & countdown */}
+                          <div className="qz-top-progress">
+                            <div className="qz-meta">
+                              <span className="qz-muted">{questionIndex + 1} / 6</span>
+                              <div className="qz-timer-wrap">
+                                <div className="qz-timer-bar">
+                                  <i style={{ width: `${(timeLeft / 15) * 100}%` }} />
+                                </div>
+                                <span className="qz-timer-num">{timeLeft}s</span>
+                              </div>
+                            </div>
+                            <div className="qz-progress">
+                              <i style={{ width: `${((questionIndex + 1) / 6) * 100}%` }} />
+                            </div>
+                          </div>
+
+                          {/* Question Box */}
+                          <div className="qz-qbox">
+                            <p className="qz-qtext">
+                              {quiz.questions[questionIndex]?.q}
+                            </p>
+
+                            <div className="qz-options">
+                              {quiz.questions[questionIndex]?.options.map((opt, oIdx) => {
+                                const correctIdx = quiz.questions[questionIndex]?.ans;
+                                let btnClass = '';
+                                if (isAnswered) {
+                                  if (oIdx === correctIdx) btnClass = 'correct';
+                                  else if (oIdx === selectedOption) btnClass = 'incorrect';
+                                }
+
+                                return (
+                                  <button
+                                    key={oIdx}
+                                    type="button"
+                                    disabled={isAnswered}
+                                    className={`qz-option ${btnClass}`}
+                                    onClick={() => handleSelectAnswer(oIdx)}
+                                  >
+                                    <span className="qz-label">{String.fromCharCode(65 + oIdx)}</span>
+                                    <span className="qz-text">{opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {isAnswered && (
+                              <div
+                                className={`qz-explain-box ${
+                                  selectedOption === quiz.questions[questionIndex]?.ans
+                                    ? 'correct-text'
+                                    : 'wrong-text'
+                                }`}
+                              >
+                                <strong>
+                                  {selectedOption === quiz.questions[questionIndex]?.ans
+                                    ? (lang === 'ar' ? '✅ أحسنت! إجابة صحيحة.' : '✅ Correct!')
+                                    : (lang === 'ar' ? '❌ إجابة غير دقيقة. الإجابة الصحيحة هي: ' : '❌ Incorrect. Correct answer is: ')}
+                                </strong>
+                                {selectedOption !== quiz.questions[questionIndex]?.ans && (
+                                  <span className="font-bold text-accent-yellow">
+                                    {' '}
+                                    {quiz.questions[questionIndex]?.options[quiz.questions[questionIndex]?.ans]}
+                                  </span>
+                                )}
+                                <p className="text-xs text-white/80 mt-1">
+                                  {quiz.questions[questionIndex]?.explanation}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Mobile Bottom Next Button */}
+                            <button
+                              type="button"
+                              className="mobile-quiz-next-bottom"
+                              onClick={advanceNextQuestion}
+                            >
+                              <span>
+                                {questionIndex < 5
+                                  ? (lang === 'ar' ? 'الانتقال للسؤال التالي ➔' : 'Next Question ➔')
+                                  : (lang === 'ar' ? 'عرض النتيجة النهائية للتقييم ➔' : 'View Quiz Result ➔')}
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* Mobile Gradient Divider */}
+                          <hr className="qz-divider" />
+
+                          {/* Bottom Cards */}
+                          <div className="qz-bottom-cards">
+                            <div className="qz-card-mini">
+                              <span className="qz-muted">{lang === 'ar' ? 'النتيجة' : 'Score'}</span>
+                              <div className="qz-score-number">{quizScore} <span>/ 6</span></div>
+                              <span className="qz-info-text">{lang === 'ar' ? 'الدرجة الحالية' : 'Current Score'}</span>
+                            </div>
+
+                            <div className="qz-card-mini">
+                              <span className="qz-muted">{lang === 'ar' ? 'المساعدة' : 'Hint'}</span>
+                              <button
+                                type="button"
+                                id="qz-hint-btn"
+                                className="btn-outline"
+                                onClick={() => setShowHint(!showHint)}
+                              >
+                                {showHint ? (lang === 'ar' ? 'إخفاء التلميح' : 'Hide Hint') : (lang === 'ar' ? 'إظهار التلميح' : 'Show Hint')}
+                              </button>
+                              {showHint ? (
+                                <p className="qz-info-text">
+                                  {quiz.questions[questionIndex]?.hint}
+                                </p>
+                              ) : (
+                                <span className="qz-info-text text-white/50">{lang === 'ar' ? 'تلميح السؤال' : 'Question hint'}</span>
+                              )}
+                            </div>
+
+                            <div className="qz-card-mini qz-retry-mobile-card">
+                              <span className="qz-muted">{lang === 'ar' ? 'إعادة' : 'Retry'}</span>
+                              <button
+                                type="button"
+                                className="qz-retry-mini-btn"
+                                onClick={() => startQuiz(qIdx)}
+                              >
+                                🔄 {lang === 'ar' ? 'إعادة التقييم' : 'Retry'}
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      )}
 
-                        {/* Question Box */}
-                        <div className="qz-qbox">
-                          <p className="qz-qtext">
-                            {activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.q}
+                      {/* State B: Quiz Result Screen */}
+                      {isCurrentActive && quizScreen === 'result' && (
+                        <div className="text-center py-8">
+                          <div className="text-5xl mb-3">🏆</div>
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            {lang === 'ar' ? 'اكتمل التقييم بنجاح!' : 'Quiz Completed!'}
+                          </h3>
+                          <div className="qz-score-number text-4xl mb-4">
+                            {quizScore} <span className="text-lg opacity-60">/ 6</span>
+                          </div>
+                          <p className="text-sm text-white/80 max-w-md mx-auto mb-6">
+                            {quizScore >= 4
+                              ? (lang === 'ar' ? 'تهانينا! لقد حققت درجة النجاح في هذا الاختبار.' : 'Congratulations! You passed this quiz.')
+                              : (lang === 'ar' ? 'يمكنك إعادة المحاولة في أي وقت لتحسين النتيجة.' : 'You can retry at any time to improve your score.')}
                           </p>
 
-                          <div className="qz-options">
-                            {activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.options.map((opt, oIdx) => {
-                              const correctIdx = activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.ans;
-                              let btnClass = '';
-                              if (isAnswered) {
-                                if (oIdx === correctIdx) btnClass = 'correct';
-                                else if (oIdx === selectedOption) btnClass = 'incorrect';
-                              }
-
-                              return (
-                                <button
-                                  key={oIdx}
-                                  type="button"
-                                  disabled={isAnswered}
-                                  className={`qz-option ${btnClass}`}
-                                  onClick={() => handleSelectAnswer(oIdx)}
-                                >
-                                  <span className="qz-label">{String.fromCharCode(65 + oIdx)}</span>
-                                  <span>{opt}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {isAnswered && (
-                            <div
-                              className={`qz-explain-box ${
-                                selectedOption === activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.ans
-                                  ? 'correct-text'
-                                  : 'wrong-text'
-                              }`}
-                            >
-                              <strong>
-                                {selectedOption === activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.ans
-                                  ? (lang === 'ar' ? '✅ أحسنت! إجابة صحيحة.' : '✅ Correct!')
-                                  : (lang === 'ar' ? '❌ إجابة غير دقيقة. الإجابة الصحيحة هي: ' : '❌ Incorrect. Correct answer is: ')}
-                              </strong>
-                              {selectedOption !== activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.ans && (
-                                <span className="font-bold text-accent-yellow">
-                                  {' '}
-                                  {activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.options[
-                                    activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.ans
-                                  ]}
-                                </span>
-                              )}
-                              <p className="text-xs text-white/80 mt-1">
-                                {activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.explanation}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Bottom Score & Hint Cards */}
-                        <div className="qz-bottom-cards">
-                          <div className="qz-card-mini">
-                            <span className="qz-muted">{lang === 'ar' ? 'النتيجة الحالية' : 'Score'}</span>
-                            <div className="qz-score-number">{quizScore} <span className="text-sm opacity-50">/ 6</span></div>
-                          </div>
-
-                          <div className="qz-card-mini">
-                            <span className="qz-muted">{lang === 'ar' ? 'المساعدة' : 'Hint'}</span>
+                          <div className="flex flex-wrap justify-center gap-3">
                             <button
                               type="button"
-                              className="text-xs text-accent-yellow underline mt-1"
-                              onClick={() => setShowHint(!showHint)}
+                              className="btn-outline"
+                              onClick={() => startQuiz(qIdx)}
                             >
-                              {showHint ? (lang === 'ar' ? 'إخفاء التلميح' : 'Hide Hint') : (lang === 'ar' ? 'إظهار التلميح' : 'Show Hint')}
+                              🔄 {lang === 'ar' ? 'إعادة الاختبار' : 'Retry Quiz'}
                             </button>
-                            {showHint && (
-                              <p className="text-xs text-white/90 mt-1">
-                                {activeQuizzesList[activeQuizIndex]?.questions[questionIndex]?.hint}
-                              </p>
+                            {qIdx < 5 ? (
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={() => {
+                                  switchQuizTab(qIdx + 2);
+                                  setQuizScreen('intro');
+                                }}
+                              >
+                                {lang === 'ar' ? 'الاختبار التالي ➔' : 'Next Quiz ➔'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={() => switchQuizTab(7)}
+                              >
+                                {lang === 'ar' ? 'عرض التقرير النهائي ➔' : 'View Report ➔'}
+                              </button>
                             )}
                           </div>
+                        </div>
+                      )}
 
-                          <div className="qz-card-mini">
-                            <span className="qz-muted">{lang === 'ar' ? 'إعادة' : 'Retry'}</span>
-                            <button
-                              type="button"
-                              className="qz-retry-mini-btn"
-                              onClick={() => startQuiz(activeQuizIndex)}
-                            >
-                              🔄 {lang === 'ar' ? 'إعادة من البداية' : 'Start Over'}
-                            </button>
+                      {/* State C: Quiz Start Screen */}
+                      {(!isCurrentActive || quizScreen === 'intro') && (
+                        <div className="qz-start-screen text-center py-6">
+                          <h3 className="text-accent-yellow text-xl font-bold mb-3">
+                            {quiz.title}
+                          </h3>
+                          <p className="text-sm text-white/90 max-w-lg mx-auto mb-6 leading-relaxed">
+                            {lang === 'ar'
+                              ? 'يتكون هذا الاختبار من 6 أسئلة اختيار من متعدد، ولديك 15 ثانية لكل سؤال. ركز جيداً قبل البدء!'
+                              : 'This quiz has 6 multiple-choice questions (15 seconds per question). Focus and give your best!'}
+                          </p>
+                          <div className="text-2xl font-black text-white mb-6">
+                            ⏱️ {lang === 'ar' ? 'المدة الكلية: 90 ثانية' : 'Total Duration: 90s'}
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Screen 3: Result View */}
-                    {quizScreen === 'result' && (
-                      <div className="text-center py-8">
-                        <div className="text-5xl mb-3">🏆</div>
-                        <h3 className="text-2xl font-bold text-white mb-2">
-                          {lang === 'ar' ? 'اكتمل التقييم بنجاح!' : 'Quiz Completed!'}
-                        </h3>
-                        <div className="qz-score-number text-4xl mb-4">
-                          {quizScore} <span className="text-lg opacity-60">/ 6</span>
-                        </div>
-                        <p className="text-sm text-white/80 max-w-md mx-auto mb-6">
-                          {quizScore >= 4
-                            ? (lang === 'ar' ? 'تهانينا! لقد حققت درجة النجاح في هذا الاختبار.' : 'Congratulations! You passed this quiz.')
-                            : (lang === 'ar' ? 'يمكنك إعادة المحاولة في أي وقت لتحسين النتيجة.' : 'You can retry at any time to improve your score.')}
-                        </p>
-
-                        <div className="flex flex-wrap justify-center gap-3">
                           <button
                             type="button"
-                            className="btn-outline"
-                            onClick={() => startQuiz(activeQuizIndex)}
+                            className="btn-primary w-full max-w-md mx-auto"
+                            onClick={() => startQuiz(qIdx)}
                           >
-                            🔄 {lang === 'ar' ? 'إعادة الاختبار' : 'Retry Quiz'}
+                            {lang === 'ar' ? 'بدء الاختبار الآن' : 'Start Quiz Now'}
                           </button>
-                          {activeQuizTab < 6 ? (
-                            <button
-                              type="button"
-                              className="btn-primary"
-                              onClick={() => {
-                                setActiveQuizTab((prev) => prev + 1);
-                                setQuizScreen('intro');
-                              }}
-                            >
-                              {lang === 'ar' ? 'الاختبار التالي ➔' : 'Next Quiz ➔'}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="btn-primary"
-                              onClick={() => setActiveQuizTab(7)}
-                            >
-                              {lang === 'ar' ? 'عرض التقرير النهائي ➔' : 'View Report ➔'}
-                            </button>
-                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  );
+                })}
 
-                {/* Tab 7: Comprehensive Report View */}
-                {activeQuizTab === 7 && (
-                  <div className="qz-panel active bg-white text-slate-900 rounded-xl p-6 shadow-xl">
-                    <div className="text-center border-b pb-4 mb-6">
-                      <div className="text-3xl mb-1">📊</div>
-                      <h3 className="text-xl font-bold text-primary-blue">
+                {/* Tab 7: Comprehensive Report View (Slide 8) */}
+                <div
+                  ref={(el) => { panelElementsRef.current[7] = el; }}
+                  className={`qz-panel qz-report-panel ${activeQuizTab === 7 ? 'active' : ''}`}
+                >
+                  <div id="final-quiz-report-card" className="qz-report-card-inner">
+                    <div className="text-center border-b border-white/15 pb-3 mb-3">
+                      <div className="text-2xl mb-1">📊</div>
+                      <h3 className="text-lg md:text-xl font-bold text-accent-yellow">
                         {lang === 'ar' ? 'التقرير النهائي للمحصلة والأداء' : 'Final Performance & Score Report'}
                       </h3>
-                      <p className="text-xs text-slate-500 font-mono mt-1">
-                        {activeModule.title[lang]} · Ref: <span className="font-bold text-slate-800">{reportCode}</span>
+                      <p className="qz-report-meta">
+                        {activeModule.title[lang]} · Ref: <span className="font-bold text-accent-yellow">{reportCode}</span>
                       </p>
                     </div>
 
-                    <div className="space-y-4 mb-6">
+                    {/* Summary Cards */}
+                    <div className="qz-report-summary-cards">
+                      <div className="qz-report-summary-box">
+                        <div className="qz-report-summary-val">
+                          {activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length} / 6
+                        </div>
+                        <div className="qz-report-summary-lbl">
+                          {lang === 'ar' ? 'الاختبارات المنجزة' : 'Completed Quizzes'}
+                        </div>
+                      </div>
+                      <div className="qz-report-summary-box">
+                        <div className="qz-report-summary-val !text-emerald-400">
+                          {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0)} / 36
+                        </div>
+                        <div className="qz-report-summary-lbl">
+                          {lang === 'ar' ? 'الإجابات الصحيحة' : 'Correct Answers'}
+                        </div>
+                      </div>
+                      <div className="qz-report-summary-box">
+                        <div className="qz-report-summary-val">
+                          {(() => {
+                            const completedCount = activeQuizzesList.filter((_, i) => (completedQuizzes[activeModule.id] || []).includes(`qz_${i}`)).length;
+                            if (completedCount === 0) return '0%';
+                            const totalCorrect = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.correct || 0), 0);
+                            return `${Math.round((totalCorrect / (completedCount * 6)) * 100)}%`;
+                          })()}
+                        </div>
+                        <div className="qz-report-summary-lbl">
+                          {lang === 'ar' ? 'المعدل التراكمي' : 'Avg Score'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Breakdown List */}
+                    <div className="qz-report-items-list">
                       {activeQuizzesList.map((q, idx) => {
                         const hist = quizHistory[idx];
                         const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
 
                         return (
-                          <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <div className="flex justify-between items-center text-sm font-bold">
-                              <span>{idx + 1}. {q.title}</span>
-                              <span className={isDone ? 'text-primary-green' : 'text-slate-400'}>
-                                {isDone ? '✔️ مكتمل' : '⏳ قيد الإنجاز'}
+                          <div key={idx} className="qz-report-item-card">
+                            <div className="qz-report-item-head">
+                              <span className="truncate max-w-[70%]">
+                                {idx + 1}. {q.title}
+                              </span>
+                              <span className={isDone ? 'text-emerald-400 text-[10px]' : 'text-white/40 text-[10px]'}>
+                                {isDone ? (lang === 'ar' ? '✔️ مكتمل' : '✔️ Completed') : (lang === 'ar' ? '⏳ قيد الإنجاز' : '⏳ Incomplete')}
                               </span>
                             </div>
                             {hist ? (
-                              <div className="grid grid-cols-4 gap-2 text-center text-xs mt-2 pt-2 border-t font-semibold">
-                                <span className="text-emerald-600">صحيحة: {hist.correct}</span>
-                                <span className="text-red-600">خاطئة: {hist.wrong}</span>
-                                <span className="text-amber-600">النسبة: {Math.round((hist.correct / 6) * 100)}%</span>
-                                <span className="text-primary-blue">المدة: {hist.totalTime}s</span>
+                              <div className="qz-report-item-grid">
+                                <span className="text-emerald-400">{lang === 'ar' ? `صحيحة: ${hist.correct}` : `Correct: ${hist.correct}`}</span>
+                                <span className="text-rose-400">{lang === 'ar' ? `خاطئة: ${hist.wrong}` : `Wrong: ${hist.wrong}`}</span>
+                                <span className="text-accent-yellow">{lang === 'ar' ? `النسبة: ${Math.round((hist.correct / 6) * 100)}%` : `${Math.round((hist.correct / 6) * 100)}%`}</span>
+                                <span className="text-cyan-300">{lang === 'ar' ? `المدة: ${hist.totalTime}ث` : `${hist.totalTime}s`}</span>
                               </div>
                             ) : (
-                              <p className="text-xs text-slate-400 mt-1">لم يتم تسجيل محاولة حديثة لهذا الاختبار</p>
+                              <p className="text-[10px] text-white/40 mt-1">
+                                {lang === 'ar' ? 'لم يتم تسجيل محاولة حديثة لهذا الاختبار' : 'No recorded attempt yet'}
+                              </p>
                             )}
                           </div>
                         );
                       })}
                     </div>
+                  </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Action Buttons: Prominent PDF Download, Copy, Print, Reset */}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      className="qz-btn-download-main"
+                      onClick={downloadReportPDF}
+                      disabled={isDownloadingReport}
+                    >
+                      <span>📥</span>
+                      <span>
+                        {isDownloadingReport
+                          ? (lang === 'ar' ? 'جارٍ إنشاء وتحميل ملف PDF...' : 'Generating & Downloading PDF...')
+                          : (lang === 'ar' ? 'تحميل التقرير النهائي (PDF)' : 'Download Final Report (PDF)')}
+                      </span>
+                    </button>
+
+                    <div className="qz-report-actions-row">
                       <button
                         type="button"
-                        className="btn-primary flex-1 justify-center"
+                        className="qz-report-action-btn"
                         onClick={copyReport}
                       >
-                        📋 {lang === 'ar' ? 'نسخ التقرير للحفظ' : 'Copy Report'}
+                        <span>📋</span>
+                        <span>{lang === 'ar' ? 'نسخ' : 'Copy'}</span>
                       </button>
                       <button
                         type="button"
-                        className="btn-outline !text-slate-900 !border-slate-400 hover:!bg-slate-100 flex-1 justify-center"
+                        className="qz-report-action-btn"
                         onClick={printReport}
                       >
-                        🖨️ {lang === 'ar' ? 'حفظ كـ PDF / طباعة' : 'Save PDF / Print'}
+                        <span>🖨️</span>
+                        <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
                       </button>
                       <button
                         type="button"
-                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition"
+                        className="qz-report-action-btn btn-reset"
                         onClick={resetQuizzes}
                       >
-                        🔄 {lang === 'ar' ? 'تصفير العدادات' : 'Reset All'}
+                        <span>🔄</span>
+                        <span>{lang === 'ar' ? 'تصفير' : 'Reset'}</span>
                       </button>
                     </div>
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* Mobile Swipe Pagination Dots */}
+              <div className="swipe-pagination-qz">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((tabIdx) => (
+                  <span
+                    key={tabIdx}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Slide ${tabIdx + 1}`}
+                    className={`swipe-dot-qz ${activeQuizTab === tabIdx ? 'active' : ''}`}
+                    onClick={() => switchQuizTab(tabIdx)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        switchQuizTab(tabIdx);
+                      }
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </div>

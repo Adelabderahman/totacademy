@@ -369,7 +369,7 @@ html[dir="rtl"] .form-elegant-info { border-radius: 10px 0 0 10px; }
 .fe-panels-wrapper { width: 100%; position: relative; overflow: hidden; direction: ltr !important; user-select: none; touch-action: pan-y; cursor: grab; }
 .fe-panels-wrapper:active { cursor: grabbing; }
 .fe-panels-track { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 100% !important; direction: ltr !important; will-change: transform; align-items: flex-start; }
-.fe-panel { display: block !important; flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; direction: rtl !important; opacity: 0.3; transition: opacity 0.32s ease; }
+.fe-panel { display: block !important; flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; direction: rtl !important; opacity: 0.3; transition: opacity 0.32s ease; touch-action: pan-y; }
 .fe-panel.active { opacity: 1; }
 html[dir="ltr"] .fe-panel { direction: ltr !important; }
 
@@ -410,6 +410,8 @@ html[dir="ltr"] .fe-panel { direction: ltr !important; }
   margin-bottom: 4px !important;
   line-height: 1.4 !important;
   text-align: start !important;
+  touch-action: pan-y;
+  user-select: none;
 }
 @media (max-width: 768px) {
   .fe-exam-q-label {

@@ -556,17 +556,6 @@ export default function EduPathPage() {
   };
 
   const handleExamPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement | null;
-    if (target && (
-      target.closest('textarea') ||
-      target.closest('input') ||
-      target.closest('button') ||
-      target.closest('label') ||
-      target.closest('a') ||
-      target.closest('.fe-intro-module-card')
-    )) {
-      return;
-    }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     examPointerRef.current = {
       id: e.pointerId,
@@ -586,12 +575,15 @@ export default function EduPathPage() {
     const dy = e.clientY - examPointerRef.current.startY;
 
     if (examPointerRef.current.isHorizontal === null) {
-      if (Math.abs(dx) > 7 || Math.abs(dy) > 7) {
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
         examPointerRef.current.isHorizontal = Math.abs(dx) >= Math.abs(dy);
         if (examPointerRef.current.isHorizontal) {
           examPointerRef.current.hasMoved = true;
           isExamDraggingRef.current = true;
           setIsExamDragging(true);
+          if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+            (document.activeElement as HTMLElement).blur();
+          }
           try {
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
           } catch {}

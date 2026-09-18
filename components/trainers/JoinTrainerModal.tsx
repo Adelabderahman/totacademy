@@ -455,7 +455,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                 </label>
                 <textarea
                   id="join-bio"
-                  rows={3}
+                  rows={2}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder={t.form_bio_placeholder}

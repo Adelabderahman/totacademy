@@ -3,99 +3,203 @@
 import React from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import { coreI18n } from '@/data/homeData';
 
 export const Footer: React.FC = () => {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const t = coreI18n[language] || coreI18n['ar'];
 
   return (
-    <footer className="w-full bg-white border-t border-border-color mt-24 mb-16 lg:mb-0">
-      <div className="w-[95%] max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Brand Col */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary-blue text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
-                T
-              </div>
-              <span className="text-2xl font-extrabold text-primary-blue">
-                TOT<span className="text-accent-yellow">Academy</span>
+    <footer className="main-footer">
+      <div className="w-[95%] max-w-7xl mx-auto px-4">
+        <div className="footer-cols">
+          {/* Col 1: Brand & Social */}
+          <div>
+            <div className="footer-logo-wrapper">
+              <img
+                src="https://i.postimg.cc/pL3qkNrj/TOT.png"
+                alt="Logo"
+                className="footer-logo-img"
+              />
+              <span style={{ fontSize: '20px', fontWeight: 800 }}>
+                TOT<span style={{ color: 'var(--accent-yellow)' }}>Academy</span>
               </span>
             </div>
-            <p className="text-sm text-text-light max-w-md leading-relaxed">
-              {t(
-                'أكاديمية تدريب المدربين — منصة رائدة متخصصة في تأهيل الكفاءات وتطوير المهارات القيادية والتدريبية وفق المعايير المهنية المعاصرة.',
-                'TOT Academy — The premier platform dedicated to qualifying training leaders and empowering professional educators worldwide.',
-                'Académie TOT — Plateforme d’excellence pour la formation et la certification des formateurs professionnels.'
-              )}
+            <p className="footer-desc">{t.footer_desc}</p>
+            <div className="social-row">
+              <a
+                href="#"
+                className="social-btn"
+                aria-label="Facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="social-btn"
+                aria-label="Twitter"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="social-btn"
+                aria-label="Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="social-btn"
+                aria-label="LinkedIn"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="social-btn youtube-fixed"
+                aria-label="YouTube"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Col 2: Important Links */}
+          <div>
+            <h4>{t.footer_links_title}</h4>
+            <ul className="footer-links">
+              <li>
+                <Link href="/classrooms">{t.nav_classrooms}</Link>
+              </li>
+              <li>
+                <Link href="/workshops">{t.nav_workshops}</Link>
+              </li>
+              <li>
+                <Link href="/bootcamps">{t.nav_bootcamps}</Link>
+              </li>
+              <li>
+                <Link href="/diplomas">{t.nav_diplomas}</Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 3: Contact */}
+          <div>
+            <h4>{t.footer_contact_title}</h4>
+            <ul className="footer-contact-list">
+              <li className="contact-header">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <span>{t.footer_phones}</span>
+              </li>
+              <li className="contact-sub-item">0550 00 00 00</li>
+              <li className="contact-sub-item">0660 00 00 00</li>
+              <li className="contact-sub-item">0770 00 00 00</li>
+              <li style={{ marginTop: '15px' }}>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span>{t.footer_address}</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 4: Newsletter */}
+          <div>
+            <h4>{t.footer_newsletter_title}</h4>
+            <p style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.85)', marginBottom: '15px' }}>
+              {t.footer_newsletter_desc}
             </p>
-          </div>
-
-          {/* Quick Links Col */}
-          <div>
-            <h4 className="text-sm font-bold text-text-dark uppercase tracking-wider mb-4">
-              {t('روابط المنصة', 'Platform Links', 'Liens Utiles')}
-            </h4>
-            <ul className="space-y-2 text-xs font-semibold text-text-light">
-              <li>
-                <Link href="/classes" className="hover:text-primary-blue transition-colors">
-                  {t('الفصول والقاعات', 'Classes & Rooms', 'Classes & Salles')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/specializations" className="hover:text-primary-blue transition-colors">
-                  {t('التخصصات والمسارات', 'Specialization Tracks', 'Spécialisations')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/edupath" className="hover:text-primary-blue transition-colors">
-                  {t('المسار والاختبارات', 'Pathway & Quizzes', 'Parcours & Quiz')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/trainer-magazine" className="hover:text-primary-blue transition-colors">
-                  {t('مجلة المدرب', 'Trainer Magazine', 'Magazine')}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact Col */}
-          <div>
-            <h4 className="text-sm font-bold text-text-dark uppercase tracking-wider mb-4">
-              {t('التواصل والدعم', 'Contact & Support', 'Contact')}
-            </h4>
-            <ul className="space-y-2 text-xs font-semibold text-text-light">
-              <li>
-                <a href="https://wa.me/213555989370" target="_blank" rel="noopener noreferrer" className="hover:text-primary-blue transition-colors">
-                  WhatsApp: +213 555 989 370
-                </a>
-              </li>
-              <li>
-                <a href="mailto:totacademy@gmail.com" className="hover:text-primary-blue transition-colors">
-                  totacademy@gmail.com
-                </a>
-              </li>
-              <li className="pt-2">
-                <Link href="/studio" className="inline-block px-3 py-1.5 rounded-lg bg-slate-100 text-primary-blue font-bold hover:bg-slate-200 transition-colors">
-                  {t('لوحة المشرف CMS', 'Admin CMS Studio', 'Studio Admin')}
-                </Link>
-              </li>
-            </ul>
+            <form
+              className="newsletter-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+              }}
+            >
+              <input
+                type="email"
+                placeholder={t.nl_placeholder}
+                className="newsletter-input"
+                required
+              />
+              <button
+                type="submit"
+                className="newsletter-btn"
+                aria-label="Subscribe"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </button>
+            </form>
           </div>
         </div>
 
-        {/* Divider & Copyright */}
-        <div className="pt-8 border-t border-border-color text-center text-xs text-text-light space-y-2">
-          <p>
-            {t(
-              'أكاديمية تدريب المدربين — استثمر شغفك واصنع الأثر. جميع الحقوق محفوظة © 2026',
-              'TOT Academy — Empower Your Passion, Create Impact. All rights reserved © 2026',
-              'Académie TOT — Tous droits réservés © 2026'
-            )}
-          </p>
-          <p className="text-text-dark font-bold tracking-wide">
-            {t('تصميم وتطوير الأستاذ بلال عويش', 'Designed & Engineered by Prof. Billel Aouiche')}
-          </p>
+        {/* Copyright */}
+        <div className="copyright">
+          <p>{t.footer_copy1}</p>
+          <p style={{ marginTop: '5px' }}>{t.footer_copy2}</p>
         </div>
       </div>
     </footer>

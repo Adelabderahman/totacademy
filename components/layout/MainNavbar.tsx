@@ -30,7 +30,7 @@ export const MainNavbar: React.FC = () => {
   ];
 
   return (
-    <header className="relative w-full z-40 py-2">
+    <header className="hidden lg:block relative w-full z-40 py-2">
       <nav
         className={`w-full transition-all duration-300 ${
           isScrolled

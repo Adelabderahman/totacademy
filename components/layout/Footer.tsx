@@ -21,7 +21,7 @@ export const Footer: React.FC = () => {
 
   return (
     <footer className="main-footer">
-      <div className="w-[95%] max-w-7xl mx-auto px-4">
+      <div className="w-[96%] max-w-[1720px] mx-auto px-4">
         <div className="footer-cols">
           {/* Col 1: Brand & Social */}
           <div className="flex flex-col">

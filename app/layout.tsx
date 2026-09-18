@@ -48,7 +48,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-bg-page text-text-dark antialiased">
         <LanguageProvider>
           <TopBar />
-          <div className="hidden lg:block w-[95%] max-w-7xl mx-auto px-4">
+          <div className="hidden lg:block w-[96%] max-w-[1720px] mx-auto px-4">
             <MainNavbar />
           </div>
           <main className="flex-1 w-full">{children}</main>

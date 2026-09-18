@@ -10,7 +10,7 @@ export default function HeroSection() {
 
   return (
     <section className="hero-wrapper w-full">
-      <div className="w-full max-w-[1380px] mx-auto px-3 sm:px-6">
+      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6">
         <div className="hero-content">
           <div className="hero-text-side">
             <p className="subtitle">{t.hero_subtitle}</p>

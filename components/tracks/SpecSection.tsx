@@ -120,7 +120,8 @@ export default function SpecSection({ spec, tracks }: SpecSectionProps) {
           className="swipe-wrapper tracks-swipe-wrapper"
           style={{
             transform: getTransform(),
-            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)'
+            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            justifyContent: isDesktop || tracks.length === 1 ? 'center' : undefined
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}

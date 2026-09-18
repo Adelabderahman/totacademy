@@ -96,25 +96,67 @@
 }
 .tracks-orbit {
   position: absolute;
-  inset: 0;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1200px, 98vw);
+  height: min(520px, 86%);
   z-index: 1;
   pointer-events: none;
 }
+
+/* Concentric decorative orbit rings centered in the Hero section */
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.03);
+}
+.orbit-ring.outer {
+  width: min(960px, 92vw);
+  height: min(480px, 78vh);
+  animation: pulseRing 12s ease-in-out infinite;
+}
+.orbit-ring.inner {
+  width: min(740px, 74vw);
+  height: min(360px, 58vh);
+  border-color: rgba(255, 255, 255, 0.1);
+  animation: pulseRing 16s ease-in-out infinite reverse;
+}
+@keyframes pulseRing {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.02); opacity: 1; }
+}
+
 .orbit-chip {
   position: absolute;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
+  padding: 7px 15px;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: #fff;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(6px);
   white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
-.orbit-chip.c1 { top: 18%; right: 6%; animation: floatChip 6s ease-in-out infinite; }
-.orbit-chip.c2 { top: 65%; right: 12%; animation: floatChip 7s ease-in-out infinite 1s; }
-.orbit-chip.c3 { top: 22%; left: 6%; animation: floatChip 6.5s ease-in-out infinite 0.5s; }
-.orbit-chip.c4 { top: 68%; left: 10%; animation: floatChip 7.5s ease-in-out infinite 1.5s; }
+
+/* 10 Orbit Chips positioned symmetrically around the center */
+.orbit-chip.c1  { top: 4%;  right: 22%; animation: floatChip 6s ease-in-out infinite 0s; }
+.orbit-chip.c2  { top: 18%; right: 4%;  animation: floatChip 7s ease-in-out infinite 0.7s; }
+.orbit-chip.c3  { top: 46%; right: 1%;  animation: floatChip 6.5s ease-in-out infinite 1.4s; }
+.orbit-chip.c4  { top: 74%; right: 5%;  animation: floatChip 7.5s ease-in-out infinite 2.1s; }
+.orbit-chip.c5  { top: 90%; right: 24%; animation: floatChip 6.8s ease-in-out infinite 2.8s; }
+.orbit-chip.c6  { top: 90%; left: 24%;  animation: floatChip 6.8s ease-in-out infinite 3.5s; }
+.orbit-chip.c7  { top: 74%; left: 5%;   animation: floatChip 7.5s ease-in-out infinite 4.2s; }
+.orbit-chip.c8  { top: 46%; left: 1%;   animation: floatChip 6.5s ease-in-out infinite 4.9s; }
+.orbit-chip.c9  { top: 18%; left: 4%;   animation: floatChip 7s ease-in-out infinite 5.6s; }
+.orbit-chip.c10 { top: 4%;  left: 22%;  animation: floatChip 6s ease-in-out infinite 6.3s; }
 
 @keyframes floatChip {
   0%, 100% { transform: translateY(0); }
@@ -123,36 +165,60 @@
 
 @media (max-width: 767px) {
   .tracks-orbit {
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
     display: block;
     overflow: hidden;
+  }
+  .orbit-ring.outer {
+    width: min(84vw, 320px);
+    height: min(84vw, 320px);
+    border-radius: 50%;
+  }
+  .orbit-ring.inner {
+    width: min(64vw, 240px);
+    height: min(64vw, 240px);
+    border-radius: 50%;
   }
   .tracks-orbit .orbit-chip {
     display: flex;
     align-items: center;
     gap: 4px;
-    top: 42%;
+    top: 50%;
     left: 50%;
     right: auto;
-    padding: 5px 9px;
+    bottom: auto;
+    margin-top: -14px;
+    margin-left: -40px;
+    padding: 4px 8px;
     font-size: 0.62rem;
-    opacity: 0.52;
-    animation: mobileOrbit 16s linear infinite;
+    opacity: 0.58;
+    animation: mobileOrbit 24s linear infinite;
     will-change: transform;
   }
-  .tracks-orbit .orbit-chip.c1 { animation-delay: 0s; }
-  .tracks-orbit .orbit-chip.c2 { animation-delay: -4s; }
-  .tracks-orbit .orbit-chip.c3 { animation-delay: -8s; }
-  .tracks-orbit .orbit-chip.c4 { animation-delay: -12s; }
+  .tracks-orbit .orbit-chip.c1  { animation-delay: 0s; }
+  .tracks-orbit .orbit-chip.c2  { animation-delay: -2.4s; }
+  .tracks-orbit .orbit-chip.c3  { animation-delay: -4.8s; }
+  .tracks-orbit .orbit-chip.c4  { animation-delay: -7.2s; }
+  .tracks-orbit .orbit-chip.c5  { animation-delay: -9.6s; }
+  .tracks-orbit .orbit-chip.c6  { animation-delay: -12s; }
+  .tracks-orbit .orbit-chip.c7  { animation-delay: -14.4s; }
+  .tracks-orbit .orbit-chip.c8  { animation-delay: -16.8s; }
+  .tracks-orbit .orbit-chip.c9  { animation-delay: -19.2s; }
+  .tracks-orbit .orbit-chip.c10 { animation-delay: -21.6s; }
   .tracks-hero h1 { font-size: 1.7rem; }
   .tracks-hero { padding-top: 70px; }
 }
 
 @keyframes mobileOrbit {
-  0%   { transform: rotate(0deg) translateX(min(29vw, 112px)) rotate(0deg); }
-  25%  { transform: rotate(90deg) translateX(min(29vw, 112px)) rotate(-90deg); }
-  50%  { transform: rotate(180deg) translateX(min(29vw, 112px)) rotate(-180deg); }
-  75%  { transform: rotate(270deg) translateX(min(29vw, 112px)) rotate(-270deg); }
-  100% { transform: rotate(360deg) translateX(min(29vw, 112px)) rotate(-360deg); }
+  0%   { transform: rotate(0deg) translateX(min(38vw, 140px)) rotate(0deg); }
+  25%  { transform: rotate(90deg) translateX(min(38vw, 140px)) rotate(-90deg); }
+  50%  { transform: rotate(180deg) translateX(min(38vw, 140px)) rotate(-180deg); }
+  75%  { transform: rotate(270deg) translateX(min(38vw, 140px)) rotate(-270deg); }
+  100% { transform: rotate(360deg) translateX(min(38vw, 140px)) rotate(-360deg); }
 }
 
 /* ===== Tracks body / filters ===== */
@@ -420,26 +486,35 @@
     flex: 0 0 100%;
     max-width: 100%;
     padding: 0;
+    display: flex;
+    justify-content: center;
   }
 }
 
 .tracks-swipe-wrapper {
   display: flex;
-  gap: 22px;
+  gap: 24px;
 }
 
 @media (min-width: 992px) {
   .tracks-swipe-wrapper {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 26px;
     transform: none !important;
     padding: 0;
+    width: 100%;
+    margin: 0 auto;
   }
   .tracks-swipe-wrapper .swipe-slide {
-    flex: auto;
+    flex: 0 0 350px;
+    max-width: 370px;
+    min-width: 320px;
     padding: 0;
-    max-width: none;
+    display: flex;
+    justify-content: center;
   }
   .spec-section .swipe-pagination {
     display: none;
@@ -449,12 +524,14 @@
 /* ===== Flip Cards ===== */
 .flip-card {
   width: 100%;
+  max-width: 370px;
   height: 560px;
   perspective: 1600px;
   position: relative;
   display: block;
   cursor: pointer;
   box-sizing: border-box;
+  margin: 0 auto;
 }
 .flip-card-inner {
   position: relative;

@@ -24,10 +24,19 @@ export default function TracksHero({ totalTracks, totalSpecs, totalTrainers }: T
   return (
     <section className="tracks-hero" id="tracks-hero-section">
       <div className="tracks-orbit">
+        <div className="orbit-ring outer" aria-hidden="true" />
+        <div className="orbit-ring inner" aria-hidden="true" />
+
         <div className="orbit-chip c1">💻 <span>{t.tracks_orbit_tech}</span></div>
         <div className="orbit-chip c2">📈 <span>{t.tracks_orbit_marketing}</span></div>
         <div className="orbit-chip c3">🎙️ <span>{t.tracks_orbit_media}</span></div>
         <div className="orbit-chip c4">💡 <span>{t.tracks_orbit_creativity}</span></div>
+        <div className="orbit-chip c5">👔 <span>{t.tracks_orbit_leadership}</span></div>
+        <div className="orbit-chip c6">🤖 <span>{t.tracks_orbit_ai}</span></div>
+        <div className="orbit-chip c7">📐 <span>{t.tracks_orbit_pedagogy}</span></div>
+        <div className="orbit-chip c8">🗣️ <span>{t.tracks_orbit_speaking}</span></div>
+        <div className="orbit-chip c9">🎲 <span>{t.tracks_orbit_gamification}</span></div>
+        <div className="orbit-chip c10">💼 <span>{t.tracks_orbit_consulting}</span></div>
       </div>
 
       <div className="tracks-hero-inner">

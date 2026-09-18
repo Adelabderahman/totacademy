@@ -170,10 +170,17 @@ export const TopBar: React.FC = () => {
           />
 
           {/* Floating Dropdown Card */}
-          <div className="absolute top-full left-0 right-0 z-50 px-3 py-2 w-full max-w-sm sm:max-w-md mx-auto lg:hidden animate-dropdown-slide">
-            <div className="bg-white/98 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-200/90 p-3 space-y-2.5">
+          <div className="absolute top-full left-0 right-0 z-50 px-3 py-2.5 w-full max-w-sm sm:max-w-md mx-auto lg:hidden animate-dropdown-slide">
+            <div
+              className="frosted-glass-dropdown rounded-2xl p-3.5 space-y-2.5 transition-all"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.94)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+            >
               {/* Header inside dropdown */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/60">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-blue to-secondary-blue text-white flex items-center justify-center font-extrabold text-xs shadow-sm">
                     T
@@ -185,7 +192,7 @@ export const TopBar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100/90 active:scale-90 transition-all"
                   aria-label="Close menu"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
@@ -194,8 +201,8 @@ export const TopBar: React.FC = () => {
                 </button>
               </div>
 
-              {/* Navigation links */}
-              <div className="grid grid-cols-1 gap-1">
+              {/* Navigation links with refined frosted hover effects */}
+              <div className="grid grid-cols-1 gap-1.5">
                 {navItems.map((item) => {
                   const isActive = pathname === item.href;
                   return (
@@ -203,38 +210,52 @@ export const TopBar: React.FC = () => {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border ${
                         isActive
-                          ? 'bg-blue-50 text-primary-blue font-extrabold border border-blue-100'
-                          : 'text-slate-700 hover:bg-slate-50 hover:text-primary-blue'
+                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50/80 text-primary-blue font-extrabold border-blue-200/80 shadow-xs'
+                          : 'border-transparent text-slate-700 hover:text-primary-blue hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-indigo-50/40 hover:border-blue-100 hover:shadow-xs active:scale-[0.98]'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className="text-sm">{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span className="text-sm transition-transform duration-200 group-hover:scale-115">
+                          {item.icon}
+                        </span>
+                        <span className="transition-colors duration-200">{item.label}</span>
                       </div>
-                      {isActive && (
-                        <span className="w-2 h-2 rounded-full bg-primary-blue"></span>
-                      )}
+                      <div className="flex items-center">
+                        {isActive ? (
+                          <span className="w-2 h-2 rounded-full bg-primary-blue shadow-xs"></span>
+                        ) : (
+                          <svg
+                            className="w-3.5 h-3.5 text-primary-blue/60 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-all duration-200"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
+                      </div>
                     </Link>
                   );
                 })}
               </div>
 
               {/* Bottom Actions inside dropdown */}
-              <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+              <div className="pt-2.5 border-t border-slate-200/60 flex items-center gap-2">
                 <Link
                   href="/studio"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 hover:text-slate-900 border border-slate-200/80 rounded-xl transition-all duration-200 active:scale-95 shadow-2xs"
                 >
-                  <span className="w-2 h-2 rounded-full bg-primary-blue"></span>
+                  <span className="w-2 h-2 rounded-full bg-primary-blue animate-pulse"></span>
                   <span>{t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}</span>
                 </Link>
                 <Link
                   href="/classes"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-colors shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                 >
                   <span>{t('التسجيل', 'Enroll', 'Inscription')}</span>
                 </Link>

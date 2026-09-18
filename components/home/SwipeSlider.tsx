@@ -21,158 +21,109 @@ export default function SwipeSlider({
   wrapperClassName = ''
 }: SwipeSliderProps) {
   const { direction } = useLanguage();
+  const isRTL = direction === 'rtl';
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
 
   const startXRef = useRef<number>(0);
-  const currentXRef = useRef<number>(0);
-  const isSwipingRef = useRef<boolean>(false);
+  const currentDiffRef = useRef<number>(0);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Check desktop breakpoint
   useEffect(() => {
-    const handleResize = () => {
-      const desktop = window.innerWidth >= 992;
-      setIsDesktop(desktop);
-      if (desktop && wrapperRef.current) {
-        wrapperRef.current.style.transform = 'none';
-        wrapperRef.current.style.transition = 'none';
-      } else {
-        updateSlidePosition(currentIndex);
-      }
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 992);
     };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [currentIndex, direction]);
-
-  const updateSlidePosition = useCallback(
-    (index: number, animate = true) => {
-      if (!wrapperRef.current || !containerRef.current) return;
-      if (window.innerWidth >= 992) {
-        wrapperRef.current.style.transform = 'none';
-        return;
-      }
-
-      const slides = wrapperRef.current.children;
-      if (!slides || slides.length === 0) return;
-
-      const firstSlide = slides[0] as HTMLElement;
-      const slideWidth = firstSlide.offsetWidth;
-      const isRTL = direction === 'rtl';
-
-      if (animate) {
-        wrapperRef.current.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-      } else {
-        wrapperRef.current.style.transition = 'none';
-      }
-
-      const offset = isRTL ? index * slideWidth : -index * slideWidth;
-      wrapperRef.current.style.transform = `translateX(${offset}px)`;
-    },
-    [direction]
-  );
-
+  // Ensure currentIndex stays within bounds when totalSlides changes
   useEffect(() => {
-    updateSlidePosition(currentIndex);
-  }, [currentIndex, updateSlidePosition]);
+    if (currentIndex >= totalSlides && totalSlides > 0) {
+      setCurrentIndex(totalSlides - 1);
+    }
+  }, [totalSlides, currentIndex]);
 
   // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isDesktop) return;
+    if (isDesktop || totalSlides <= 1) return;
+    setIsDragging(true);
     startXRef.current = e.touches[0].clientX;
-    currentXRef.current = e.touches[0].clientX;
-    isSwipingRef.current = true;
-    if (wrapperRef.current) {
-      wrapperRef.current.style.transition = 'none';
-    }
+    currentDiffRef.current = 0;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isSwipingRef.current || isDesktop || !wrapperRef.current) return;
-    currentXRef.current = e.touches[0].clientX;
-    const diffX = currentXRef.current - startXRef.current;
-    const isRTL = direction === 'rtl';
-
-    const slides = wrapperRef.current.children;
-    if (!slides || slides.length === 0) return;
-    const slideWidth = (slides[0] as HTMLElement).offsetWidth;
-
-    const baseOffset = isRTL ? currentIndex * slideWidth : -currentIndex * slideWidth;
-    wrapperRef.current.style.transform = `translateX(${baseOffset + diffX}px)`;
+    if (!isDragging || isDesktop || totalSlides <= 1) return;
+    const diff = e.touches[0].clientX - startXRef.current;
+    currentDiffRef.current = diff;
+    setDragOffset(diff * 0.4);
   };
 
   const handleTouchEnd = () => {
-    if (!isSwipingRef.current || isDesktop) return;
-    isSwipingRef.current = false;
+    if (!isDragging || isDesktop || totalSlides <= 1) return;
+    setIsDragging(false);
+    setDragOffset(0);
 
-    const diffX = currentXRef.current - startXRef.current;
-    const isRTL = direction === 'rtl';
+    const diff = currentDiffRef.current;
     const threshold = 40;
 
-    let newIndex = currentIndex;
-    if (Math.abs(diffX) > threshold) {
-      if (isRTL) {
-        // In Arabic (RTL): Swiping from left to right (diffX > 0) advances to the next slide
-        if (diffX > 0 && currentIndex < totalSlides - 1) {
-          newIndex = currentIndex + 1;
-        } else if (diffX < 0 && currentIndex > 0) {
-          newIndex = currentIndex - 1;
-        }
-      } else {
-        // In LTR: Swiping from right to left (diffX < 0) advances to the next slide
-        if (diffX < 0 && currentIndex < totalSlides - 1) {
-          newIndex = currentIndex + 1;
-        } else if (diffX > 0 && currentIndex > 0) {
-          newIndex = currentIndex - 1;
-        }
+    if (isRTL) {
+      // In Arabic (RTL): swiping to the right (diff > 0) advances to next slide
+      if (diff > threshold && currentIndex < totalSlides - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else if (diff < -threshold && currentIndex > 0) {
+        setCurrentIndex((prev) => prev - 1);
+      }
+    } else {
+      // In LTR: swiping to the left (diff < 0) advances to next slide
+      if (diff < -threshold && currentIndex < totalSlides - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else if (diff > threshold && currentIndex > 0) {
+        setCurrentIndex((prev) => prev - 1);
       }
     }
-
-    setCurrentIndex(newIndex);
-    updateSlidePosition(newIndex, true);
-    startXRef.current = 0;
-    currentXRef.current = 0;
   };
 
-  // Mouse handlers for desktop/tablet drag simulation on mobile preview
+  // Mouse drag handlers for desktop/tablet simulation and preview
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isDesktop) return;
+    if (isDesktop || totalSlides <= 1) return;
+    setIsDragging(true);
     startXRef.current = e.clientX;
-    currentXRef.current = e.clientX;
-    isSwipingRef.current = true;
-    if (wrapperRef.current) {
-      wrapperRef.current.style.transition = 'none';
-    }
+    currentDiffRef.current = 0;
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isSwipingRef.current || isDesktop || !wrapperRef.current) return;
-    currentXRef.current = e.clientX;
-    const diffX = currentXRef.current - startXRef.current;
-    const isRTL = direction === 'rtl';
-
-    const slides = wrapperRef.current.children;
-    if (!slides || slides.length === 0) return;
-    const slideWidth = (slides[0] as HTMLElement).offsetWidth;
-
-    const baseOffset = isRTL ? currentIndex * slideWidth : -currentIndex * slideWidth;
-    wrapperRef.current.style.transform = `translateX(${baseOffset + diffX}px)`;
+    if (!isDragging || isDesktop || totalSlides <= 1) return;
+    const diff = e.clientX - startXRef.current;
+    currentDiffRef.current = diff;
+    setDragOffset(diff * 0.4);
   };
 
   const handleMouseUp = () => {
-    if (!isSwipingRef.current || isDesktop) return;
+    if (!isDragging || isDesktop) return;
     handleTouchEnd();
   };
 
+  // Calculate transform for mobile slider exactly like SpecSection & TrainersCategorySection
+  const getTransform = useCallback(() => {
+    if (isDesktop) return 'none';
+    const sign = isRTL ? 1 : -1;
+    const percentage = currentIndex * 100;
+    if (isDragging && dragOffset !== 0) {
+      return `translateX(calc(${sign * percentage}% + ${dragOffset}px))`;
+    }
+    return `translateX(${sign * percentage}%)`;
+  }, [isDesktop, isRTL, currentIndex, isDragging, dragOffset]);
+
   return (
-    <div>
+    <div className="w-full">
       <div
         id={containerId}
-        ref={containerRef}
         className="swipe-container"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -185,24 +136,30 @@ export default function SwipeSlider({
         <div
           id={wrapperId}
           ref={wrapperRef}
-          className={`swipe-wrapper ${wrapperClassName}`}
+          className={`swipe-wrapper tracks-swipe-wrapper ${wrapperClassName}`}
+          style={{
+            transform: getTransform(),
+            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            justifyContent: isDesktop || totalSlides === 1 ? 'center' : undefined,
+          }}
         >
           {children}
         </div>
       </div>
 
-      <div id={dotsId} className="swipe-pagination">
-        {Array.from({ length: totalSlides }).map((_, idx) => (
-          <div
-            key={idx}
-            className={`swipe-dot ${idx === currentIndex ? 'active' : ''}`}
-            onClick={() => {
-              setCurrentIndex(idx);
-              updateSlidePosition(idx, true);
-            }}
-          />
-        ))}
-      </div>
+      {!isDesktop && totalSlides > 1 && (
+        <div id={dotsId} className="swipe-pagination">
+          {Array.from({ length: totalSlides }).map((_, idx) => (
+            <button
+              type="button"
+              key={idx}
+              className={`swipe-dot ${idx === currentIndex ? 'active' : ''}`}
+              onClick={() => setCurrentIndex(idx)}
+              aria-label={`Slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

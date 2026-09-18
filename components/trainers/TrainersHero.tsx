@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { coreI18n, getAllTrainers, TrainerCategory } from '@/data/trainersData';
+import JoinTrainerModal from './JoinTrainerModal';
 
 interface TrainersHeroProps {
   categories: TrainerCategory[];
@@ -11,6 +12,7 @@ interface TrainersHeroProps {
 export default function TrainersHero({ categories }: TrainersHeroProps) {
   const { language } = useLanguage();
   const t = coreI18n[language] || coreI18n.ar;
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const all = getAllTrainers().slice(0, 10);
 
@@ -57,6 +59,21 @@ export default function TrainersHero({ categories }: TrainersHeroProps) {
         )}
         <p>{t.hero_desc}</p>
 
+        {/* Action Button: Join Elite Trainers */}
+        <div className="trainers-join-cta-wrapper">
+          <button
+            type="button"
+            className="trainers-join-btn"
+            id="join-elite-trainers-btn"
+            onClick={() => setIsModalOpen(true)}
+            aria-haspopup="dialog"
+          >
+            <span className="join-btn-sparkle" aria-hidden="true">✨</span>
+            <span className="join-btn-text">{t.join_elite_btn || 'انضم لنخبة المدربين'}</span>
+            <span className="join-btn-arrow" aria-hidden="true">{language === 'ar' ? '←' : '→'}</span>
+          </button>
+        </div>
+
         <div className="tracks-hero-stats">
           <div className="thero-stat">
             <b id="stat-total">{totalTrainers}</b>
@@ -102,6 +119,13 @@ export default function TrainersHero({ categories }: TrainersHeroProps) {
           d="M0,40 C240,90 480,0 720,30 C960,60 1200,10 1440,45 L1440,90 L0,90 Z"
         />
       </svg>
+
+      {/* Join Elite Trainer Modal */}
+      <JoinTrainerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }
+

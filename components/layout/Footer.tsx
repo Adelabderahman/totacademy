@@ -9,13 +9,23 @@ export const Footer: React.FC = () => {
   const { language } = useLanguage();
   const t = coreI18n[language] || coreI18n['ar'];
 
+  const navLinks = [
+    { href: '/', label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home' },
+    { href: '/classes', label: language === 'ar' ? 'الفصول والقاعات' : language === 'fr' ? 'Classes' : 'Classes' },
+    { href: '/specializations', label: language === 'ar' ? 'التخصصات والمسارات' : language === 'fr' ? 'Spécialisations' : 'Specializations' },
+    { href: '/edupath', label: language === 'ar' ? 'المسار التعليمي' : language === 'fr' ? 'Parcours' : 'EduPath' },
+    { href: '/events', label: language === 'ar' ? 'الفعاليات' : language === 'fr' ? 'Événements' : 'Events' },
+    { href: '/trainers', label: language === 'ar' ? 'المدربون' : language === 'fr' ? 'Formateurs' : 'Trainers' },
+    { href: '/trainer-magazine', label: language === 'ar' ? 'مجلة المدرب' : language === 'fr' ? 'Revue' : 'Magazine' },
+  ];
+
   return (
     <footer className="main-footer">
       <div className="w-[95%] max-w-7xl mx-auto px-4">
         <div className="footer-cols">
           {/* Col 1: Brand & Social */}
-          <div>
-            <div className="footer-logo-wrapper">
+          <div className="flex flex-col">
+            <div className="footer-logo-wrapper mb-2">
               <img
                 src="https://i.postimg.cc/pL3qkNrj/TOT.png"
                 alt="Logo"
@@ -25,8 +35,10 @@ export const Footer: React.FC = () => {
                 TOT<span style={{ color: 'var(--accent-yellow)' }}>Academy</span>
               </span>
             </div>
-            <p className="footer-desc">{t.footer_desc}</p>
-            <div className="social-row">
+            <p className="footer-desc" style={{ marginBottom: '14px', lineHeight: 1.5 }}>
+              {t.footer_desc}
+            </p>
+            <div className="social-row" style={{ marginTop: 'auto' }}>
               <a
                 href="#"
                 className="social-btn"
@@ -103,62 +115,101 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Col 2: Important Links */}
+          {/* Col 2: Important Links in Two Columns with compact spacing */}
           <div>
-            <h4>{t.footer_links_title}</h4>
-            <ul className="footer-links">
-              <li>
-                <Link href="/classrooms">{t.nav_classrooms}</Link>
-              </li>
-              <li>
-                <Link href="/workshops">{t.nav_workshops}</Link>
-              </li>
-              <li>
-                <Link href="/bootcamps">{t.nav_bootcamps}</Link>
-              </li>
-              <li>
-                <Link href="/diplomas">{t.nav_diplomas}</Link>
-              </li>
-            </ul>
+            <h4 style={{ marginBottom: '14px' }}>{t.footer_links_title}</h4>
+            <div className="footer-links-2col">
+              {navLinks.map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={item.href}
+                  className="footer-nav-link"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Col 3: Contact */}
+          {/* Col 3: Contact with 2-column phone numbers and email */}
           <div>
-            <h4>{t.footer_contact_title}</h4>
+            <h4 style={{ marginBottom: '14px' }}>{t.footer_contact_title}</h4>
             <ul className="footer-contact-list">
-              <li className="contact-header">
+              <li className="contact-header" style={{ marginBottom: '6px' }}>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  className="w-4 h-4 text-accent-yellow"
                 >
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
                 <span>{t.footer_phones}</span>
               </li>
-              <li className="contact-sub-item">0550 00 00 00</li>
-              <li className="contact-sub-item">0660 00 00 00</li>
-              <li className="contact-sub-item">0770 00 00 00</li>
-              <li style={{ marginTop: '15px' }}>
+
+              {/* Two phone numbers side by side in two columns */}
+              <li style={{ padding: 0, marginBottom: '8px' }}>
+                <div className="footer-phones-grid">
+                  <a
+                    href="tel:213555989370"
+                    className="contact-sub-item contact-phone-pill"
+                    dir="ltr"
+                  >
+                    213555989370
+                  </a>
+                  <a
+                    href="tel:213656180056"
+                    className="contact-sub-item contact-phone-pill"
+                    dir="ltr"
+                  >
+                    213656180056
+                  </a>
+                </div>
+              </li>
+
+              {/* Email */}
+              <li className="footer-email-row" style={{ marginTop: '6px', marginBottom: '8px' }}>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  className="w-4 h-4 text-accent-yellow flex-shrink-0"
+                >
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                <a
+                  href="mailto:bbillel87@gmail.com"
+                  className="contact-email-link"
+                  dir="ltr"
+                >
+                  bbillel87@gmail.com
+                </a>
+              </li>
+
+              {/* Address */}
+              <li style={{ marginTop: '8px' }}>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="w-4 h-4 text-accent-yellow flex-shrink-0"
                 >
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                <span>{t.footer_address}</span>
+                <span style={{ fontSize: '13px', lineHeight: 1.4 }}>{t.footer_address}</span>
               </li>
             </ul>
           </div>
 
           {/* Col 4: Newsletter */}
           <div>
-            <h4>{t.footer_newsletter_title}</h4>
-            <p style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.85)', marginBottom: '15px' }}>
+            <h4 style={{ marginBottom: '14px' }}>{t.footer_newsletter_title}</h4>
+            <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.85)', marginBottom: '12px', lineHeight: 1.5 }}>
               {t.footer_newsletter_desc}
             </p>
             <form
@@ -196,10 +247,10 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Copyright */}
+        {/* Copyright Section (elevated on mobile) */}
         <div className="copyright">
           <p>{t.footer_copy1}</p>
-          <p style={{ marginTop: '5px' }}>{t.footer_copy2}</p>
+          <p style={{ marginTop: '4px' }}>{t.footer_copy2}</p>
         </div>
       </div>
     </footer>

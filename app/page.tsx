@@ -14,36 +14,39 @@ import BackToTop from '@/components/home/BackToTop';
 
 export default function HomePage() {
   return (
-    <main className="w-full max-w-[1380px] mx-auto px-2 sm:px-4 pt-4 md:pt-6 pb-20 lg:pb-8">
-      {/* 1. Hero Section (Includes Desktop VMO) */}
+    <main className="w-full pb-20 lg:pb-8 overflow-hidden">
+      {/* 1. Hero Section (100% Full-Width Blue Background without borders or margins) */}
       <HeroSection />
 
-      {/* 2. Mobile VMO Section (Only visible on mobile/tablet) */}
-      <VmoMobileSection />
+      {/* Main Content Container for Remaining Sections */}
+      <div className="w-full max-w-[1380px] mx-auto px-2 sm:px-4 pt-4 md:pt-6">
+        {/* 2. Mobile VMO Section (Only visible on mobile/tablet) */}
+        <VmoMobileSection />
 
-      {/* 3. Part 1: Essentials */}
-      <Part1Essentials />
+        {/* 3. Part 1: Essentials */}
+        <Part1Essentials />
 
-      {/* 4. Part 2: Specialists */}
-      <Part2Specialists />
+        {/* 4. Part 2: Specialists */}
+        <Part2Specialists />
 
-      {/* 5. Part 3: Elite Trainers */}
-      <Part3Trainers />
+        {/* 5. Part 3: Elite Trainers */}
+        <Part3Trainers />
 
-      {/* 6. Part 4: Registration Portals */}
-      <Part4Registration />
+        {/* 6. Part 4: Registration Portals */}
+        <Part4Registration />
 
-      {/* 7. Part 5: Certificates & Accreditations */}
-      <Part5Certificates />
+        {/* 7. Part 5: Certificates & Accreditations */}
+        <Part5Certificates />
 
-      {/* 8. Part 6: Success Partners */}
-      <Part6Partners />
+        {/* 8. Part 6: Success Partners */}
+        <Part6Partners />
 
-      {/* 9. Part 7: FAQ & Advisor + Fullscreen Modal */}
-      <Part7FAQ />
+        {/* 9. Part 7: FAQ & Advisor + Fullscreen Modal */}
+        <Part7FAQ />
 
-      {/* 10. Floating Back to Top Button */}
-      <BackToTop />
+        {/* 10. Floating Back to Top Button */}
+        <BackToTop />
+      </div>
     </main>
   );
 }

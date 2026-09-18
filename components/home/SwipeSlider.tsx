@@ -116,12 +116,14 @@ export default function SwipeSlider({
     let newIndex = currentIndex;
     if (Math.abs(diffX) > threshold) {
       if (isRTL) {
-        if (diffX < 0 && currentIndex < totalSlides - 1) {
+        // In Arabic (RTL): Swiping from left to right (diffX > 0) advances to the next slide
+        if (diffX > 0 && currentIndex < totalSlides - 1) {
           newIndex = currentIndex + 1;
-        } else if (diffX > 0 && currentIndex > 0) {
+        } else if (diffX < 0 && currentIndex > 0) {
           newIndex = currentIndex - 1;
         }
       } else {
+        // In LTR: Swiping from right to left (diffX < 0) advances to the next slide
         if (diffX < 0 && currentIndex < totalSlides - 1) {
           newIndex = currentIndex + 1;
         } else if (diffX > 0 && currentIndex > 0) {

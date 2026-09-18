@@ -46,11 +46,13 @@ html[dir="rtl"] .back-to-top {
     radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px),
     linear-gradient(135deg, #0b3a96 0%, #1152cf 40%, #1c61e7 100%);
   background-size: 100% 100%, 100% 100%, 25px 25px, 100% 100%;
-  box-shadow: 0 15px 35px rgba(17, 82, 207, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 50px;
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  padding: 20px 0 45px 0;
+  margin: 0 0 35px 0;
   color: var(--white, #ffffff);
+  width: 100%;
 }
 
 .hero-content {
@@ -844,6 +846,10 @@ html[dir="rtl"] .mc-banner-footer {
 }
 
 /* Trainer Card */
+#part3-section .swipe-container {
+  padding-top: 50px;
+  margin-top: -40px;
+}
 .trainer-card {
   background: #fff;
   border-radius: 20px;
@@ -854,6 +860,7 @@ html[dir="rtl"] .mc-banner-footer {
   border: 3px solid var(--accent-yellow, #ffab00);
   transition: transform 0.4s ease, box-shadow 0.4s ease;
   position: relative;
+  margin-top: 0;
 }
 .trainer-card:hover {
   transform: translateY(-8px);
@@ -870,7 +877,7 @@ html[dir="rtl"] .mc-banner-footer {
   background-color: var(--white, #ffffff);
   background-size: cover;
   background-position: center;
-  z-index: 10;
+  z-index: 25;
   border: 3px solid var(--accent-yellow, #ffab00);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
   pointer-events: none;
@@ -1278,9 +1285,73 @@ html[dir="ltr"] .trainer-btn:hover svg {
   stroke: none !important;
 }
 .footer-cols h4 {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  color: var(--accent-yellow, #ffab00);
+}
+.footer-links-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 14px;
+}
+.footer-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.footer-nav-link:hover {
+  color: var(--accent-yellow, #ffab00);
+  transform: translateX(-2px);
+}
+html[dir="ltr"] .footer-nav-link:hover {
+  transform: translateX(2px);
+}
+.footer-phones-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+.contact-phone-pill {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 5px 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 700;
+  color: #fff !important;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+.contact-phone-pill:hover {
+  background: var(--accent-yellow, #ffab00);
+  color: #000 !important;
+  border-color: var(--accent-yellow, #ffab00);
+}
+.footer-email-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.contact-email-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: color 0.2s ease;
+}
+.contact-email-link:hover {
   color: var(--accent-yellow, #ffab00);
 }
 .footer-links {
@@ -1288,7 +1359,7 @@ html[dir="ltr"] .trainer-btn:hover svg {
   padding: 0;
 }
 .footer-links li {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .footer-links a {
   color: rgba(255, 255, 255, 0.85);
@@ -1463,6 +1534,9 @@ html[dir="rtl"] .faq-fullscreen-close:hover {
 
 /* ================= التجاوب (Media Queries) ================= */
 @media (min-width: 992px) {
+  #part3-section .swipe-container {
+    overflow: visible !important;
+  }
   .swipe-wrapper {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -1523,9 +1597,12 @@ html[dir="rtl"] .faq-fullscreen-close:hover {
 
 @media (max-width: 768px) {
   .hero-wrapper {
-    padding: 15px;
-    border-radius: 16px;
-    margin-bottom: 25px;
+    padding: 20px 0 30px 0;
+    border-radius: 0 !important;
+    margin-bottom: 20px;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
   }
   .hero-text-side {
     text-align: center;
@@ -1756,13 +1833,16 @@ html[dir="rtl"] .faq-fullscreen-close:hover {
   /* تعديلات الفوتر في الهاتف */
   .footer-cols {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 24px;
   }
   .main-footer {
-    padding: 40px 15px 20px;
+    padding: 35px 15px calc(80px + env(safe-area-inset-bottom, 0px));
     border-radius: 20px 20px 0 0;
     margin-top: 30px;
     text-align: center;
+  }
+  .copyright {
+    padding-bottom: 12px;
   }
   .footer-logo-wrapper {
     justify-content: center;

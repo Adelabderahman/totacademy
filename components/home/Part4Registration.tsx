@@ -4,10 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { coreI18n, programsDB } from '@/data/homeData';
+import { useAuthModal } from '@/context/AuthModalContext';
 import SwipeSlider from './SwipeSlider';
 
 export default function Part4Registration() {
   const { language } = useLanguage();
+  const { openAuthModal } = useAuthModal();
   const t = coreI18n[language] || coreI18n['ar'];
   const portals = programsDB.registration;
 
@@ -43,9 +45,13 @@ export default function Part4Registration() {
                     <span className="portal-word">{word1}</span> {restOfTitle}
                   </h3>
                   <p className="reg-desc">{desc}</p>
-                  <Link href="/classrooms" className="reg-btn">
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('register')}
+                    className="reg-btn cursor-pointer"
+                  >
                     {t.reg_btn}
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -70,7 +76,7 @@ export default function Part4Registration() {
       </SwipeSlider>
 
       <div className="learn-more-container">
-        <Link href="/classrooms" className="learn-more-btn">
+        <Link href="/specializations" className="learn-more-btn">
           <span>{t.learn_more}</span>
           <svg
             width="18"

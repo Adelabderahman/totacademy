@@ -21,29 +21,31 @@ export const MainNavbar: React.FC = () => {
 
   const navItems = [
     { href: '/', label: t('الرئيسية', 'Home', 'Accueil') },
-    { href: '/classes', label: t('الفصول والقاعات', 'Classes', 'Classes') },
+    { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications') },
     { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations') },
     { href: '/edupath', label: t('المسار التعليمي', 'EduPath', 'Parcours') },
-    { href: '/events', label: t('الفعاليات', 'Events', 'Événements') },
-    { href: '/trainers', label: t('المدربون', 'Trainers', 'Formateurs') },
+    { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements') },
+    { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs') },
     { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine') },
   ];
 
   return (
-    <header className="hidden lg:block relative w-full z-40 py-2">
+    <header className="hidden lg:block sticky top-[48px] w-full z-40 py-2 transition-all duration-300">
       <nav
         className={`w-full transition-all duration-300 ${
           isScrolled
-            ? 'fixed top-0 left-0 right-0 z-50 mx-auto w-[95%] max-w-7xl mt-2 rounded-b-2xl bg-white/85 backdrop-blur-md shadow-lg py-3 px-6 border border-border-color'
-            : 'bg-white rounded-2xl p-4 shadow-sm border border-border-color/60'
+            ? 'bg-white/85 backdrop-blur-md shadow-md border border-border-color/80 py-2.5 px-6 rounded-2xl'
+            : 'bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border-color/60'
         }`}
       >
         <div className="flex items-center justify-between">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 no-underline group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-blue to-secondary-blue text-white flex items-center justify-center font-extrabold text-xl shadow-md group-hover:scale-105 transition-transform">
-              T
-            </div>
+            <img
+              src="https://i.postimg.cc/bNBk21SY/logototaca.png"
+              alt="TOT Academy Logo"
+              className="h-10 w-auto max-h-10 object-contain group-hover:scale-105 transition-transform drop-shadow-2xs"
+            />
             <div className="flex flex-col">
               <span className="text-xl md:text-2xl font-extrabold text-primary-blue tracking-tight leading-none">
                 TOT<span className="text-accent-yellow">Academy</span>

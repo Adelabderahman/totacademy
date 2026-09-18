@@ -4,11 +4,22 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage, Language } from '@/context/LanguageContext';
+import { useAuthModal } from '@/context/AuthModalContext';
 
 export const TopBar: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
+  const { openAuthModal } = useAuthModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Close dropdown whenever route changes
   useEffect(() => {
@@ -26,7 +37,7 @@ export const TopBar: React.FC = () => {
 
   const navItems = [
     { href: '/', label: t('الرئيسية', 'Home', 'Accueil'), icon: '🏠' },
-    { href: '/classes', label: t('الفصول والقاعات', 'Classes', 'Classes'), icon: '🏛️' },
+    { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications'), icon: '📜' },
     { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations'), icon: '🎯' },
     { href: '/edupath', label: t('المسار التعليمي', 'EduPath', 'Parcours'), icon: '📚' },
     { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements'), icon: '📅' },
@@ -35,7 +46,13 @@ export const TopBar: React.FC = () => {
   ];
 
   return (
-    <div className="relative w-full bg-white border-b border-border-color py-2 sm:py-2.5 z-50">
+    <div
+      className={`sticky top-0 w-full border-b transition-all duration-300 z-50 ${
+        isScrolled
+          ? 'bg-white/85 backdrop-blur-md border-border-color/80 shadow-xs py-1.5 sm:py-2'
+          : 'bg-white/95 backdrop-blur-sm border-border-color py-2 sm:py-2.5'
+      }`}
+    >
       <div className="w-[95%] max-w-7xl mx-auto px-2 sm:px-4">
         {/* Main Row */}
         <div className="flex justify-between items-center text-sm font-medium">
@@ -125,13 +142,14 @@ export const TopBar: React.FC = () => {
               {t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}
             </Link>
 
-            {/* Registration button */}
-            <Link
-              href="/classes"
-              className="px-3 sm:px-5 py-1.5 bg-primary-blue text-white border border-primary-blue rounded-lg text-xs sm:text-sm font-bold hover:bg-secondary-blue transition-all whitespace-nowrap shadow-sm"
+            {/* Registration button opening the modal */}
+            <button
+              type="button"
+              onClick={() => openAuthModal('prompt')}
+              className="px-3 sm:px-5 py-1.5 bg-primary-blue text-white border border-primary-blue rounded-lg text-xs sm:text-sm font-bold hover:bg-secondary-blue transition-all whitespace-nowrap shadow-sm cursor-pointer active:scale-95"
             >
               {t('التسجيل', 'Enroll', 'Inscription')}
-            </Link>
+            </button>
 
             {/* Mobile-only Sleek Menu Burger Button (in top-left corner beside Registration button) */}
             <button
@@ -182,9 +200,11 @@ export const TopBar: React.FC = () => {
               {/* Header inside dropdown */}
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/60">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-blue to-secondary-blue text-white flex items-center justify-center font-extrabold text-xs shadow-sm">
-                    T
-                  </div>
+                  <img
+                    src="https://i.postimg.cc/bNBk21SY/logototaca.png"
+                    alt="TOT Academy Logo"
+                    className="h-7 w-auto max-h-7 object-contain drop-shadow-2xs"
+                  />
                   <span className="text-sm font-extrabold text-primary-blue tracking-tight">
                     TOT<span className="text-accent-yellow">Academy</span>
                   </span>
@@ -192,7 +212,7 @@ export const TopBar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100/90 active:scale-90 transition-all"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100/90 active:scale-90 transition-all cursor-pointer"
                   aria-label="Close menu"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
@@ -252,13 +272,16 @@ export const TopBar: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-primary-blue animate-pulse"></span>
                   <span>{t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}</span>
                 </Link>
-                <Link
-                  href="/classes"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openAuthModal('prompt');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >
                   <span>{t('التسجيل', 'Enroll', 'Inscription')}</span>
-                </Link>
+                </button>
               </div>
             </div>
           </div>

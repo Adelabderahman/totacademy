@@ -142,7 +142,7 @@ export default function Part1Essentials() {
       </SwipeSlider>
 
       <div className="learn-more-container">
-        <Link href="/classrooms" className="learn-more-btn">
+        <Link href="/specializations" className="learn-more-btn">
           <span>{t.learn_more}</span>
           <svg
             width="18"

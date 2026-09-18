@@ -11,7 +11,7 @@ export const Footer: React.FC = () => {
 
   const navLinks = [
     { href: '/', label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home' },
-    { href: '/classes', label: language === 'ar' ? 'الفصول والقاعات' : language === 'fr' ? 'Classes' : 'Classes' },
+    { href: '/certificates', label: language === 'ar' ? 'الشهادات والاعتمادات' : language === 'fr' ? 'Certifications' : 'Certificates' },
     { href: '/specializations', label: language === 'ar' ? 'التخصصات والمسارات' : language === 'fr' ? 'Spécialisations' : 'Specializations' },
     { href: '/edupath', label: language === 'ar' ? 'المسار التعليمي' : language === 'fr' ? 'Parcours' : 'EduPath' },
     { href: '/events', label: language === 'ar' ? 'الفعاليات' : language === 'fr' ? 'Événements' : 'Events' },

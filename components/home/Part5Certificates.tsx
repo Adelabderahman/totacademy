@@ -55,7 +55,7 @@ export default function Part5Certificates() {
                   </div>
                 </div>
 
-                <Link href="/classrooms" className="cert-btn">
+                <Link href="/certificates" className="cert-btn">
                   <span>{t.btn_get_cert}</span>
                   <svg
                     width="16"
@@ -76,7 +76,7 @@ export default function Part5Certificates() {
       </SwipeSlider>
 
       <div className="learn-more-container">
-        <Link href="/classrooms" className="learn-more-btn">
+        <Link href="/certificates" className="learn-more-btn">
           <span>{t.btn_more_certs}</span>
           <svg
             width="18"

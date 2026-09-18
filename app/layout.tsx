@@ -5,6 +5,8 @@ import './home.css';
 import '@/components/tracks/tracks.css';
 import '@/components/trainers/trainers.css';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { AuthModalProvider } from '@/context/AuthModalContext';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 import { TopBar } from '@/components/layout/TopBar';
 import { MainNavbar } from '@/components/layout/MainNavbar';
@@ -47,15 +49,18 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={`${inter.variable} ${tajawal.variable}`} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-bg-page text-text-dark antialiased">
         <LanguageProvider>
-          <TopBar />
-          <div className="hidden lg:block w-[96%] max-w-[1720px] mx-auto px-4">
-            <MainNavbar />
-          </div>
-          <main className="flex-1 w-full">{children}</main>
-          <Footer />
-          <MobileBottomNav />
-          <BackToTop />
-          <WhatsAppFloat />
+          <AuthModalProvider>
+            <TopBar />
+            <div className="hidden lg:block w-[98%] max-w-[1820px] mx-auto px-4">
+              <MainNavbar />
+            </div>
+            <main className="flex-1 w-full">{children}</main>
+            <Footer />
+            <MobileBottomNav />
+            <BackToTop />
+            <WhatsAppFloat />
+            <AuthModal />
+          </AuthModalProvider>
         </LanguageProvider>
       </body>
     </html>

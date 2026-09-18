@@ -138,10 +138,8 @@ export default function Part3Trainers() {
       </SwipeSlider>
 
       <div className="part3-actions">
-        <a
-          href="https://wa.me/213550000000"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/trainers"
           className="learn-more-btn primary-action"
         >
           <span>{t.btn_join_team}</span>
@@ -160,8 +158,8 @@ export default function Part3Trainers() {
             <line x1="20" y1="8" x2="20" y2="14" />
             <line x1="23" y1="11" x2="17" y2="11" />
           </svg>
-        </a>
-        <Link href="/classrooms" className="learn-more-btn desktop-only-btn">
+        </Link>
+        <Link href="/trainers" className="learn-more-btn desktop-only-btn">
           <span>{t.learn_more}</span>
           <svg
             width="18"

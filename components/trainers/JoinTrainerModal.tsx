@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Send } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { coreI18n } from '@/data/trainersData';
 
@@ -243,11 +244,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
         ) : (
           <>
             <div className="join-modal-header">
-              <div className="modal-header-badge">
-                <span>✨</span> TOT ACADEMY
-              </div>
               <h2 id="join-modal-title">{t.join_modal_title}</h2>
-              <p className="join-modal-subtitle">{t.join_modal_subtitle}</p>
             </div>
 
             {errorMessage && (
@@ -257,8 +254,8 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
             )}
 
             <form className="join-modal-form" onSubmit={handleSubmit} noValidate>
-              <div className="form-grid-2">
-                {/* Full Name */}
+              <div className="form-grid-2col-3row">
+                {/* 1. Full Name */}
                 <div className="form-group">
                   <label htmlFor="join-full-name">
                     {t.form_name_label} <span className="req">*</span>
@@ -274,7 +271,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   />
                 </div>
 
-                {/* Email */}
+                {/* 2. Email */}
                 <div className="form-group">
                   <label htmlFor="join-email">
                     {t.form_email_label} <span className="req">*</span>
@@ -289,10 +286,8 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                     className="form-input"
                   />
                 </div>
-              </div>
 
-              <div className="form-grid-2">
-                {/* WhatsApp / Phone */}
+                {/* 3. WhatsApp / Phone */}
                 <div className="form-group">
                   <label htmlFor="join-phone">
                     {t.form_phone_label} <span className="req">*</span>
@@ -308,7 +303,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   />
                 </div>
 
-                {/* Country / Province */}
+                {/* 4. Country / Province */}
                 <div className="form-group">
                   <label htmlFor="join-country">
                     {t.form_country_label} <span className="req">*</span>
@@ -323,10 +318,8 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                     className="form-input"
                   />
                 </div>
-              </div>
 
-              <div className="form-grid-2">
-                {/* Specialization */}
+                {/* 5. Specialization */}
                 <div className="form-group">
                   <label htmlFor="join-specialty">
                     {t.form_specialty_label} <span className="req">*</span>
@@ -347,7 +340,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   </select>
                 </div>
 
-                {/* Years of Experience */}
+                {/* 6. Years of Experience */}
                 <div className="form-group">
                   <label htmlFor="join-experience">
                     {t.form_exp_label}
@@ -500,7 +493,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   ) : (
                     <>
                       <span>{t.form_submit_btn}</span>
-                      <span className="btn-icon">🚀</span>
+                      <Send size={18} className="telegram-send-icon" />
                     </>
                   )}
                 </button>

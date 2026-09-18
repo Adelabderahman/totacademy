@@ -682,7 +682,7 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
   overflow-y: auto;
   scrollbar-width: thin;
   border-radius: 24px;
-  padding: 34px 36px;
+  padding: 24px 28px 24px;
   box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(226, 232, 240, 0.8);
   color: #1e293b;
   font-family: inherit;
@@ -701,15 +701,15 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
 
 .join-modal-close-btn {
   position: absolute;
-  top: 20px;
-  inset-inline-end: 20px;
-  width: 38px;
-  height: 38px;
+  top: 16px;
+  inset-inline-end: 16px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   color: #64748b;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -728,38 +728,28 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
 
 .join-modal-header {
   text-align: center;
-  margin-bottom: 24px;
-  padding-inline: 16px;
-}
-
-.modal-header-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 14px;
-  border-radius: 20px;
-  background: #f0fdf4;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-inline: 42px;
 }
 
 .join-modal-header h2 {
-  font-size: 1.55rem;
+  font-size: clamp(0.92rem, 3.2vw, 1.18rem);
   font-weight: 850;
   color: #0f172a;
-  margin: 0 0 8px 0;
+  margin: 0;
   line-height: 1.3;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .join-modal-subtitle {
-  font-size: 0.9rem;
-  color: #64748b;
-  line-height: 1.55;
-  margin: 0;
+  display: none;
+}
+
+.modal-header-badge {
+  display: none;
 }
 
 .join-modal-alert {
@@ -786,6 +776,12 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+}
+
+.form-grid-2col-3row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
 }
 
 .form-group {
@@ -996,6 +992,25 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
   box-shadow: 0 12px 24px rgba(17, 82, 207, 0.45);
 }
 
+.telegram-send-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html[dir="rtl"] .telegram-send-icon {
+  transform: scaleX(-1);
+}
+
+.submit-btn:hover .telegram-send-icon {
+  transform: translateY(-2px) translateX(3px);
+}
+
+html[dir="rtl"] .submit-btn:hover .telegram-send-icon {
+  transform: scaleX(-1) translateY(-2px) translateX(3px);
+}
+
 .join-modal-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -1087,14 +1102,46 @@ html[dir="ltr"] .trainers-join-btn:hover .join-btn-arrow {
 
 @media (max-width: 640px) {
   .join-modal-card {
-    padding: 24px 18px;
+    padding: 20px 14px 22px;
     border-radius: 20px;
+  }
+  .join-modal-close-btn {
+    top: 12px;
+    inset-inline-end: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+  .join-modal-header {
+    margin-bottom: 10px;
+    padding-inline: 36px;
+  }
+  .join-modal-header h2 {
+    font-size: clamp(0.8rem, 3.5vw, 1rem);
+    white-space: nowrap;
+    text-wrap: nowrap;
   }
   .form-grid-2 {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  .join-modal-header h2 {
-    font-size: 1.3rem;
+  .form-grid-2col-3row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
+  }
+  .form-grid-2col-3row .form-group {
+    gap: 3px;
+  }
+  .form-grid-2col-3row .form-group label {
+    font-size: 0.73rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .form-grid-2col-3row .form-input,
+  .form-grid-2col-3row .form-select {
+    padding: 7px 9px;
+    font-size: 0.8rem;
+    border-radius: 9px;
   }
 }

@@ -10,7 +10,6 @@ import Part4Registration from '@/components/home/Part4Registration';
 import Part5Certificates from '@/components/home/Part5Certificates';
 import Part6Partners from '@/components/home/Part6Partners';
 import Part7FAQ from '@/components/home/Part7FAQ';
-import BackToTop from '@/components/home/BackToTop';
 
 export default function HomePage() {
   return (
@@ -43,9 +42,6 @@ export default function HomePage() {
 
         {/* 9. Part 7: FAQ & Advisor + Fullscreen Modal */}
         <Part7FAQ />
-
-        {/* 10. Floating Back to Top Button */}
-        <BackToTop />
       </div>
     </main>
   );

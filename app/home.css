@@ -1537,19 +1537,19 @@ html[dir="rtl"] .faq-fullscreen-close:hover {
   #part3-section .swipe-container {
     overflow: visible !important;
   }
-  .swipe-wrapper {
+  #part3-section .swipe-wrapper {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 20px !important;
     transform: none !important;
     padding: 0 30px !important;
   }
-  .swipe-slide {
+  #part3-section .swipe-slide {
     flex: auto !important;
     padding: 0 !important;
     max-width: none !important;
   }
-  .swipe-pagination {
+  #part3-section .swipe-pagination {
     display: none !important;
   }
   .learn-more-btn {

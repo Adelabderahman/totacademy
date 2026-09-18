@@ -10,6 +10,8 @@ import { TopBar } from '@/components/layout/TopBar';
 import { MainNavbar } from '@/components/layout/MainNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { Footer } from '@/components/layout/Footer';
+import BackToTop from '@/components/home/BackToTop';
+import { WhatsAppFloat } from '@/components/events/WhatsAppFloat';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -52,6 +54,8 @@ export default function RootLayout({
           <main className="flex-1 w-full">{children}</main>
           <Footer />
           <MobileBottomNav />
+          <BackToTop />
+          <WhatsAppFloat />
         </LanguageProvider>
       </body>
     </html>

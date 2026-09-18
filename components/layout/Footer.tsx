@@ -27,7 +27,7 @@ export const Footer: React.FC = () => {
           <div className="flex flex-col">
             <div className="footer-logo-wrapper mb-2">
               <img
-                src="https://i.postimg.cc/pL3qkNrj/TOT.png"
+                src="https://i.postimg.cc/bNBk21SY/logototaca.png"
                 alt="Logo"
                 className="footer-logo-img"
               />

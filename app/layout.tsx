@@ -3,6 +3,7 @@ import { Inter, Tajawal } from 'next/font/google';
 import './globals.css';
 import './home.css';
 import '@/components/tracks/tracks.css';
+import '@/components/trainers/trainers.css';
 import { LanguageProvider } from '@/context/LanguageContext';
 
 import { TopBar } from '@/components/layout/TopBar';

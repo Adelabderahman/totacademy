@@ -16,9 +16,9 @@ const AuthModalContext = createContext<AuthModalContextType | undefined>(undefin
 
 export const AuthModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<AuthModalMode>('prompt');
+  const [mode, setMode] = useState<AuthModalMode>('register');
 
-  const openAuthModal = (initialMode: AuthModalMode = 'prompt') => {
+  const openAuthModal = (initialMode: AuthModalMode = 'register') => {
     setMode(initialMode);
     setIsOpen(true);
   };

@@ -145,7 +145,7 @@ export const TopBar: React.FC = () => {
             {/* Registration button opening the modal */}
             <button
               type="button"
-              onClick={() => openAuthModal('prompt')}
+              onClick={() => openAuthModal('register')}
               className="px-3 sm:px-5 py-1.5 bg-primary-blue text-white border border-primary-blue rounded-lg text-xs sm:text-sm font-bold hover:bg-secondary-blue transition-all whitespace-nowrap shadow-sm cursor-pointer active:scale-95"
             >
               {t('التسجيل', 'Enroll', 'Inscription')}
@@ -276,7 +276,7 @@ export const TopBar: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    openAuthModal('prompt');
+                    openAuthModal('register');
                   }}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
                 >

@@ -18,6 +18,8 @@ export const AuthModal: React.FC = () => {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPhone, setRegisterPhone] = useState('');
   const [registerSpecialty, setRegisterSpecialty] = useState('');
+  const [registerCountry, setRegisterCountry] = useState('');
+  const [registerRole, setRegisterRole] = useState('trainee-foundation');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -83,7 +85,7 @@ export const AuthModal: React.FC = () => {
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div
-        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transition-all transform animate-scaleIn max-h-[94vh] flex flex-col"
+        className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transition-all transform animate-scaleIn max-h-[94vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with logo, title, and close button */}
@@ -115,7 +117,7 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
           {submittedMessage ? (
             <div className="py-16 px-4 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl animate-bounce">
@@ -127,78 +129,109 @@ export const AuthModal: React.FC = () => {
               <p className="text-sm text-text-light">{submittedMessage}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative">
-              {/* Divider for desktop */}
-              <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-slate-200/80 pointer-events-none" />
-
-              {/* ======================================================== */}
-              {/* العمود الأول: هل لديك حساب؟ (تسجيل الدخول) - 4 صفوف */}
-              {/* ======================================================== */}
-              <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4 bg-slate-50/50 p-4 sm:p-5 rounded-2xl border border-slate-200/70">
-                {/* الصف الأول: العنوان والبطاقة التعريفية */}
-                <div className="p-3.5 rounded-xl border border-primary-blue/30 bg-blue-50/60 shadow-xs flex items-center justify-between min-h-[72px]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl">🔑</span>
-                    <div>
-                      <div className="text-xs font-semibold text-text-light">
-                        {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have an account?'}
-                      </div>
-                      <div className="text-sm font-bold text-primary-blue">
-                        {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
-                      </div>
-                    </div>
+            <>
+              {/* Question & Option Switcher: "هل لديك حساب؟ قم بتسجيل الدخول" vs "ليس لدي حساب: أنشئ حساب وصر من المحترفين" */}
+              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option 1: Login */}
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer relative ${
+                    mode === 'login'
+                      ? 'border-primary-blue bg-blue-50/60 shadow-sm ring-2 ring-primary-blue/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">🔑</span>
+                    <span className="text-xs font-semibold text-text-light">
+                      {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have an account?'}
+                    </span>
                   </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary-blue animate-pulse" />
-                </div>
+                  <div className="text-sm font-bold text-primary-blue">
+                    {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
+                  </div>
+                  {mode === 'login' && (
+                    <span className="absolute top-2.5 end-2.5 w-2.5 h-2.5 rounded-full bg-primary-blue" />
+                  )}
+                </button>
 
-                {/* الصف الثاني: حقل البريد الإلكتروني أو اسم المستخدم */}
-                <div>
-                  <label className="block text-xs font-semibold text-text-dark mb-1.5">
-                    {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : language === 'fr' ? 'Email ou nom d\'utilisateur' : 'Email or Username'}
-                    <span className="text-red-500 ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="trainer@tot-academy.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-white"
-                  />
-                </div>
+                {/* Option 2: Register */}
+                <button
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer relative ${
+                    mode === 'register' || mode === 'prompt'
+                      ? 'border-primary-green bg-emerald-50/60 shadow-sm ring-2 ring-primary-green/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">🌟</span>
+                    <span className="text-xs font-semibold text-text-light">
+                      {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account yet?'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-primary-green">
+                    {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créez un compte & devenez pro' : 'Create Account & Join Pros'}
+                  </div>
+                  {(mode === 'register' || mode === 'prompt') && (
+                    <span className="absolute top-2.5 end-2.5 w-2.5 h-2.5 rounded-full bg-primary-green" />
+                  )}
+                </button>
+              </div>
 
-                {/* الصف الثالث: حقل كلمة المرور والتذكير */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-text-dark">
-                      {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
+              {/* Form 1: LOGIN MODE */}
+              {mode === 'login' ? (
+                <form onSubmit={handleLoginSubmit} className="space-y-4 animate-fadeIn">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-dark mb-1.5">
+                      {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : language === 'fr' ? 'Email ou nom d\'utilisateur' : 'Email or Username'}
                       <span className="text-red-500 ms-1">*</span>
                     </label>
-                    <button
-                      type="button"
-                      className="text-xs text-primary-blue hover:underline cursor-pointer"
-                      onClick={() => alert(language === 'ar' ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب لاستعادة كلمة المرور.' : 'Please contact support via WhatsApp to reset password.')}
-                    >
-                      {language === 'ar' ? 'نسيت كلمة المرور؟' : language === 'fr' ? 'Mot de passe oublié ?' : 'Forgot Password?'}
-                    </button>
-                  </div>
-                  <div className="relative">
                     <input
-                      type={showLoginPassword ? 'text' : 'password'}
+                      type="text"
                       required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-white"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="trainer@tot-academy.com"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
-                    >
-                      {showLoginPassword ? '👁️' : '🔒'}
-                    </button>
                   </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-text-dark">
+                        {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary-blue hover:underline cursor-pointer"
+                        onClick={() => alert(language === 'ar' ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب لاستعادة كلمة المرور.' : 'Please contact support via WhatsApp to reset password.')}
+                      >
+                        {language === 'ar' ? 'نسيت كلمة المرور؟' : language === 'fr' ? 'Mot de passe oublié ?' : 'Forgot Password?'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
+                      >
+                        {showLoginPassword ? '👁️' : '🔒'}
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2 pt-1">
                     <input
                       type="checkbox"
@@ -209,84 +242,72 @@ export const AuthModal: React.FC = () => {
                       {language === 'ar' ? 'تذكر بياناتي في هذا المتصفح' : language === 'fr' ? 'Se souvenir de moi' : 'Remember me on this device'}
                     </label>
                   </div>
-                </div>
 
-                {/* الصف الرابع: زر تسجيل الدخول والملاحظة التوجيهية */}
-                <div className="mt-auto pt-2 space-y-2">
                   <button
                     type="submit"
-                    className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-primary-blue to-secondary-blue hover:from-primary-blue-hover hover:to-secondary-blue text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
+                    className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-blue to-secondary-blue hover:from-primary-blue-hover hover:to-secondary-blue text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
                   >
                     {language === 'ar' ? 'تسجيل الدخول إلى حسابي' : language === 'fr' ? 'Se connecter' : 'Log In to My Account'}
                   </button>
-                  <p className="text-center text-xs text-text-light">
-                    {language === 'ar' ? 'حسابك محمي وفق أعلى معايير الأمان' : 'Secure and encrypted access'}
-                  </p>
-                </div>
-              </form>
 
-              {/* ======================================================== */}
-              {/* العمود الثاني: ليس لدي حساب (إنشاء حساب جديد) - 4 صفوف */}
-              {/* ======================================================== */}
-              <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-4 bg-emerald-50/30 p-4 sm:p-5 rounded-2xl border border-emerald-200/70">
-                {/* الصف الأول: العنوان والبطاقة المقابلة */}
-                <div className="p-3.5 rounded-xl border border-primary-green/30 bg-emerald-50/80 shadow-xs flex items-center justify-between min-h-[72px]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl">🌟</span>
-                    <div>
-                      <div className="text-xs font-semibold text-text-light">
-                        {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account yet?'}
-                      </div>
-                      <div className="text-sm font-bold text-primary-green">
-                        {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créez un compte & devenez pro' : 'Create Account & Join Pros'}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary-green animate-pulse" />
-                </div>
-
-                {/* الصف الثاني: الاسم الكامل مع التخصص */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-dark mb-1.5">
-                      {language === 'ar' ? 'الاسم واللقب الكامل' : language === 'fr' ? 'Nom et prénom' : 'Full Name'}
-                      <span className="text-red-500 ms-1">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={registerName}
-                      onChange={(e) => setRegisterName(e.target.value)}
-                      placeholder={language === 'ar' ? 'أحمد بن محمد' : 'Ahmed Mohamed'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-dark mb-1.5">
-                      {language === 'ar' ? 'التخصص المهتم به' : language === 'fr' ? 'Spécialité' : 'Specialization'}
-                    </label>
-                    <select
-                      value={registerSpecialty}
-                      onChange={(e) => setRegisterSpecialty(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
+                  <p className="text-center text-xs text-text-light pt-2">
+                    {language === 'ar' ? 'ليس لديك حساب بعد؟' : 'Don\'t have an account?'}{' '}
+                    <button
+                      type="button"
+                      onClick={() => setMode('register')}
+                      className="text-primary-green font-bold hover:underline cursor-pointer"
                     >
-                      <option value="">{language === 'ar' ? '-- اختر التخصص --' : '-- Select --'}</option>
-                      <option value="tot-foundation">{language === 'ar' ? 'تدريب المدربين - التأسيسي' : 'TOT Foundation'}</option>
-                      <option value="tot-master">{language === 'ar' ? 'تدريب المدربين - الاحترافي' : 'Specialized TOT'}</option>
-                      <option value="tech-ai">{language === 'ar' ? 'الذكاء الاصطناعي والتقنية' : 'AI & Tech'}</option>
-                      <option value="management">{language === 'ar' ? 'الإدارة والقيادة' : 'Management & Leadership'}</option>
-                      <option value="marketing">{language === 'ar' ? 'التسويق الرقمي' : 'Digital Marketing'}</option>
-                      <option value="media">{language === 'ar' ? 'الإعلام والصوت والإلقاء' : 'Media & Speaking'}</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* الصف الثالث: بيانات الاتصال وكلمة المرور */}
-                <div className="space-y-2.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : 'Create Account & Join Pros'}
+                    </button>
+                  </p>
+                </form>
+              ) : (
+                /* Form 2: REGISTER MODE - All fields in 2 columns and 4 rows (8 fields) */
+                <form onSubmit={handleRegisterSubmit} className="space-y-4 animate-fadeIn">
+                  {/* Grid: 2 columns and 4 rows */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                    {/* Row 1, Col 1: الاسم واللقب الكامل */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
-                        {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                        {language === 'ar' ? 'الاسم واللقب الكامل' : language === 'fr' ? 'Nom et prénom' : 'Full Name'}
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={registerName}
+                        onChange={(e) => setRegisterName(e.target.value)}
+                        placeholder={language === 'ar' ? 'أحمد بن محمد' : 'Ahmed Mohamed'}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
+                      />
+                    </div>
+
+                    {/* Row 1, Col 2: التخصص أو المسار التدريبي */}
+                    <div>
+                      <label className="block text-xs font-semibold text-text-dark mb-1">
+                        {language === 'ar' ? 'التخصص أو المسار المهتم به' : language === 'fr' ? 'Spécialité / Parcours' : 'Specialty / Track'}
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+                      <select
+                        required
+                        value={registerSpecialty}
+                        onChange={(e) => setRegisterSpecialty(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
+                      >
+                        <option value="">{language === 'ar' ? '-- اختر التخصص --' : '-- Select Track --'}</option>
+                        <option value="tot-foundation">{language === 'ar' ? 'تدريب المدربين - التأسيسي (TOT Foundation)' : 'TOT Foundation'}</option>
+                        <option value="tot-master">{language === 'ar' ? 'تدريب المدربين - الاحترافي للمتخصصين' : 'Specialized Professional TOT'}</option>
+                        <option value="tech-ai">{language === 'ar' ? 'الذكاء الاصطناعي والتقنيات الحديثة' : 'AI & Modern Technology'}</option>
+                        <option value="management">{language === 'ar' ? 'الإدارة والقيادة المؤسسية' : 'Management & Leadership'}</option>
+                        <option value="marketing">{language === 'ar' ? 'التسويق الرقمي والمبيعات' : 'Digital Marketing & Sales'}</option>
+                        <option value="media">{language === 'ar' ? 'الإعلام، الصوت والإلقاء' : 'Media, Voice & Public Speaking'}</option>
+                      </select>
+                    </div>
+
+                    {/* Row 2, Col 1: البريد الإلكتروني */}
+                    <div>
+                      <label className="block text-xs font-semibold text-text-dark mb-1">
+                        {language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email'}
                         <span className="text-red-500 ms-1">*</span>
                       </label>
                       <input
@@ -295,12 +316,14 @@ export const AuthModal: React.FC = () => {
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
                         placeholder="name@domain.com"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
                       />
                     </div>
+
+                    {/* Row 2, Col 2: رقم الهاتف / واتساب */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
-                        {language === 'ar' ? 'رقم الهاتف / واتساب' : 'Phone / WhatsApp'}
+                        {language === 'ar' ? 'رقم الهاتف / واتساب' : language === 'fr' ? 'Téléphone / WhatsApp' : 'Phone / WhatsApp'}
                         <span className="text-red-500 ms-1">*</span>
                       </label>
                       <input
@@ -309,15 +332,47 @@ export const AuthModal: React.FC = () => {
                         value={registerPhone}
                         onChange={(e) => setRegisterPhone(e.target.value)}
                         placeholder="+213 550 000 000"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* Row 3, Col 1: بلد أو مدينة الإقامة */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
-                        {language === 'ar' ? 'كلمة المرور' : 'Password'}
+                        {language === 'ar' ? 'بلد أو مدينة الإقامة' : language === 'fr' ? 'Pays / Ville' : 'Country / City'}
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={registerCountry}
+                        onChange={(e) => setRegisterCountry(e.target.value)}
+                        placeholder={language === 'ar' ? 'مثال: الجزائر، وهران، دبي...' : 'e.g. Algiers, Dubai, Paris...'}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
+                      />
+                    </div>
+
+                    {/* Row 3, Col 2: الصفة أو الفئة التدريبية */}
+                    <div>
+                      <label className="block text-xs font-semibold text-text-dark mb-1">
+                        {language === 'ar' ? 'الصفة أو الفئة المستهدفة' : language === 'fr' ? 'Statut / Catégorie' : 'Role / Category'}
+                      </label>
+                      <select
+                        value={registerRole}
+                        onChange={(e) => setRegisterRole(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
+                      >
+                        <option value="trainee-foundation">{language === 'ar' ? 'متدرب TOT أساسي (TOT/P-F)' : 'Trainee TOT/P-F'}</option>
+                        <option value="trainee-pro">{language === 'ar' ? 'متدرب متخصص (TOT/P-P)' : 'Specialized TOT/P-P'}</option>
+                        <option value="certified-trainer">{language === 'ar' ? 'مدرب محترف ضمن الطاقم' : 'Professional Staff Trainer'}</option>
+                        <option value="visitor">{language === 'ar' ? 'مستفيد / زائر مهتم بالبرامج' : 'Beneficiary / Visitor'}</option>
+                      </select>
+                    </div>
+
+                    {/* Row 4, Col 1: كلمة المرور */}
+                    <div>
+                      <label className="block text-xs font-semibold text-text-dark mb-1">
+                        {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
                         <span className="text-red-500 ms-1">*</span>
                       </label>
                       <div className="relative">
@@ -327,20 +382,22 @@ export const AuthModal: React.FC = () => {
                           value={registerPassword}
                           onChange={(e) => setRegisterPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
                         />
                         <button
                           type="button"
                           onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                          className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
                         >
                           {showRegisterPassword ? '👁️' : '🔒'}
                         </button>
                       </div>
                     </div>
+
+                    {/* Row 4, Col 2: تأكيد كلمة المرور */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
-                        {language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm'}
+                        {language === 'ar' ? 'تأكيد كلمة المرور' : language === 'fr' ? 'Confirmer le mot de passe' : 'Confirm Password'}
                         <span className="text-red-500 ms-1">*</span>
                       </label>
                       <input
@@ -349,40 +406,52 @@ export const AuthModal: React.FC = () => {
                         value={registerConfirmPassword}
                         onChange={(e) => setRegisterConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/50"
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* الصف الرابع: الموافقة وزر الإنشاء المقابل لزر الدخول */}
-                <div className="mt-auto pt-2 space-y-2">
-                  <div className="flex items-center gap-2">
+                  {/* Agreement checkbox */}
+                  <div className="flex items-start gap-2 pt-1">
                     <input
                       type="checkbox"
                       id="agree-terms"
                       required
                       checked={agreedTerms}
                       onChange={(e) => setAgreedTerms(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-primary-green focus:ring-primary-green cursor-pointer"
+                      className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary-green focus:ring-primary-green cursor-pointer"
                     />
                     <label htmlFor="agree-terms" className="text-xs text-text-light cursor-pointer">
                       {language === 'ar' ? (
-                        <>أوافق على <span className="text-primary-blue underline">شروط الاستخدام</span> والخصوصية</>
+                        <>أوافق على <span className="text-primary-blue underline">شروط الاستخدام</span> وسياسة الخصوصية للأكاديمية</>
                       ) : (
-                        <>I agree to <span className="text-primary-blue underline">Terms</span> & Policy</>
+                        <>I agree to the <span className="text-primary-blue underline">Terms of Service</span> and Privacy Policy</>
                       )}
                     </label>
                   </div>
+
+                  {/* Submit button */}
                   <button
                     type="submit"
-                    className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-primary-green to-emerald-600 hover:from-emerald-600 hover:to-primary-green text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
+                    className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-green to-emerald-600 hover:from-emerald-600 hover:to-primary-green text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
                   >
-                    {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créer mon compte' : 'Create Account & Join Pros'}
+                    {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créer mon compte professionnel' : 'Create Account & Join Professionals'}
                   </button>
-                </div>
-              </form>
-            </div>
+
+                  {/* Switch to login link */}
+                  <p className="text-center text-xs text-text-light pt-2">
+                    {language === 'ar' ? 'هل لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
+                    <button
+                      type="button"
+                      onClick={() => setMode('login')}
+                      className="text-primary-blue font-bold hover:underline cursor-pointer"
+                    >
+                      {language === 'ar' ? 'قم بتسجيل الدخول' : 'Log In'}
+                    </button>
+                  </p>
+                </form>
+              )}
+            </>
           )}
         </div>
       </div>

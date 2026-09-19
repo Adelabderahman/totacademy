@@ -279,19 +279,19 @@ export const SPECIALIZATIONS: Specialization[] = [
       {
         id: "tot-foundation",
         title: {
-          ar: "البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)",
+          ar: "المسار التأصيلي الشامل لتدريب المدربين (TOTF126)",
           en: "Comprehensive Foundation Training Track for Trainers (TOTF126)",
           fr: "Programme fondamental complet de formation des formateurs (TOTF126)"
         },
         summary: {
-          ar: "المسار المعتمد الفعلي والنشط حالياً بالأكاديمية؛ ينقلك من التأسيس إلى التمكين ثم التمتين مع دروس فيديو، وثائق، اختبارات ومحاكاة عملية للمدربين.",
-          en: "The active pilot accredited pathway at the academy, guiding you from foundation to enablement and reinforcement with real video lectures, docs, and assessments.",
-          fr: "Le parcours accrédité actif à l'académie, vous guidant de la fondation à l'habilitation et au renforcement avec vidéos réelles, documents et examens."
+          ar: "رحلة تدريبية وتأصيلية متكاملة لإعداد وتأهيل المدربين المحترفين ونقل المعارف من التأسيس إلى التمكين ثم التمتين.",
+          en: "A comprehensive foundational journey to qualify professional trainers, advancing from foundation to enablement and mastery.",
+          fr: "Un parcours fondamental complet pour qualifier les formateurs professionnels, de la fondation à la maîtrise."
         },
         image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=700&q=80",
-        status: { ar: "متاح للتجربة والتعلم", en: "Available for Testing", fr: "Disponible pour essai" },
+        status: { ar: "متاح", en: "Available", fr: "Disponible" },
         statusKey: "available",
-        duration: 45,
+        duration: 60,
         mode: { ar: "عن بعد", en: "Remote", fr: "À distance" },
         modeKey: "remote",
         url: "/edupath",

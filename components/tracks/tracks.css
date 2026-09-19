@@ -405,6 +405,9 @@
   color: var(--text-light, #64748b);
 }
 
+.spec-head.spec-head-tot {
+  background: linear-gradient(135deg, #e8f1ff 0%, #d9e9ff 58%, #edf7ff 100%);
+}
 .spec-head.spec-head-tech {
   background: linear-gradient(135deg, #e8f1ff 0%, #d9e9ff 58%, #edf7ff 100%);
 }
@@ -830,6 +833,13 @@ html[dir="rtl"] .fc-flip-close {
 }
 
 /* ===== Specialization-matched card themes ===== */
+.flip-card.theme-tot {
+  --card-bg: linear-gradient(135deg, #e8f1ff 0%, #d9e9ff 58%, #edf7ff 100%);
+  --card-accent: #1152cf;
+  --card-accent-dark: #0b3a96;
+  --card-border: #b9d3fb;
+  --card-shadow: rgba(17, 82, 207, 0.18);
+}
 .flip-card.theme-tech {
   --card-bg: linear-gradient(135deg, #e8f1ff 0%, #d9e9ff 58%, #edf7ff 100%);
   --card-accent: #1152cf;

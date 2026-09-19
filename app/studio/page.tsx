@@ -91,7 +91,7 @@ const defaultCMSData: StudioCMSState = {
 };
 
 export default function StudioPage() {
-  const { isAuthenticated, user, quickDemoLogin } = useUserAccount();
+  const { isAuthenticated, user } = useUserAccount();
   const { openAuthModal } = useAuthModal();
 
   const { data, mutate, isLoading } = useFirestoreSync<StudioCMSState>(
@@ -163,17 +163,9 @@ export default function StudioPage() {
             >
               تسجيل الدخول إلى حسابك الإداري
             </button>
-            <button
-              type="button"
-              onClick={() => quickDemoLogin('trainer')}
-              className="w-full py-3 px-5 rounded-xl bg-slate-700 hover:bg-slate-600 text-accent-yellow font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>⚡</span>
-              <span>دخول تجريبي سريع كمدرب معتمد (Demo Access)</span>
-            </button>
             <Link
               href="/"
-              className="text-xs text-slate-400 hover:text-white pt-2 transition-colors"
+              className="text-xs text-slate-400 hover:text-white pt-2 transition-colors text-center"
             >
               ← العودة إلى الصفحة الرئيسية
             </Link>

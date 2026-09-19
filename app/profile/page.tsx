@@ -11,7 +11,6 @@ import {
   BookOpen,
   Calendar,
   FileText,
-  Users,
   GraduationCap,
   Settings,
   CheckCircle2,
@@ -25,7 +24,6 @@ import {
   ArrowUpRight,
   Video,
   ShieldCheck,
-  RefreshCw,
   LogOut,
   ChevronRight,
   AlertCircle,
@@ -44,11 +42,8 @@ export default function ProfilePage() {
     certificates,
     appointments,
     articles,
-    students,
     professors,
-    toggleRole,
     updateProfile,
-    quickDemoLogin,
     logout,
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
@@ -123,21 +118,11 @@ export default function ProfilePage() {
             >
               {language === 'ar' ? 'إنشاء حساب جديد بالأكاديمية' : 'Create New Account'}
             </button>
-            <button
-              type="button"
-              onClick={() => quickDemoLogin('trainer')}
-              className="w-full py-2.5 px-4 rounded-xl border border-primary-blue/30 bg-primary-blue/5 hover:bg-primary-blue/10 text-primary-blue font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <span>⚡</span>
-              <span>{language === 'ar' ? 'دخول تجريبي فوري كمدرب معتمد (Demo Preview)' : 'Instant Demo Preview'}</span>
-            </button>
           </div>
         </div>
       </div>
     );
   }
-
-  const isTrainer = user.role === 'trainer';
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-24" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -156,34 +141,9 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2 bg-slate-900/70 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>
-              {language === 'ar'
-                ? isTrainer
-                  ? 'عضوية مدرب معتمد وموثق'
-                  : 'متدرب نشط بالدفعة الحالية'
-                : isTrainer
-                ? 'Verified Certified Trainer'
-                : 'Active Enrolled Trainee'}
+              {language === 'ar' ? 'حساب عضوية موثق ونشط' : 'Verified Active Member'}
             </span>
           </div>
-
-          {/* Role Switcher preview toggle for user testing */}
-          <button
-            type="button"
-            onClick={toggleRole}
-            className="flex items-center gap-2 bg-white/90 hover:bg-white text-slate-900 text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg transition-all cursor-pointer hover:scale-105 active:scale-95"
-            title={language === 'ar' ? 'التبديل بين دور مدرب / متدرب لتجربة الواجهة' : 'Toggle Trainer / Trainee view'}
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-primary-blue" />
-            <span>
-              {language === 'ar'
-                ? isTrainer
-                  ? 'التبديل إلى: وضع المتدرب'
-                  : 'التبديل إلى: وضع المدرب'
-                : isTrainer
-                ? 'Switch to: Trainee Mode'
-                : 'Switch to: Trainer Mode'}
-            </span>
-          </button>
         </div>
       </div>
 
@@ -214,21 +174,9 @@ export default function ProfilePage() {
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {user.name}
                 </h1>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs ${
-                    isTrainer
-                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                      : 'bg-blue-100 text-primary-blue border border-blue-200'
-                  }`}
-                >
+                <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs bg-blue-100 text-primary-blue border border-blue-200">
                   <Sparkles className="w-3.5 h-3.5" />
-                  {isTrainer
-                    ? language === 'ar'
-                      ? 'مدرب معتمد (Master)'
-                      : 'Certified Trainer'
-                    : language === 'ar'
-                    ? 'طالب متدرب (TOT Trainee)'
-                    : 'Trainee'}
+                  {language === 'ar' ? 'عضو الأكاديمية (Academy Member)' : 'Academy Member'}
                 </span>
                 <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                   {user.membershipNumber}
@@ -330,16 +278,10 @@ export default function ProfilePage() {
 
             <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70">
               <span className="text-xl sm:text-2xl font-black text-purple-600 block">
-                {isTrainer ? students.length : professors.length}
+                {professors.length}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {isTrainer
-                  ? language === 'ar'
-                    ? 'الطلبة المشرف عليهم'
-                    : 'Supervised Students'
-                  : language === 'ar'
-                  ? 'الأساتذة المشرفون'
-                  : 'Supervising Mentors'}
+                {language === 'ar' ? 'الأساتذة والمدربون' : 'Faculty Mentors'}
               </span>
             </div>
           </div>
@@ -432,18 +374,12 @@ export default function ProfilePage() {
                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
             }`}
           >
-            {isTrainer ? <Users className="w-4 h-4" /> : <GraduationCap className="w-4 h-4" />}
+            <GraduationCap className="w-4 h-4" />
             <span>
-              {isTrainer
-                ? language === 'ar'
-                  ? 'الطلبة المشرف عليهم'
-                  : 'My Students'
-                : language === 'ar'
-                ? 'الأساتذة المشرفون'
-                : 'Supervising Faculty'}
+              {language === 'ar' ? 'الهيئة الأكاديمية' : 'Faculty Mentors'}
             </span>
             <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {isTrainer ? students.length : professors.length}
+              {professors.length}
             </span>
           </button>
 
@@ -920,154 +856,65 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ================= TAB 5: NETWORK (STUDENTS / PROFESSORS) ================= */}
+          {/* ================= TAB 5: FACULTY & MENTORS ================= */}
           {activeTab === 'network' && (
             <div className="space-y-4 animate-fadeIn">
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-                    {isTrainer
-                      ? language === 'ar'
-                        ? 'الطلبة والمتدربون المشرف عليهم'
-                        : 'Supervised Trainees & Students'
-                      : language === 'ar'
-                      ? 'الأساتذة والمدربون المشرفون على تأهيلك'
-                      : 'Supervising Master Trainers & Mentors'}
+                    {language === 'ar'
+                      ? 'الأساتذة والمدربون المشرفون على الأكاديمية'
+                      : 'Supervising Master Trainers & Faculty'}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {isTrainer
-                      ? language === 'ar'
-                        ? 'متابعة تقدم المتدربين، تقييم اختباراتهم، والتواصل المباشر معهم'
-                        : 'Review your students progress, grade assessments, and communicate'
-                      : language === 'ar'
-                      ? 'نخبة المدربين المعتمدين والمشرفين على مساراتك الأكاديمية'
-                      : 'Your assigned faculty board and academic supervisors'}
+                    {language === 'ar'
+                      ? 'نخبة المدربين المعتمدين والمشرفين الأكاديميين المتاحين للتوجيه والإرشاد والتواصل المباشر'
+                      : 'Certified faculty board and academic supervisors available for mentorship'}
                   </p>
                 </div>
               </div>
 
-              {/* TRAINER VIEW: Supervised Students */}
-              {isTrainer && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {students.map((stu) => (
-                    <div
-                      key={stu.id}
-                      className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={stu.avatar}
-                          alt={stu.name}
-                          className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-blue/20"
-                        />
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-900">{stu.name}</h3>
-                          <span className="text-xs text-primary-blue font-semibold block">
-                            {language === 'ar' ? stu.trackTitleAr : stu.trackTitleEn}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {language === 'ar' ? `آخر نشاط: ${stu.lastActive}` : `Active: ${stu.lastActive}`}
-                          </span>
-                        </div>
-                      </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {professors.map((prof) => (
+                  <div
+                    key={prof.id}
+                    className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={prof.avatar}
+                        alt={prof.name}
+                        className="w-16 h-16 rounded-2xl object-cover ring-2 ring-primary-blue/30 shadow-md"
+                      />
                       <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-slate-500">
-                            {language === 'ar' ? 'نسبة الإنجاز' : 'Progress'}
-                          </span>
-                          <span className="text-primary-blue font-bold">{stu.progress}%</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-primary-blue to-emerald-500 rounded-full"
-                            style={{ width: `${stu.progress}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            stu.status === 'completed'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : stu.status === 'submitted_exam'
-                              ? 'bg-amber-50 text-amber-800'
-                              : 'bg-blue-50 text-blue-700'
-                          }`}
-                        >
-                          {stu.status === 'completed'
-                            ? language === 'ar'
-                              ? 'أكمل التدريب'
-                              : 'Completed'
-                            : stu.status === 'submitted_exam'
-                            ? language === 'ar'
-                              ? 'قدم الامتحان للمراجعة'
-                              : 'Exam Pending'
-                            : language === 'ar'
-                            ? 'نشط بالمسار'
-                            : 'Active'}
+                        <h3 className="text-base font-bold text-slate-900">{prof.name}</h3>
+                        <p className="text-xs text-primary-blue font-bold">
+                          {language === 'ar' ? prof.specialtyAr : prof.specialtyEn}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {language === 'ar' ? prof.degreeAr : prof.degreeEn}
+                        </p>
+                        <span className="inline-block text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                          {language === 'ar' ? `المسار: ${prof.trackAr}` : `Track: ${prof.trackEn}`}
                         </span>
-
-                        <a
-                          href={`https://wa.me/${stu.phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-bold text-primary-blue hover:text-secondary-blue flex items-center gap-1"
-                        >
-                          <Phone className="w-3 h-3" />
-                          <span>{language === 'ar' ? 'مراسلة' : 'Contact'}</span>
-                        </a>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              {/* TRAINEE VIEW: Supervising Professors */}
-              {!isTrainer && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {professors.map((prof) => (
-                    <div
-                      key={prof.id}
-                      className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-4"
-                    >
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={prof.avatar}
-                          alt={prof.name}
-                          className="w-16 h-16 rounded-2xl object-cover ring-2 ring-primary-blue/30 shadow-md"
-                        />
-                        <div className="space-y-1">
-                          <h3 className="text-base font-bold text-slate-900">{prof.name}</h3>
-                          <p className="text-xs text-primary-blue font-bold">
-                            {language === 'ar' ? prof.specialtyAr : prof.specialtyEn}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {language === 'ar' ? prof.degreeAr : prof.degreeEn}
-                          </p>
-                          <span className="inline-block text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                            {language === 'ar' ? `المسار: ${prof.trackAr}` : `Track: ${prof.trackEn}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-400 font-mono">{prof.email}</span>
-                        <a
-                          href={`https://wa.me/${prof.phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors flex items-center gap-1.5 shadow-xs"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>{language === 'ar' ? 'طلب جلسة إرشادية' : 'Book Session'}</span>
-                        </a>
-                      </div>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                      <span className="text-xs text-slate-400 font-mono">{prof.email}</span>
+                      <a
+                        href={`https://wa.me/${prof.phone.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>{language === 'ar' ? 'طلب جلسة إرشادية' : 'Book Session'}</span>
+                      </a>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

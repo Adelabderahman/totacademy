@@ -38,7 +38,7 @@ interface RegisterData {
   name: string;
   phone?: string;
   country?: string;
-  role?: 'trainer' | 'trainee';
+  role?: 'user' | 'trainer' | 'trainee';
   specialty?: string;
 }
 
@@ -74,6 +74,27 @@ interface UserAccountContextType {
   ) => Promise<void>;
   getTrackProgress: (trackKey: string) => Promise<TrackProgressRecord | null>;
 }
+
+const DEFAULT_USER_PROFILE: UserProfile = {
+  id: 'tot-usr-member',
+  name: 'عضو الأكاديمية',
+  email: 'member@tot-academy.org',
+  phone: '+213 555 000 000',
+  role: 'user',
+  roleTitleAr: 'عضو أكاديمية تدريب المدربين',
+  roleTitleEn: 'TOT Academy Member',
+  specialtyAr: 'إعداد وتأهيل المدربين وتطوير المهارات',
+  specialtyEn: 'Professional Training & Skill Development',
+  bioAr: 'عضو مسجل بالأكاديمية لمتابعة المسارات التدريبية المعتمدة وتطوير مهارات التدريب الاحترافي.',
+  bioEn: 'Registered member at TOT Academy pursuing accredited training tracks and professional development.',
+  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
+  coverImage: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1600&auto=format&fit=crop',
+  joinedDate: '2025',
+  country: 'الجزائر',
+  city: 'الجزائر العاصمة',
+  membershipNumber: 'TOT-MBR-2025',
+  status: 'active',
+};
 
 const DEFAULT_TRAINER_PROFILE: UserProfile = {
   id: 'tot-usr-1094',
@@ -355,7 +376,7 @@ const STORAGE_KEY = 'tot_user_profile_v2';
 const AUTH_STATE_KEY = 'tot_auth_state_v2';
 
 export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(DEFAULT_TRAINEE_PROFILE);
+  const [user, setUser] = useState<UserProfile>(DEFAULT_USER_PROFILE);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -499,24 +520,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   };
 
   const toggleRole = () => {
-    const nextRole = user.role === 'trainer' ? 'trainee' : 'trainer';
-    const template = nextRole === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
-    const next: UserProfile = {
-      ...template,
-      id: user.id,
-      name: user.name || template.name,
-      email: user.email || template.email,
-      phone: user.phone || template.phone,
-      country: user.country || template.country,
-      city: user.city || template.city,
-    };
-    setUser(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {}
-    if (firebaseUser?.uid) {
-      saveUserProfileToFirestore(next).catch(() => {});
-    }
+    // Role switcher disabled in favor of unified general member account
   };
 
   // Real Firebase Registration
@@ -566,18 +570,18 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         }
       }
 
-      const role = profileData.role || 'trainee';
-      const roleTemplate = role === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
-
       const newProfile: UserProfile = {
-        ...roleTemplate,
+        ...DEFAULT_USER_PROFILE,
         id: createdUid,
         name: profileData.name,
         email,
         phone: profileData.phone || '+213 555 000 000',
         country: profileData.country || 'الجزائر',
-        role,
-        specialtyAr: profileData.specialty || (role === 'trainer' ? 'تدريب المدربين والقيادة' : 'تصميم الحقائب والمحتوى'),
+        role: 'user',
+        roleTitleAr: 'عضو أكاديمية تدريب المدربين',
+        roleTitleEn: 'TOT Academy Member',
+        specialtyAr: profileData.specialty || 'إعداد وتأهيل المدربين المحترفين',
+        specialtyEn: 'Training of Trainers',
         joinedDate: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
         membershipNumber: `TOT-${Math.floor(1000 + Math.random() * 9000)}`,
         status: 'active',
@@ -676,8 +680,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       if (!auth || !googleProvider) {
-        quickDemoLogin('trainer');
-        return { success: true };
+        return { success: false, error: 'خدمة تسجيل الدخول بـ Google غير مهيأة أو غير مدعومة في المعاينة.' };
       }
       const result = await signInWithPopup(auth, googleProvider);
       const fUser = result.user;
@@ -686,11 +689,11 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         setUser(remoteProfile);
       } else {
         const newProfile: UserProfile = {
-          ...DEFAULT_TRAINEE_PROFILE,
+          ...DEFAULT_USER_PROFILE,
           id: fUser.uid,
-          name: fUser.displayName || 'عضو جديد',
+          name: fUser.displayName || 'عضو الأكاديمية',
           email: fUser.email || '',
-          avatar: fUser.photoURL || DEFAULT_TRAINEE_PROFILE.avatar,
+          avatar: fUser.photoURL || DEFAULT_USER_PROFILE.avatar,
         };
         setUser(newProfile);
         await saveUserProfileToFirestore(newProfile).catch(() => {});
@@ -699,30 +702,15 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       localStorage.setItem(AUTH_STATE_KEY, 'true');
       return { success: true };
     } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error?.code === 'auth/popup-closed-by-user') {
         return { success: false, error: 'تم إغلاق نافذة تسجيل الدخول بـ Google.' };
       }
-      console.warn('Google Sign In note:', error);
-      // If popup fails (e.g. in iframe), allow demo login
-      quickDemoLogin('trainer');
-      return { success: true };
+      return { success: false, error: error?.message || 'تعذر تسجيل الدخول بـ Google.' };
     }
   };
 
-  // Quick Demo Login helper for preview convenience
-  const quickDemoLogin = (role: 'trainer' | 'trainee' = 'trainer') => {
-    const template = role === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
-    setUser(template);
-    setIsAuthenticated(true);
-    setEnrolledTracks(INITIAL_TRACKS);
-    setCertificates(INITIAL_CERTIFICATES);
-    setAppointments(INITIAL_APPOINTMENTS);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
-      localStorage.setItem(AUTH_STATE_KEY, 'true');
-      localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(INITIAL_TRACKS));
-    } catch {}
-  };
+  // Safe helper
+  const quickDemoLogin = () => {};
 
   // Enroll in track and persist to Firestore
   const enrollInTrack = async (

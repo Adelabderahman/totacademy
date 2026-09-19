@@ -3,7 +3,7 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  role: 'trainer' | 'trainee';
+  role: 'user' | 'trainer' | 'trainee';
   roleTitleAr: string;
   roleTitleEn: string;
   specialtyAr: string;

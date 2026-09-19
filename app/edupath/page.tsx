@@ -26,7 +26,6 @@ export default function EduPathPage() {
   const {
     isAuthenticated,
     user,
-    quickDemoLogin,
     enrolledTracks,
     enrollInTrack,
     updateTrackProgress,
@@ -1945,30 +1944,6 @@ export default function EduPathPage() {
                     {lang === 'ar' ? 'إنشاء حساب جديد وتأكيد التسجيل' : 'Create New Account'}
                   </button>
                 </div>
-              </div>
-
-              {/* Quick Demo Access Bar */}
-              <div className="bg-white rounded-2xl p-4 border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-start">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-primary-blue flex items-center justify-center text-lg font-bold">
-                    ⚡
-                  </div>
-                  <div>
-                    <div className="text-xs sm:text-sm font-bold text-slate-800">
-                      {lang === 'ar' ? 'معاينة تجريبية فورية للتقييم والتصفح' : 'Instant Evaluation & Preview Mode'}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {lang === 'ar' ? 'اضغط للمعاينة الفورية لكامل المسار والدروس كمتدرب معتمد' : 'Click to instantly preview the full track and interactive modules'}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => quickDemoLogin('trainee')}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-primary-blue hover:text-white text-slate-700 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  {lang === 'ar' ? 'تفعيل المعاينة الفورية' : 'Instant Preview'}
-                </button>
               </div>
 
               {/* Curriculum Overview Pills */}

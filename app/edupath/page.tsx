@@ -3098,21 +3098,11 @@ export default function EduPathPage() {
           </div>
         </section>
 
-        {/* ================= 9. Direct & In-Person Training (Unlocked at 25%) ================= */}
+        {/* ================= 9. Direct & In-Person Training ================= */}
         <section
-          className={`grand-blue-section ${overallProgress < 25 ? 'edu-locked-section' : ''}`}
+          className="grand-blue-section"
           id="direct-training-group"
         >
-          {overallProgress < 25 && (
-            <div className="edu-lock-overlay">
-              <div className="edu-lock-card">
-                <span className="edu-lock-icon">🔒</span>
-                <strong className="edu-lock-title">{strings.locked_inperson_title}</strong>
-                <span className="edu-lock-subtitle">{strings.locked_inperson_sub}</span>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-between items-center mb-6">
             <div className="grand-header-title">
               <span className="grand-badge badge-blue">{strings.badge_new}</span>
@@ -3140,30 +3130,30 @@ export default function EduPathPage() {
                 <div className="grand-form-grid">
                   <div>
                     <label className="grand-label">{strings.label_name}</label>
-                    <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 25} />
+                    <input type="text" required className="grand-input" placeholder="..." />
                   </div>
                   <div>
                     <label className="grand-label">{strings.dt_whatsapp_label}</label>
-                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" disabled={overallProgress < 25} />
+                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
                   </div>
                   <div className="grand-col-full">
                     <label className="grand-label">{strings.label_email}</label>
-                    <input type="email" required className="grand-input" placeholder="example@email.com" disabled={overallProgress < 25} />
+                    <input type="email" required className="grand-input" placeholder="example@email.com" />
                   </div>
                   <div>
                     <label className="grand-label">{strings.label_pathway_name}</label>
-                    <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} disabled={overallProgress < 25} />
+                    <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} />
                   </div>
                   <div>
                     <label className="grand-label">{strings.label_supervisor}</label>
-                    <input type="text" required className="grand-input" defaultValue="الأستاذ بلال عويش" disabled={overallProgress < 25} />
+                    <input type="text" required className="grand-input" defaultValue="الأستاذ بلال عويش" />
                   </div>
                   <div className="grand-col-full">
                     <label className="grand-label">{strings.label_request_type}</label>
-                    <input type="text" readOnly className="grand-input font-bold text-sky-400" value={strings.val_interactive_meeting} disabled={overallProgress < 25} />
+                    <input type="text" readOnly className="grand-input font-bold text-sky-400" value={strings.val_interactive_meeting} />
                   </div>
                 </div>
-                <button type="submit" className="grand-btn btn-blue" disabled={overallProgress < 25}>
+                <button type="submit" className="grand-btn btn-blue">
                   {strings.btn_submit_meeting}
                 </button>
               </form>
@@ -3184,15 +3174,15 @@ export default function EduPathPage() {
                 <div className="grand-form-grid">
                   <div>
                     <label className="grand-label">{strings.label_name}</label>
-                    <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 25} />
+                    <input type="text" required className="grand-input" placeholder="..." />
                   </div>
                   <div>
                     <label className="grand-label">{strings.label_phone}</label>
-                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" disabled={overallProgress < 25} />
+                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
                   </div>
                   <div>
                     <label className="grand-label">{strings.dt_location_label}</label>
-                    <input type="text" required className="grand-input" placeholder="الجزائر العاصمة، وهران، قسنطينة..." disabled={overallProgress < 25} />
+                    <input type="text" required className="grand-input" placeholder="الجزائر العاصمة، وهران، قسنطينة..." />
                   </div>
                   <div>
                     <CustomDropdown
@@ -3201,7 +3191,6 @@ export default function EduPathPage() {
                       required
                       value={workshopTravel}
                       onChange={setWorkshopTravel}
-                      disabled={overallProgress < 25}
                       options={[
                         { value: 'yes', label: strings.dt_travel_opt_1, icon: '✈️' },
                         { value: 'no', label: strings.dt_travel_opt_2, icon: '❌' },
@@ -3218,7 +3207,6 @@ export default function EduPathPage() {
                       required
                       value={workshopDays}
                       onChange={setWorkshopDays}
-                      disabled={overallProgress < 25}
                       options={[
                         { value: 'weekend', label: strings.dt_days_opt_1, icon: '📅' },
                         { value: 'weekdays', label: strings.dt_days_opt_2, icon: '📆' },
@@ -3236,7 +3224,6 @@ export default function EduPathPage() {
                       required
                       value={workshopTimes}
                       onChange={setWorkshopTimes}
-                      disabled={overallProgress < 25}
                       options={[
                         { value: 'morning', label: strings.dt_times_opt_1, icon: '🌅' },
                         { value: 'afternoon', label: strings.dt_times_opt_2, icon: '🌆' },
@@ -3247,7 +3234,7 @@ export default function EduPathPage() {
                     />
                   </div>
                 </div>
-                <button type="submit" className="grand-btn btn-blue" disabled={overallProgress < 25}>
+                <button type="submit" className="grand-btn btn-blue">
                   {strings.btn_submit_workshop}
                 </button>
               </form>
@@ -3281,21 +3268,11 @@ export default function EduPathPage() {
           </div>
         </section>
 
-        {/* ================= 10. Certificate & Final Accreditation (Unlocked at 50%) ================= */}
+        {/* ================= 10. Certificate & Final Accreditation ================= */}
         <section
-          className={`grand-orange-section ${overallProgress < 50 ? 'edu-locked-section' : ''}`}
+          className="grand-orange-section"
           id="certification-group"
         >
-          {overallProgress < 50 && (
-            <div className="edu-lock-overlay">
-              <div className="edu-lock-card">
-                <span className="edu-lock-icon">🔒</span>
-                <strong className="edu-lock-title">{strings.locked_cert_title}</strong>
-                <span className="edu-lock-subtitle">{strings.locked_cert_sub}</span>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-between items-center mb-6">
             <div className="grand-header-title">
               <span className="grand-badge badge-orange">{strings.badge_accreditation}</span>
@@ -3317,32 +3294,32 @@ export default function EduPathPage() {
               <div className="grand-form-grid">
                 <div>
                   <label className="grand-label">{strings.label_name}</label>
-                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" placeholder="..." />
                 </div>
                 <div>
                   <label className="grand-label">{strings.label_phone}</label>
-                  <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" disabled={overallProgress < 50} />
+                  <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
                 </div>
                 <div>
                   <label className="grand-label">{strings.label_email}</label>
-                  <input type="email" required className="grand-input" placeholder="example@gmail.com" disabled={overallProgress < 50} />
+                  <input type="email" required className="grand-input" placeholder="example@gmail.com" />
                 </div>
                 <div>
                   <label className="grand-label">{strings.cert_id_label}</label>
-                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" placeholder="..." />
                 </div>
                 <div>
                   <label className="grand-label">{strings.cert_address_label}</label>
-                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" placeholder="..." />
                 </div>
                 <div>
                   <label className="grand-label">{strings.cert_job_label}</label>
-                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" placeholder="..." />
                 </div>
 
                 <div>
                   <label className="grand-label">{strings.cert_age_label}</label>
-                  <input type="number" required className="grand-input" placeholder="28" disabled={overallProgress < 50} />
+                  <input type="number" required className="grand-input" placeholder="28" />
                 </div>
                 <div>
                   <CustomDropdown
@@ -3351,7 +3328,6 @@ export default function EduPathPage() {
                     required
                     value={certGender}
                     onChange={setCertGender}
-                    disabled={overallProgress < 50}
                     options={[
                       { value: 'male', label: strings.cert_gender_opt_1, icon: '👨' },
                       { value: 'female', label: strings.cert_gender_opt_2, icon: '👩' },
@@ -3364,11 +3340,11 @@ export default function EduPathPage() {
 
                 <div>
                   <label className="grand-label">{strings.label_pathway_name}</label>
-                  <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} />
                 </div>
                 <div>
                   <label className="grand-label">{strings.label_supervisor}</label>
-                  <input type="text" required className="grand-input" defaultValue="الأستاذ بلال عويش" disabled={overallProgress < 50} />
+                  <input type="text" required className="grand-input" defaultValue="الأستاذ بلال عويش" />
                 </div>
 
                 <div>
@@ -3378,7 +3354,6 @@ export default function EduPathPage() {
                     required
                     value={certType}
                     onChange={setCertType}
-                    disabled={overallProgress < 50}
                     options={[
                       { value: '1', label: strings.cert_type_opt_1, icon: '📜' },
                       { value: '2', label: strings.cert_type_opt_2, icon: '🎓' },
@@ -3396,7 +3371,6 @@ export default function EduPathPage() {
                     required
                     value={certAccreditation}
                     onChange={setCertAccreditation}
-                    disabled={overallProgress < 50}
                     options={[
                       { value: 'local', label: strings.cert_acc_opt_1, icon: '🇩🇿' },
                       { value: 'intl', label: strings.cert_acc_opt_2, icon: '🌐' },
@@ -3415,7 +3389,6 @@ export default function EduPathPage() {
                     required
                     value={certPayment}
                     onChange={setCertPayment}
-                    disabled={overallProgress < 50}
                     options={[
                       { value: 'cash', label: strings.cert_pay_opt_1, icon: '💵' },
                       { value: 'ccp', label: strings.cert_pay_opt_2, icon: '📮' },
@@ -3428,11 +3401,11 @@ export default function EduPathPage() {
 
                 <div className="grand-col-full mt-2">
                   <label className="grand-checkbox">
-                    <input type="checkbox" required disabled={overallProgress < 50} />
+                    <input type="checkbox" required />
                     <span>{strings.cert_agree_terms}</span>
                   </label>
                   <label className="grand-checkbox mt-2">
-                    <input type="checkbox" required disabled={overallProgress < 50} />
+                    <input type="checkbox" required />
                     <span>{strings.cert_agree_ethics}</span>
                   </label>
                 </div>
@@ -3441,7 +3414,6 @@ export default function EduPathPage() {
               <button
                 type="submit"
                 className="grand-btn btn-orange mt-6 py-4 text-base"
-                disabled={overallProgress < 50}
               >
                 {strings.btn_submit_cert}
               </button>

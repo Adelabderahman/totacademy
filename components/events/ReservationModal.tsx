@@ -11,6 +11,7 @@ import {
   formatEventDate,
   MODES,
 } from '@/data/eventsData';
+import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -222,36 +223,38 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
             </div>
 
             <div className="reservation-field">
-              <label htmlFor="res-type">
-                {getTranslation('reservation_seat_type', language)}
-              </label>
-              <select
+              <CustomDropdown
                 id="res-type"
+                label={getTranslation('reservation_seat_type', language)}
                 value={seatType}
-                onChange={(e) => setSeatType(e.target.value)}
-              >
-                <option value="trainer">{getTranslation('seat_type_trainer', language)}</option>
-                <option value="trainee">{getTranslation('seat_type_trainee', language)}</option>
-                <option value="visitor">{getTranslation('seat_type_visitor', language)}</option>
-                <option value="press">{getTranslation('seat_type_press', language)}</option>
-                <option value="beneficiary">{getTranslation('seat_type_beneficiary', language)}</option>
-              </select>
+                onChange={setSeatType}
+                options={[
+                  { value: 'trainer', label: getTranslation('seat_type_trainer', language), icon: '🎓' },
+                  { value: 'trainee', label: getTranslation('seat_type_trainee', language), icon: '👨‍🎓' },
+                  { value: 'visitor', label: getTranslation('seat_type_visitor', language), icon: '👋' },
+                  { value: 'press', label: getTranslation('seat_type_press', language), icon: '📰' },
+                  { value: 'beneficiary', label: getTranslation('seat_type_beneficiary', language), icon: '🤝' },
+                ]}
+                themeColor="blue"
+                dropdownWidthClass="w-full min-w-[240px] sm:min-w-[280px]"
+              />
             </div>
 
             <div className="reservation-field">
-              <label htmlFor="res-seats">
-                {getTranslation('reservation_seat_count', language)}
-              </label>
-              <select
+              <CustomDropdown
                 id="res-seats"
+                label={getTranslation('reservation_seat_count', language)}
                 value={seatCount}
-                onChange={(e) => setSeatCount(e.target.value)}
-              >
-                <option value="1">1 {getTranslation('seat', language)}</option>
-                <option value="2">2 {getTranslation('seat', language)}</option>
-                <option value="3">3 {getTranslation('seat', language)}</option>
-                <option value="4">4 {getTranslation('seat', language)}</option>
-              </select>
+                onChange={setSeatCount}
+                options={[
+                  { value: '1', label: `1 ${getTranslation('seat', language)}`, icon: '💺' },
+                  { value: '2', label: `2 ${getTranslation('seat', language)}`, icon: '👥' },
+                  { value: '3', label: `3 ${getTranslation('seat', language)}`, icon: '👨‍👩‍👧' },
+                  { value: '4', label: `4 ${getTranslation('seat', language)}`, icon: '🏢' },
+                ]}
+                themeColor="blue"
+                dropdownWidthClass="w-full min-w-[200px] sm:min-w-[240px]"
+              />
             </div>
 
             <div className="reservation-field">

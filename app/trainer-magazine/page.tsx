@@ -47,6 +47,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { SectionCardsSlider } from '@/components/magazine/SectionCardsSlider';
+import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 import './magazine.css';
 
 export default function TrainerMagazinePage() {
@@ -978,22 +979,23 @@ export default function TrainerMagazinePage() {
                   </div>
 
                   <div>
-                    <label className="form-label">{t.writer_section}</label>
-                    <select
-                      className="form-select"
+                    <CustomDropdown
+                      id="writer-section"
+                      label={t.writer_section}
                       required
                       value={writerForm.section}
-                      onChange={(e) =>
-                        setWriterForm({ ...writerForm, section: e.target.value })
+                      onChange={(val) =>
+                        setWriterForm({ ...writerForm, section: val })
                       }
-                    >
-                      <option value="">{t.writer_section_placeholder}</option>
-                      {MAG_SECTIONS.map((sec) => (
-                        <option key={sec.slug} value={sec.slug}>
-                          {sec.name[lang] || sec.name.ar}
-                        </option>
-                      ))}
-                    </select>
+                      options={MAG_SECTIONS.map((sec) => ({
+                        value: sec.slug,
+                        label: sec.name[lang] || sec.name.ar,
+                        icon: '📖',
+                      }))}
+                      placeholder={t.writer_section_placeholder}
+                      themeColor="blue"
+                      dropdownWidthClass="w-full min-w-[260px] sm:min-w-[320px]"
+                    />
                   </div>
 
                   <div className="writer-full-col">

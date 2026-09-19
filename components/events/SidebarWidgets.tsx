@@ -8,6 +8,7 @@ import {
   getTranslation,
   getLocalized,
 } from '@/data/eventsData';
+import CustomDropdown from '@/components/ui/CustomDropdown';
 
 interface SidebarWidgetsProps {
   search: string;
@@ -155,18 +156,22 @@ ${proposalMessage || 'لا يوجد تفاصيل إضافية'}`;
             value={proposalPhone}
             onChange={(e) => setProposalPhone(e.target.value)}
           />
-          <select
-            className="event-select"
-            value={proposalType}
-            onChange={(e) => setProposalType(e.target.value)}
-          >
-            <option value="">{getTranslation('proposal_type', language)}</option>
-            {EVENT_SECTIONS.map((sec) => (
-              <option key={sec.key} value={getLocalized(sec.title, language)}>
-                {sec.icon} {getLocalized(sec.title, language)}
-              </option>
-            ))}
-          </select>
+          <div className="mb-2">
+            <CustomDropdown
+              id="sidebar-proposal-type"
+              label={getTranslation('proposal_type', language)}
+              value={proposalType}
+              onChange={setProposalType}
+              options={EVENT_SECTIONS.map((sec) => ({
+                value: getLocalized(sec.title, language),
+                label: getLocalized(sec.title, language),
+                icon: sec.icon || '🎯',
+              }))}
+              placeholder={getTranslation('proposal_type', language)}
+              themeColor="blue"
+              dropdownWidthClass="w-full min-w-[240px]"
+            />
+          </div>
 
           <label className="event-upload">
             <span>📎</span>

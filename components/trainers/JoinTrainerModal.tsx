@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { coreI18n } from '@/data/trainersData';
+import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 
 interface JoinTrainerModalProps {
   isOpen: boolean;
@@ -320,43 +321,43 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                 </div>
 
                 {/* 5. Specialization */}
-                <div className="form-group">
-                  <label htmlFor="join-specialty">
-                    {t.form_specialty_label} <span className="req">*</span>
-                  </label>
-                  <select
+                <div>
+                  <CustomDropdown
                     id="join-specialty"
+                    label={t.form_specialty_label}
                     required
                     value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="">{t.form_specialty_select}</option>
-                    {specialtiesList.map((item) => (
-                      <option key={item.key} value={item[language as keyof typeof item] || item.ar}>
-                        {item[language as keyof typeof item] || item.ar}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSpecialty}
+                    options={specialtiesList.map((item) => ({
+                      value: item[language as keyof typeof item] || item.ar,
+                      label: item[language as keyof typeof item] || item.ar,
+                      icon: '🎯',
+                    }))}
+                    placeholder={t.form_specialty_select}
+                    showSearch={specialtiesList.length > 5}
+                    searchPlaceholder={language === 'ar' ? 'ابحث عن تخصص...' : 'Search specialty...'}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[270px] sm:min-w-[320px]"
+                  />
                 </div>
 
                 {/* 6. Years of Experience */}
-                <div className="form-group">
-                  <label htmlFor="join-experience">
-                    {t.form_exp_label}
-                  </label>
-                  <select
+                <div>
+                  <CustomDropdown
                     id="join-experience"
+                    label={t.form_exp_label}
                     value={experienceYears}
-                    onChange={(e) => setExperienceYears(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="">{t.form_exp_select}</option>
-                    <option value="<3">{t.form_exp_1}</option>
-                    <option value="3-5">{t.form_exp_2}</option>
-                    <option value="5-10">{t.form_exp_3}</option>
-                    <option value=">10">{t.form_exp_4}</option>
-                  </select>
+                    onChange={setExperienceYears}
+                    options={[
+                      { value: '<3', label: t.form_exp_1, icon: '🌱' },
+                      { value: '3-5', label: t.form_exp_2, icon: '⭐' },
+                      { value: '5-10', label: t.form_exp_3, icon: '🏆' },
+                      { value: '>10', label: t.form_exp_4, icon: '👑' },
+                    ]}
+                    placeholder={t.form_exp_select}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[240px] sm:min-w-[280px]"
+                  />
                 </div>
               </div>
 

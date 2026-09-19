@@ -14,11 +14,21 @@ import {
   LessonData,
   QuizItem,
 } from '@/lib/edupath-data';
+import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 
 export default function EduPathPage() {
   const { language } = useLanguage();
   const lang = (language as LangKey) || 'ar';
   const strings = coreI18n[lang] || coreI18n.ar;
+
+  // Form dropdown states
+  const [workshopDays, setWorkshopDays] = useState<string>('');
+  const [workshopTimes, setWorkshopTimes] = useState<string>('');
+  const [workshopTravel, setWorkshopTravel] = useState<string>('');
+  const [certGender, setCertGender] = useState<string>('');
+  const [certType, setCertType] = useState<string>('');
+  const [certAccreditation, setCertAccreditation] = useState<string>('');
+  const [certPayment, setCertPayment] = useState<string>('');
 
   // 1. Level & Module State
   const [activeLevel, setActiveLevel] = useState<'foundation' | 'empowerment' | 'consolidation'>('foundation');
@@ -3234,34 +3244,61 @@ export default function EduPathPage() {
                     <label className="grand-label">{strings.label_phone}</label>
                     <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" disabled={overallProgress < 25} />
                   </div>
-                  <div className="grand-col-full">
+                  <div>
                     <label className="grand-label">{strings.dt_location_label}</label>
                     <input type="text" required className="grand-input" placeholder="الجزائر العاصمة، وهران، قسنطينة..." disabled={overallProgress < 25} />
                   </div>
                   <div>
-                    <label className="grand-label">{strings.dt_days_label}</label>
-                    <select required className="grand-select" disabled={overallProgress < 25}>
-                      <option value="">{strings.dt_days_opt_0}</option>
-                      <option value="weekend">{strings.dt_days_opt_1}</option>
-                      <option value="weekdays">{strings.dt_days_opt_2}</option>
-                      <option value="all">{strings.dt_days_opt_3}</option>
-                    </select>
+                    <CustomDropdown
+                      id="dt-travel"
+                      label={strings.dt_travel_label}
+                      required
+                      value={workshopTravel}
+                      onChange={setWorkshopTravel}
+                      disabled={overallProgress < 25}
+                      options={[
+                        { value: 'yes', label: strings.dt_travel_opt_1, icon: '✈️' },
+                        { value: 'no', label: strings.dt_travel_opt_2, icon: '❌' },
+                      ]}
+                      placeholder={strings.dt_travel_opt_0}
+                      themeColor="blue"
+                      dropdownWidthClass="w-full min-w-[240px]"
+                    />
                   </div>
                   <div>
-                    <label className="grand-label">{strings.dt_times_label}</label>
-                    <select required className="grand-select" disabled={overallProgress < 25}>
-                      <option value="">{strings.dt_times_opt_0}</option>
-                      <option value="morning">{strings.dt_times_opt_1}</option>
-                      <option value="afternoon">{strings.dt_times_opt_2}</option>
-                    </select>
+                    <CustomDropdown
+                      id="dt-days"
+                      label={strings.dt_days_label}
+                      required
+                      value={workshopDays}
+                      onChange={setWorkshopDays}
+                      disabled={overallProgress < 25}
+                      options={[
+                        { value: 'weekend', label: strings.dt_days_opt_1, icon: '📅' },
+                        { value: 'weekdays', label: strings.dt_days_opt_2, icon: '📆' },
+                        { value: 'all', label: strings.dt_days_opt_3, icon: '✨' },
+                      ]}
+                      placeholder={strings.dt_days_opt_0}
+                      themeColor="blue"
+                      dropdownWidthClass="w-full min-w-[240px]"
+                    />
                   </div>
-                  <div className="grand-col-full">
-                    <label className="grand-label">{strings.dt_travel_label}</label>
-                    <select required className="grand-select" disabled={overallProgress < 25}>
-                      <option value="">{strings.dt_travel_opt_0}</option>
-                      <option value="yes">{strings.dt_travel_opt_1}</option>
-                      <option value="no">{strings.dt_travel_opt_2}</option>
-                    </select>
+                  <div>
+                    <CustomDropdown
+                      id="dt-times"
+                      label={strings.dt_times_label}
+                      required
+                      value={workshopTimes}
+                      onChange={setWorkshopTimes}
+                      disabled={overallProgress < 25}
+                      options={[
+                        { value: 'morning', label: strings.dt_times_opt_1, icon: '🌅' },
+                        { value: 'afternoon', label: strings.dt_times_opt_2, icon: '🌆' },
+                      ]}
+                      placeholder={strings.dt_times_opt_0}
+                      themeColor="blue"
+                      dropdownWidthClass="w-full min-w-[240px]"
+                    />
                   </div>
                 </div>
                 <button type="submit" className="grand-btn btn-blue" disabled={overallProgress < 25}>
@@ -3348,8 +3385,12 @@ export default function EduPathPage() {
                   <label className="grand-label">{strings.cert_id_label}</label>
                   <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
                 </div>
-                <div className="grand-col-full">
+                <div>
                   <label className="grand-label">{strings.cert_address_label}</label>
+                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                </div>
+                <div>
+                  <label className="grand-label">{strings.cert_job_label}</label>
                   <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
                 </div>
 
@@ -3358,17 +3399,21 @@ export default function EduPathPage() {
                   <input type="number" required className="grand-input" placeholder="28" disabled={overallProgress < 50} />
                 </div>
                 <div>
-                  <label className="grand-label">{strings.cert_gender_label}</label>
-                  <select required className="grand-select" disabled={overallProgress < 50}>
-                    <option value="">{strings.cert_gender_opt_0}</option>
-                    <option value="male">{strings.cert_gender_opt_1}</option>
-                    <option value="female">{strings.cert_gender_opt_2}</option>
-                  </select>
-                </div>
-
-                <div className="grand-col-full">
-                  <label className="grand-label">{strings.cert_job_label}</label>
-                  <input type="text" required className="grand-input" placeholder="..." disabled={overallProgress < 50} />
+                  <CustomDropdown
+                    id="cert-gender"
+                    label={strings.cert_gender_label}
+                    required
+                    value={certGender}
+                    onChange={setCertGender}
+                    disabled={overallProgress < 50}
+                    options={[
+                      { value: 'male', label: strings.cert_gender_opt_1, icon: '👨' },
+                      { value: 'female', label: strings.cert_gender_opt_2, icon: '👩' },
+                    ]}
+                    placeholder={strings.cert_gender_opt_0}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[220px]"
+                  />
                 </div>
 
                 <div>
@@ -3381,31 +3426,58 @@ export default function EduPathPage() {
                 </div>
 
                 <div>
-                  <label className="grand-label">{strings.cert_type_label}</label>
-                  <select required className="grand-select" disabled={overallProgress < 50}>
-                    <option value="">{strings.cert_type_opt_0}</option>
-                    <option value="1">{strings.cert_type_opt_1}</option>
-                    <option value="2">{strings.cert_type_opt_2}</option>
-                    <option value="3">{strings.cert_type_opt_3}</option>
-                  </select>
+                  <CustomDropdown
+                    id="cert-type"
+                    label={strings.cert_type_label}
+                    required
+                    value={certType}
+                    onChange={setCertType}
+                    disabled={overallProgress < 50}
+                    options={[
+                      { value: '1', label: strings.cert_type_opt_1, icon: '📜' },
+                      { value: '2', label: strings.cert_type_opt_2, icon: '🎓' },
+                      { value: '3', label: strings.cert_type_opt_3, icon: '⭐' },
+                    ]}
+                    placeholder={strings.cert_type_opt_0}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[260px]"
+                  />
                 </div>
                 <div>
-                  <label className="grand-label">{strings.cert_accreditation_label}</label>
-                  <select required className="grand-select" disabled={overallProgress < 50}>
-                    <option value="">{strings.cert_acc_opt_0}</option>
-                    <option value="local">{strings.cert_acc_opt_1}</option>
-                    <option value="intl">{strings.cert_acc_opt_2}</option>
-                    <option value="both">{strings.cert_acc_opt_3}</option>
-                  </select>
+                  <CustomDropdown
+                    id="cert-accreditation"
+                    label={strings.cert_accreditation_label}
+                    required
+                    value={certAccreditation}
+                    onChange={setCertAccreditation}
+                    disabled={overallProgress < 50}
+                    options={[
+                      { value: 'local', label: strings.cert_acc_opt_1, icon: '🇩🇿' },
+                      { value: 'intl', label: strings.cert_acc_opt_2, icon: '🌐' },
+                      { value: 'both', label: strings.cert_acc_opt_3, icon: '🌟' },
+                    ]}
+                    placeholder={strings.cert_acc_opt_0}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[260px]"
+                  />
                 </div>
 
                 <div className="grand-col-full">
-                  <label className="grand-label">{strings.cert_payment_label}</label>
-                  <select required className="grand-select" disabled={overallProgress < 50}>
-                    <option value="">{strings.cert_pay_opt_0}</option>
-                    <option value="cash">{strings.cert_pay_opt_1}</option>
-                    <option value="ccp">{strings.cert_pay_opt_2}</option>
-                  </select>
+                  <CustomDropdown
+                    id="cert-payment"
+                    label={strings.cert_payment_label}
+                    required
+                    value={certPayment}
+                    onChange={setCertPayment}
+                    disabled={overallProgress < 50}
+                    options={[
+                      { value: 'cash', label: strings.cert_pay_opt_1, icon: '💵' },
+                      { value: 'ccp', label: strings.cert_pay_opt_2, icon: '📮' },
+                    ]}
+                    placeholder={strings.cert_pay_opt_0}
+                    themeColor="blue"
+                    dropdownWidthClass="w-full min-w-[260px]"
+                  />
                 </div>
 
                 <div className="grand-col-full mt-2">

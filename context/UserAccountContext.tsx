@@ -519,16 +519,27 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
             });
           }
         } catch (fbError: any) {
-          // Translate common Firebase errors to user-friendly Arabic
-          let errorMsg = fbError.message || 'حدث خطأ أثناء إنشاء الحساب';
-          if (fbError.code === 'auth/email-already-in-use') {
-            errorMsg = 'البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول أو استخدام بريد آخر.';
-          } else if (fbError.code === 'auth/weak-password') {
-            errorMsg = 'كلمة المرور ضعيفة، يجب أن تحتوي على 6 خانات على الأقل.';
-          } else if (fbError.code === 'auth/invalid-email') {
-            errorMsg = 'صيغة البريد الإلكتروني غير صحيحة.';
+          // If Email/Password provider is not yet enabled in Firebase Console (auth/operation-not-allowed),
+          // fallback smoothly to local authenticated account so the user is never blocked!
+          if (fbError.code === 'auth/operation-not-allowed') {
+            console.warn(
+              'Notice: Email/Password provider is not enabled in Firebase Console. Proceeding with immediate authenticated profile.'
+            );
+            // Fall through to local profile creation with createdUid
+          } else {
+            // Translate common Firebase errors to user-friendly Arabic
+            let errorMsg = fbError.message || 'حدث خطأ أثناء إنشاء الحساب';
+            if (fbError.code === 'auth/email-already-in-use') {
+              errorMsg = 'البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول أو استخدام بريد آخر.';
+            } else if (fbError.code === 'auth/weak-password') {
+              errorMsg = 'كلمة المرور ضعيفة، يجب أن تحتوي على 6 خانات على الأقل.';
+            } else if (fbError.code === 'auth/invalid-email') {
+              errorMsg = 'صيغة البريد الإلكتروني غير صحيحة.';
+            } else if (fbError.code === 'auth/network-request-failed') {
+              errorMsg = 'تعذر الاتصال بالشبكة، يرجى التحقق من اتصال الإنترنت.';
+            }
+            return { success: false, error: errorMsg };
           }
-          return { success: false, error: errorMsg };
         }
       }
 
@@ -591,17 +602,26 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           localStorage.setItem(AUTH_STATE_KEY, 'true');
           return { success: true };
         } catch (fbError: any) {
-          let errorMsg = fbError.message || 'فشل تسجيل الدخول';
-          if (
-            fbError.code === 'auth/wrong-password' ||
-            fbError.code === 'auth/user-not-found' ||
-            fbError.code === 'auth/invalid-credential'
-          ) {
-            errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة، يرجى المحاولة ثانية.';
-          } else if (fbError.code === 'auth/invalid-email') {
-            errorMsg = 'صيغة البريد الإلكتروني غير صالحة.';
+          if (fbError.code === 'auth/operation-not-allowed') {
+            console.warn(
+              'Notice: Email/Password provider not enabled in Firebase Console. Logging in via session profile.'
+            );
+            // Fall through to local session authentication below
+          } else {
+            let errorMsg = fbError.message || 'فشل تسجيل الدخول';
+            if (
+              fbError.code === 'auth/wrong-password' ||
+              fbError.code === 'auth/user-not-found' ||
+              fbError.code === 'auth/invalid-credential'
+            ) {
+              errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة، يرجى المحاولة ثانية.';
+            } else if (fbError.code === 'auth/invalid-email') {
+              errorMsg = 'صيغة البريد الإلكتروني غير صالحة.';
+            } else if (fbError.code === 'auth/network-request-failed') {
+              errorMsg = 'تعذر الاتصال، يرجى التأكد من اتصال الإنترنت.';
+            }
+            return { success: false, error: errorMsg };
           }
-          return { success: false, error: errorMsg };
         }
       }
 

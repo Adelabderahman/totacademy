@@ -1,12 +1,12 @@
 {
-  "projectId": "vertical-octagon-9v9wh",
-  "appId": "1:754364848760:web:cea02b8b4404c8720c6b8d",
-  "apiKey": "AIzaSyBx_L-3f8kIXBrN88FDY880I5ittnfR5UE",
-  "authDomain": "vertical-octagon-9v9wh.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-totacademy-0d742c00-f2b6-41e2-b826-da864834a895",
-  "storageBucket": "vertical-octagon-9v9wh.firebasestorage.app",
-  "messagingSenderId": "754364848760",
-  "measurementId": "",
-  "oAuthClientId": "754364848760-9o4pt6b9fl5doaff2k45keu4u1v2ofrt.apps.googleusercontent.com",
+  "projectId": "totacademy",
+  "appId": "1:263477452010:web:2df4115074b56705cd4b93",
+  "apiKey": "AIzaSyBtqo4KZi-_oUeTvOQQ-_AJnMn6kg6OPI4",
+  "authDomain": "totacademy.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "totacademy.firebasestorage.app",
+  "messagingSenderId": "263477452010",
+  "measurementId": "G-CS1BEC8410",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }

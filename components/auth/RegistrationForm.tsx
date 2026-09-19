@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface RegistrationFormProps {
@@ -10,6 +10,154 @@ interface RegistrationFormProps {
   onSuccess?: (msg: string) => void;
   className?: string;
 }
+
+interface SpecialtyOption {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  nameFr: string;
+  badge: string;
+  icon: string;
+}
+
+interface SpecialtyCategory {
+  categoryNameAr: string;
+  categoryNameEn: string;
+  categoryNameFr: string;
+  categoryIcon: string;
+  options: SpecialtyOption[];
+}
+
+const SPECIALTY_GROUPS: SpecialtyCategory[] = [
+  {
+    categoryNameAr: 'برامج تدريب المدربين TOT',
+    categoryNameEn: 'TOT Trainer Programs',
+    categoryNameFr: 'Programmes Formateur TOT',
+    categoryIcon: '🎓',
+    options: [
+      {
+        id: 'tot-foundation',
+        nameAr: 'تدريب المدربين - التأسيسي (TOT/P-F)',
+        nameEn: 'TOT Foundation (TOT/P-F)',
+        nameFr: 'TOT Fondamental (TOT/P-F)',
+        badge: 'TOT/P-F',
+        icon: '📘',
+      },
+      {
+        id: 'tot-pro',
+        nameAr: 'تدريب المدربين - الاحترافي المتخصص (TOT/P-P)',
+        nameEn: 'Professional TOT (TOT/P-P)',
+        nameFr: 'TOT Professionnel (TOT/P-P)',
+        badge: 'TOT/P-P',
+        icon: '⭐',
+      },
+      {
+        id: 'tot-master',
+        nameAr: 'إعداد وتأهيل المدرب الخبير الدولي (Master)',
+        nameEn: 'Master Trainer Program',
+        nameFr: 'Master Trainer International',
+        badge: 'Master',
+        icon: '👑',
+      },
+    ],
+  },
+  {
+    categoryNameAr: 'الذكاء الاصطناعي والتكنولوجيا',
+    categoryNameEn: 'AI & Educational Tech',
+    categoryNameFr: 'IA & Technologies',
+    categoryIcon: '🤖',
+    options: [
+      {
+        id: 'ai-training',
+        nameAr: 'الذكاء الاصطناعي التوليدي وتطبيقاته في التدريب',
+        nameEn: 'Generative AI for Trainers',
+        nameFr: 'IA Générative pour Formateurs',
+        badge: 'AI-Gen',
+        icon: '💡',
+      },
+      {
+        id: 'digital-transformation',
+        nameAr: 'التحول الرقمي وأمن المعلومات المؤسسية',
+        nameEn: 'Digital Transformation & Security',
+        nameFr: 'Transformation Digitale & Sécurité',
+        badge: 'Digital',
+        icon: '⚡',
+      },
+      {
+        id: 'instructional-design',
+        nameAr: 'التصميم التعليمي الرقمي وإنتاج المحتوى',
+        nameEn: 'Digital Instructional Design',
+        nameFr: 'Ingénierie Pédagogique Digitale',
+        badge: 'EdTech',
+        icon: '🎨',
+      },
+    ],
+  },
+  {
+    categoryNameAr: 'الإدارة والقيادة المؤسسية',
+    categoryNameEn: 'Management & Leadership',
+    categoryNameFr: 'Management & Leadership',
+    categoryIcon: '🏛️',
+    options: [
+      {
+        id: 'leadership',
+        nameAr: 'القيادة الاستراتيجية وإدارة فرق العمل',
+        nameEn: 'Strategic Leadership & Teams',
+        nameFr: 'Leadership Stratégique',
+        badge: 'Leader',
+        icon: '🧭',
+      },
+      {
+        id: 'pmp',
+        nameAr: 'إدارة المشاريع الاحترافية (PMP)',
+        nameEn: 'Project Management (PMP®)',
+        nameFr: 'Gestion de Projet (PMP®)',
+        badge: 'PMP®',
+        icon: '📊',
+      },
+      {
+        id: 'hr-management',
+        nameAr: 'إدارة الموارد البشرية وتطوير المواهب',
+        nameEn: 'HR Management & Talent Development',
+        nameFr: 'Gestion RH & Talents',
+        badge: 'HRM',
+        icon: '👥',
+      },
+    ],
+  },
+  {
+    categoryNameAr: 'الإعلام، الإلقاء والتأثير',
+    categoryNameEn: 'Media, Speaking & Impact',
+    categoryNameFr: 'Médias & Prise de Parole',
+    categoryIcon: '🎙️',
+    options: [
+      {
+        id: 'public-speaking',
+        nameAr: 'مهارات العرض، الإلقاء والتأثير الجماهيري',
+        nameEn: 'Public Speaking & Presentation',
+        nameFr: 'Art Oratoire & Présentation',
+        badge: 'Speech',
+        icon: '📢',
+      },
+      {
+        id: 'coaching',
+        nameAr: 'الكوتشينغ والتوجيه القيادي والشخصي',
+        nameEn: 'Professional Coaching & Mentoring',
+        nameFr: 'Coaching Professionnel',
+        badge: 'Coach',
+        icon: '🎯',
+      },
+      {
+        id: 'marketing',
+        nameAr: 'التسويق الرقمي وبناء العلامة الشخصية',
+        nameEn: 'Digital Marketing & Personal Branding',
+        nameFr: 'Marketing Digital & Branding',
+        badge: 'Brand',
+        icon: '🚀',
+      },
+    ],
+  },
+];
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   initialMode = 'register',
@@ -35,6 +183,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
 
+  // Custom Specialty Dropdown state
+  const [isSpecialtyOpen, setIsSpecialtyOpen] = useState(false);
+  const specialtyDropdownRef = useRef<HTMLDivElement>(null);
+
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -46,9 +198,51 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Click outside to close specialty dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        specialtyDropdownRef.current &&
+        !specialtyDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSpecialtyOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Find currently selected specialty object
+  const selectedSpecialtyObj = SPECIALTY_GROUPS.flatMap((g) => g.options).find(
+    (opt) => opt.id === registerSpecialty
+  );
+
+  const getSpecialtyLabel = (opt: SpecialtyOption) => {
+    if (language === 'ar') return opt.nameAr;
+    if (language === 'fr') return opt.nameFr;
+    return opt.nameEn;
+  };
+
+  const getCategoryLabel = (cat: SpecialtyCategory) => {
+    if (language === 'ar') return cat.categoryNameAr;
+    if (language === 'fr') return cat.categoryNameFr;
+    return cat.categoryNameEn;
+  };
+
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (!registerSpecialty) {
+      setErrorMessage(
+        language === 'ar'
+          ? 'يرجى اختيار تخصص من القائمة للاستمرار.'
+          : 'Please choose a specialty from the list to continue.'
+      );
+      return;
+    }
 
     if (registerPassword !== registerConfirmPassword) {
       setErrorMessage(
@@ -194,7 +388,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <div className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
                 {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account?'}
               </div>
-              {/* مقاس خط عبارة: أنشئ حساب وصر من المحترفين أقل وأصغر وأكثر أناقة */}
               <div className={`text-[11px] sm:text-xs font-semibold leading-tight transition-colors ${mode === 'register' ? 'text-primary-green' : 'text-slate-700'}`}>
                 {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créer un compte et devenir pro' : 'Create account & join pros'}
               </div>
@@ -204,21 +397,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <span className="absolute end-2 top-2 w-2 h-2 rounded-full bg-primary-green animate-pulse" />
           )}
         </button>
-      </div>
-
-      {/* شريط حالة انسيابي متبدل يوضح وضع النموذج الحالي */}
-      <div className="mb-3 px-3 py-1.5 rounded-lg bg-slate-50/80 border border-slate-100 flex items-center justify-between text-[11px] text-slate-500 transition-all duration-300">
-        <span className="flex items-center gap-1.5 font-medium">
-          <span className={`w-1.5 h-1.5 rounded-full ${mode === 'login' ? 'bg-primary-blue' : 'bg-primary-green'}`} />
-          {mode === 'login'
-            ? (language === 'ar' ? 'بوابة تسجيل الدخول المعتمدة للأعضاء' : 'Member Login Portal')
-            : (language === 'ar' ? 'نموذج التسجيل والالتحاق بالبرامج (عمودين × 5 صفوف)' : 'Enrollment Form (2 Columns × 5 Rows)')}
-        </span>
-        <span className="text-[10px] text-slate-400">
-          {mode === 'login'
-            ? (language === 'ar' ? 'دخول فوري' : 'Instant Login')
-            : (language === 'ar' ? 'بيانات معتمدة' : 'Verified Registration')}
-        </span>
       </div>
 
       {/* ========================================================================= */}
@@ -344,79 +522,118 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 />
               </div>
 
-              {/* الصف 2، العمود الثاني: اختر تخصص (القائمة المنسدلة بتصميم أنيق وحجم خط صغير) */}
-              <div>
+              {/* الصف 2، العمود الثاني: اختر تخصص (قائمة منسدلة منسقة بشكل كامل وإبداعي وبحجم خط صغير) */}
+              <div className="relative" ref={specialtyDropdownRef}>
                 <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
                   {language === 'ar' ? 'اختر تخصص' : language === 'fr' ? 'Choisir une spécialité' : 'Choose Specialty'}
                   <span className="text-red-500 ms-1">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    required
-                    value={registerSpecialty}
-                    onChange={(e) => setRegisterSpecialty(e.target.value)}
-                    className="w-full appearance-none px-3 py-2 sm:py-2.5 pe-8 rounded-xl border border-slate-200 hover:border-emerald-400 focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 text-[11px] sm:text-xs font-medium text-slate-700 bg-slate-50/70 hover:bg-white focus:bg-white transition-all shadow-2xs cursor-pointer truncate"
-                  >
-                    <option value="" disabled>
-                      {language === 'ar' ? '-- اختر تخصص --' : '-- Choose Specialty --'}
-                    </option>
 
-                    <optgroup label={language === 'ar' ? '🎓 برامج تدريب المدربين TOT' : 'TOT Trainer Programs'}>
-                      <option value="tot-foundation">
-                        {language === 'ar' ? 'تدريب المدربين - التأسيسي (TOT/P-F)' : 'TOT Foundation (TOT/P-F)'}
-                      </option>
-                      <option value="tot-pro">
-                        {language === 'ar' ? 'تدريب المدربين - الاحترافي المتخصص (TOT/P-P)' : 'Professional TOT (TOT/P-P)'}
-                      </option>
-                      <option value="tot-master">
-                        {language === 'ar' ? 'إعداد وتأهيل المدرب الخبير الدولي (Master Trainer)' : 'Master Trainer Program'}
-                      </option>
-                    </optgroup>
+                {/* حقل القيمة المخفية لدعم التحقق النموذجي */}
+                <input type="hidden" name="specialty" value={registerSpecialty} />
 
-                    <optgroup label={language === 'ar' ? '🤖 الذكاء الاصطناعي والتكنولوجيا' : 'AI & Modern Tech'}>
-                      <option value="ai-training">
-                        {language === 'ar' ? 'الذكاء الاصطناعي التوليدي وتطبيقاته في التدريب' : 'Generative AI for Trainers'}
-                      </option>
-                      <option value="digital-transformation">
-                        {language === 'ar' ? 'التحول الرقمي وأمن المعلومات' : 'Digital Transformation & Security'}
-                      </option>
-                      <option value="instructional-design">
-                        {language === 'ar' ? 'التصميم التعليمي الرقمي وإنتاج المحتوى' : 'Digital Instructional Design'}
-                      </option>
-                    </optgroup>
+                {/* الزر الرئيسي المشغل للقائمة المنسدلة */}
+                <button
+                  type="button"
+                  onClick={() => setIsSpecialtyOpen(!isSpecialtyOpen)}
+                  className={`w-full px-3 py-2 sm:py-2.5 rounded-xl border text-start flex items-center justify-between transition-all duration-200 shadow-2xs cursor-pointer ${
+                    isSpecialtyOpen
+                      ? 'border-primary-green ring-2 ring-primary-green/20 bg-white'
+                      : registerSpecialty
+                      ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70 text-slate-800'
+                      : 'border-slate-200 bg-slate-50/70 hover:bg-white text-slate-500 hover:border-slate-300'
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={isSpecialtyOpen}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 pe-1">
+                    {selectedSpecialtyObj ? (
+                      <>
+                        <span className="text-xs sm:text-sm shrink-0">
+                          {selectedSpecialtyObj.icon}
+                        </span>
+                        <span className="text-[11px] sm:text-[11.5px] font-semibold text-slate-800 truncate">
+                          {getSpecialtyLabel(selectedSpecialtyObj)}
+                        </span>
+                        <span className="hidden sm:inline-block ms-auto text-[9px] px-1.5 py-0.2 rounded bg-emerald-100/80 text-emerald-800 font-medium shrink-0">
+                          {selectedSpecialtyObj.badge}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[11px] sm:text-xs text-slate-400 font-normal">
+                        {language === 'ar' ? '-- اختر تخصص --' : '-- Choose Specialty --'}
+                      </span>
+                    )}
+                  </div>
 
-                    <optgroup label={language === 'ar' ? '🏛️ الإدارة والقيادة المؤسسية' : 'Management & Leadership'}>
-                      <option value="leadership">
-                        {language === 'ar' ? 'القيادة الاستراتيجية وإدارة فرق العمل' : 'Strategic Leadership & Teams'}
-                      </option>
-                      <option value="pmp">
-                        {language === 'ar' ? 'إدارة المشاريع الاحترافية (PMP)' : 'Project Management (PMP)'}
-                      </option>
-                      <option value="hr-management">
-                        {language === 'ar' ? 'إدارة الموارد البشرية وتطوير المواهب' : 'HR Management & Talent Development'}
-                      </option>
-                    </optgroup>
-
-                    <optgroup label={language === 'ar' ? '🎙️ الإعلام، الإلقاء والتأثير' : 'Media & Public Speaking'}>
-                      <option value="public-speaking">
-                        {language === 'ar' ? 'مهارات العرض، الإلقاء والتأثير الجماهيري' : 'Public Speaking & Presentation'}
-                      </option>
-                      <option value="coaching">
-                        {language === 'ar' ? 'الكوتشينغ والتوجيه القيادي والشخصي' : 'Professional Coaching & Mentoring'}
-                      </option>
-                      <option value="marketing">
-                        {language === 'ar' ? 'التسويق الرقمي وبناء العلامة الشخصية' : 'Digital Marketing & Personal Branding'}
-                      </option>
-                    </optgroup>
-                  </select>
-
-                  {/* سهم أنيق للقائمة المنسدلة */}
-                  <div className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  {/* سهم التفاعل المنسدل الأنيق */}
+                  <div className={`shrink-0 ms-1 transition-transform duration-200 text-slate-400 ${isSpecialtyOpen ? 'rotate-180 text-primary-green' : ''}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
-                </div>
+                </button>
+
+                {/* القائمة المنسدلة الاحترافية والمنسقة بحجم خط صغير وتصميم انسيابي */}
+                {isSpecialtyOpen && (
+                  <div className="absolute top-[calc(100%+4px)] start-0 end-0 z-50 bg-white/98 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn py-1 max-h-64 sm:max-h-72 overflow-y-auto divide-y divide-slate-100">
+                    {SPECIALTY_GROUPS.map((group, groupIdx) => (
+                      <div key={groupIdx} className="p-1.5">
+                        {/* ترويسة المجموعة بتصميم ناعم ومقاس خط مصغر */}
+                        <div className="px-2 py-1 mb-1 rounded-md bg-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-600 tracking-normal">
+                          <span className="flex items-center gap-1">
+                            <span>{group.categoryIcon}</span>
+                            <span>{getCategoryLabel(group)}</span>
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-normal">
+                            {group.options.length} {language === 'ar' ? 'مسارات' : 'tracks'}
+                          </span>
+                        </div>
+
+                        {/* خيارات التخصص المنسقة بخط أصغر وأنيق */}
+                        <div className="space-y-0.5">
+                          {group.options.map((opt) => {
+                            const isSelected = registerSpecialty === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                  setRegisterSpecialty(opt.id);
+                                  setIsSpecialtyOpen(false);
+                                }}
+                                className={`w-full text-start px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors duration-150 cursor-pointer group ${
+                                  isSelected
+                                    ? 'bg-emerald-50 text-emerald-900 font-semibold border-s-2 border-primary-green'
+                                    : 'hover:bg-slate-50 text-slate-700 hover:text-slate-900'
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1 pe-2">
+                                  <span className="text-xs shrink-0">{opt.icon}</span>
+                                  <span className="text-[10.5px] sm:text-[11px] leading-snug truncate">
+                                    {getSpecialtyLabel(opt)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-medium ${
+                                    isSelected
+                                      ? 'bg-emerald-200/70 text-emerald-900'
+                                      : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200/70'
+                                  }`}>
+                                    {opt.badge}
+                                  </span>
+                                  {isSelected && (
+                                    <span className="text-primary-green text-xs font-bold">✓</span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ======================================================== */}

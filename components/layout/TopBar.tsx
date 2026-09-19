@@ -41,7 +41,6 @@ export const TopBar: React.FC = () => {
     { href: '/', label: t('الرئيسية', 'Home', 'Accueil'), icon: '🏠' },
     { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications'), icon: '📜' },
     { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations'), icon: '🎯' },
-    { href: '/edupath', label: t('المسار التعليمي', 'EduPath', 'Parcours'), icon: '📚' },
     { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements'), icon: '📅' },
     { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs'), icon: '👥' },
     { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine'), icon: '📰' },

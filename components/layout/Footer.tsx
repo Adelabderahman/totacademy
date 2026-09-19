@@ -13,7 +13,6 @@ export const Footer: React.FC = () => {
     { href: '/', label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home' },
     { href: '/certificates', label: language === 'ar' ? 'الشهادات والاعتمادات' : language === 'fr' ? 'Certifications' : 'Certificates' },
     { href: '/specializations', label: language === 'ar' ? 'التخصصات والمسارات' : language === 'fr' ? 'Spécialisations' : 'Specializations' },
-    { href: '/edupath', label: language === 'ar' ? 'المسار التعليمي' : language === 'fr' ? 'Parcours' : 'EduPath' },
     { href: '/events', label: language === 'ar' ? 'الفعاليات' : language === 'fr' ? 'Événements' : 'Events' },
     { href: '/trainers', label: language === 'ar' ? 'المدربون' : language === 'fr' ? 'Formateurs' : 'Trainers' },
     { href: '/trainer-magazine', label: language === 'ar' ? 'مجلة المدرب' : language === 'fr' ? 'Revue' : 'Magazine' },

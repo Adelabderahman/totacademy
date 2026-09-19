@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
+import { useAuthModal } from '@/context/AuthModalContext';
 import {
   TrackItem,
   Specialization,
@@ -16,7 +19,10 @@ interface TrackFlipCardProps {
 }
 
 export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
+  const router = useRouter();
   const { language } = useLanguage();
+  const { isAuthenticated, enrollInTrack } = useUserAccount();
+  const { openAuthModal } = useAuthModal();
   const t = coreI18n[language] || coreI18n.ar;
 
   const [isFlipped, setIsFlipped] = useState(false);
@@ -34,9 +40,8 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
   const currentLevelMetrics =
     (track.levels[activeLevel] && (track.levels[activeLevel][language] || track.levels[activeLevel].ar)) || [];
 
-  const trackEnrollUrl =
-    track.url ||
-    `https://wa.me/213555989370?text=${encodeURIComponent('التسجيل في: ' + track.title.ar)}`;
+  const targetTrackId = track.id || `trk-${encodeURIComponent(track.title.ar.substring(0, 15))}`;
+  const trackEduPathUrl = `/edupath?track=${encodeURIComponent(targetTrackId)}`;
 
   const handleCardClick = (e: React.MouseEvent) => {
     // If clicked on front, flip to back
@@ -48,6 +53,58 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
   const handleBackFaceClick = (e: React.MouseEvent) => {
     // If clicked on background of back face, flip back
     setIsFlipped(false);
+  };
+
+  const handleStartTraining = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (isAuthenticated) {
+      // User is logged in: enroll in this track and navigate directly to edupath
+      try {
+        await enrollInTrack({
+          id: targetTrackId,
+          trackKey: targetTrackId,
+          titleAr: track.title.ar,
+          titleEn: track.title.en,
+          categoryAr: spec.name.ar,
+          categoryEn: spec.name.en,
+          enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+          progress: 0,
+          status: 'in_progress',
+          nextSessionAr: 'الوحدة 1: المدخل التأسيسي وبناء الإطار العام',
+          nextSessionEn: 'Module 1: Foundation Overview',
+          mentorName: track.trainers?.[0]?.name ? getTrainerName(track.trainers[0].name, language) : 'فريق المدربين بالأكاديمية',
+          badge: spec.name.ar.slice(0, 8),
+          totalLessons: 12,
+          completedLessons: 0,
+        });
+      } catch (err) {
+        console.warn('Track enrollment warning:', err);
+      }
+      router.push(trackEduPathUrl);
+    } else {
+      // User is NOT logged in: show registration requirement notice and open auth modal
+      const noticeMsg =
+        language === 'ar'
+          ? `يرجى تسجيل الدخول أو إنشاء حساب جديد للبدء في مسار "${title}"، وبمجرد التسجيل ستدخل مباشرة لصفحة المسار التعليمي.`
+          : `Please sign in or create an account to start the "${title}" track. Once registered, you will enter the learning path directly.`;
+
+      openAuthModal(
+        'register',
+        trackEduPathUrl,
+        noticeMsg,
+        {
+          id: targetTrackId,
+          trackKey: targetTrackId,
+          titleAr: track.title.ar,
+          titleEn: track.title.en,
+          categoryAr: spec.name.ar,
+          categoryEn: spec.name.en,
+          mentorName: track.trainers?.[0]?.name ? getTrainerName(track.trainers[0].name, language) : undefined,
+          badge: spec.name.ar.slice(0, 8),
+        }
+      );
+    }
   };
 
   return (
@@ -172,15 +229,13 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
           </div>
 
           <div className="fc-back-footer">
-            <a
-              href={trackEnrollUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="fc-cta fc-back-cta"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              className="fc-cta fc-back-cta cursor-pointer transition-transform active:scale-95"
+              onClick={handleStartTraining}
             >
               {t.fc_back_cta}
-            </a>
+            </button>
           </div>
         </div>
       </div>

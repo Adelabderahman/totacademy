@@ -355,14 +355,14 @@ const STORAGE_KEY = 'tot_user_profile_v2';
 const AUTH_STATE_KEY = 'tot_auth_state_v2';
 
 export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(DEFAULT_TRAINER_PROFILE);
+  const [user, setUser] = useState<UserProfile>(DEFAULT_TRAINEE_PROFILE);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [enrolledTracks, setEnrolledTracks] = useState<EnrolledTrack[]>(INITIAL_TRACKS);
-  const [certificates, setCertificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
-  const [appointments, setAppointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
+  const [enrolledTracks, setEnrolledTracks] = useState<EnrolledTrack[]>([]);
+  const [certificates, setCertificates] = useState<UserCertificate[]>([]);
+  const [appointments, setAppointments] = useState<UserAppointment[]>([]);
   const [articles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
   const [students] = useState<SupervisedStudent[]>(INITIAL_STUDENTS);
   const [professors] = useState<SupervisingProfessor[]>(INITIAL_PROFESSORS);
@@ -378,6 +378,12 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       const savedAuth = localStorage.getItem(AUTH_STATE_KEY);
       if (savedAuth !== null) {
         setIsAuthenticated(savedAuth === 'true');
+      } else {
+        setIsAuthenticated(false);
+      }
+      const savedTracks = localStorage.getItem('tot_user_enrolled_tracks');
+      if (savedTracks) {
+        setEnrolledTracks(JSON.parse(savedTracks));
       }
     } catch {
       // ignore local cache errors
@@ -431,31 +437,43 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
             await saveUserProfileToFirestore(newProfile).catch(() => {});
           }
 
-          // Load enrolled tracks from Firestore
+          // Load enrolled tracks from Firestore - do NOT auto-seed tracks for new users
           const remoteTracks = await fetchUserEnrolledTracks(fUser.uid);
           if (remoteTracks && remoteTracks.length > 0) {
             setEnrolledTracks(remoteTracks);
+            try {
+              localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(remoteTracks));
+            } catch {}
           } else {
-            // Seed initial track for the new user and persist to Firestore
-            for (const trk of INITIAL_TRACKS) {
-              await saveEnrolledTrackToFirestore(fUser.uid, trk).catch(() => {});
-            }
+            // New registered user has NO enrolled tracks yet (empty state)
+            setEnrolledTracks([]);
           }
 
           // Load certificates and appointments if any
           const remoteCerts = await fetchUserCertificatesFromFirestore(fUser.uid);
-          if (remoteCerts && remoteCerts.length > 0) setCertificates(remoteCerts);
+          if (remoteCerts && remoteCerts.length > 0) {
+            setCertificates(remoteCerts);
+          } else {
+            setCertificates([]);
+          }
 
           const remoteAppts = await fetchUserAppointmentsFromFirestore(fUser.uid);
-          if (remoteAppts && remoteAppts.length > 0) setAppointments(remoteAppts);
+          if (remoteAppts && remoteAppts.length > 0) {
+            setAppointments(remoteAppts);
+          } else {
+            setAppointments([]);
+          }
         } catch (err) {
           console.warn('Note loading user data from Firestore:', err);
         }
       } else {
-        // If not signed into Firebase Auth, rely on local session flag if set
+        // If not signed into Firebase Auth, check local session flag
         const savedAuth = localStorage.getItem(AUTH_STATE_KEY);
-        if (savedAuth === 'false') {
+        if (savedAuth !== 'true') {
           setIsAuthenticated(false);
+          setEnrolledTracks([]);
+          setCertificates([]);
+          setAppointments([]);
         }
       }
       setLoading(false);
@@ -567,9 +585,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       setUser(newProfile);
       setIsAuthenticated(true);
+      setEnrolledTracks([]);
+      setCertificates([]);
+      setAppointments([]);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
         localStorage.setItem(AUTH_STATE_KEY, 'true');
+        localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify([]));
       } catch {}
 
       await saveUserProfileToFirestore(newProfile).catch(() => {});
@@ -692,9 +714,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     const template = role === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
     setUser(template);
     setIsAuthenticated(true);
+    setEnrolledTracks(INITIAL_TRACKS);
+    setCertificates(INITIAL_CERTIFICATES);
+    setAppointments(INITIAL_APPOINTMENTS);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
       localStorage.setItem(AUTH_STATE_KEY, 'true');
+      localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(INITIAL_TRACKS));
     } catch {}
   };
 
@@ -723,12 +749,17 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     setEnrolledTracks((prev) => {
       const existingIdx = prev.findIndex((t) => t.id === trackId || t.trackKey === newTrack.trackKey);
+      let nextList: EnrolledTrack[];
       if (existingIdx >= 0) {
-        const copy = [...prev];
-        copy[existingIdx] = { ...copy[existingIdx], ...newTrack };
-        return copy;
+        nextList = [...prev];
+        nextList[existingIdx] = { ...nextList[existingIdx], ...newTrack };
+      } else {
+        nextList = [newTrack, ...prev];
       }
-      return [newTrack, ...prev];
+      try {
+        localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(nextList));
+      } catch {}
+      return nextList;
     });
 
     const targetUid = firebaseUser?.uid || user.id;
@@ -811,8 +842,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     } finally {
       setIsAuthenticated(false);
       setFirebaseUser(null);
+      setEnrolledTracks([]);
+      setCertificates([]);
+      setAppointments([]);
       try {
         localStorage.setItem(AUTH_STATE_KEY, 'false');
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('tot_user_enrolled_tracks');
       } catch {}
     }
   };

@@ -23,7 +23,6 @@ export const MainNavbar: React.FC = () => {
     { href: '/', label: t('الرئيسية', 'Home', 'Accueil') },
     { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications') },
     { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations') },
-    { href: '/edupath', label: t('المسار التعليمي', 'EduPath', 'Parcours') },
     { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements') },
     { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs') },
     { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine') },

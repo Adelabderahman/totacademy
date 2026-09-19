@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthModal } from '@/context/AuthModalContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { RegistrationForm } from './RegistrationForm';
 
 export const AuthModal: React.FC = () => {
-  const { isOpen, mode, closeAuthModal } = useAuthModal();
+  const router = useRouter();
+  const { isOpen, mode, redirectUrl, customMessage, pendingTrack, closeAuthModal, clearRedirectData } = useAuthModal();
+  const { enrollInTrack } = useUserAccount();
   const { language } = useLanguage();
   const isRTL = language === 'ar';
 
@@ -28,6 +32,43 @@ export const AuthModal: React.FC = () => {
   }, [isOpen, closeAuthModal]);
 
   if (!isOpen) return null;
+
+  const handleAuthSuccess = async () => {
+    // If there is a pending track enrollment from clicking "بدأ التدريب"
+    if (pendingTrack) {
+      try {
+        await enrollInTrack({
+          id: pendingTrack.id,
+          trackKey: pendingTrack.trackKey,
+          titleAr: pendingTrack.titleAr,
+          titleEn: pendingTrack.titleEn,
+          categoryAr: pendingTrack.categoryAr,
+          categoryEn: pendingTrack.categoryEn,
+          enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+          progress: 0,
+          status: 'in_progress',
+          nextSessionAr: 'الوحدة الأولى: البناء التأسيسي للمسار',
+          nextSessionEn: 'Module 1: Foundation Overview',
+          mentorName: pendingTrack.mentorName || 'فريق المدربين بالأكاديمية',
+          badge: pendingTrack.badge || pendingTrack.categoryAr.slice(0, 8),
+          totalLessons: 12,
+          completedLessons: 0,
+        });
+      } catch (err) {
+        console.warn('Auto-enroll on auth success error:', err);
+      }
+    }
+
+    const targetUrl = redirectUrl;
+    clearRedirectData();
+
+    setTimeout(() => {
+      closeAuthModal();
+      if (targetUrl) {
+        router.push(targetUrl);
+      }
+    }, 1200);
+  };
 
   return (
     <div
@@ -69,15 +110,26 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Modal Body: Unified RegistrationForm (عمودين × 5 صفوف) */}
+        {/* Modal Body: Unified RegistrationForm */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
+          {/* Custom Requirement Notice Banner if triggered by start training */}
+          {customMessage && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs font-semibold flex items-start gap-2.5 shadow-2xs animate-fadeIn">
+              <span className="text-lg leading-none shrink-0">🧭</span>
+              <div className="flex-1">
+                <p className="font-bold text-slate-900 mb-0.5">
+                  {language === 'ar' ? 'تنبيه: يلزم التسجيل للمتابعة في المسار' : 'Notice: Account Required to Start'}
+                </p>
+                <p className="font-normal text-[12px] leading-relaxed text-slate-700">
+                  {customMessage}
+                </p>
+              </div>
+            </div>
+          )}
+
           <RegistrationForm
             initialMode={mode === 'login' ? 'login' : 'register'}
-            onSuccess={() => {
-              setTimeout(() => {
-                closeAuthModal();
-              }, 2200);
-            }}
+            onSuccess={handleAuthSuccess}
             className="border-0 shadow-none p-0"
           />
         </div>

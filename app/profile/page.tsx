@@ -486,96 +486,125 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {enrolledTracks.map((track) => (
-                  <div
-                    key={track.id}
-                    className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-primary-blue border border-blue-100">
-                          {track.badge}
-                        </span>
-                        <span
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-                            track.status === 'completed'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : track.status === 'in_progress'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200'
-                          }`}
-                        >
-                          {track.status === 'completed'
-                            ? language === 'ar'
-                              ? 'تم الاعتماد'
-                              : 'Completed'
-                            : track.status === 'in_progress'
-                            ? language === 'ar'
-                              ? 'قيد التدريب'
-                              : 'In Progress'
-                            : language === 'ar'
-                            ? 'تسجيل مؤكد'
-                            : 'Confirmed'}
-                        </span>
-                      </div>
-
-                      <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
-                        {language === 'ar' ? track.titleAr : track.titleEn}
-                      </h3>
-
-                      <p className="text-xs text-slate-500">
-                        {language === 'ar' ? `المشرف: ${track.mentorName}` : `Mentor: ${track.mentorName}`}
-                      </p>
-
-                      {/* Progress Bar */}
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-slate-600">
-                            {language === 'ar' ? 'نسبة الإنجاز' : 'Progress'}
-                          </span>
-                          <span className="text-primary-blue">{track.progress}%</span>
-                        </div>
-                        <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              track.progress === 100
-                                ? 'bg-emerald-500'
-                                : 'bg-gradient-to-r from-primary-blue to-cyan-500'
-                            }`}
-                            style={{ width: `${track.progress}%` }}
-                          />
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {track.completedLessons} / {track.totalLessons}{' '}
-                          {language === 'ar' ? 'درساً ومحوراً معتمداً' : 'lessons completed'}
-                        </div>
-                      </div>
-
-                      {/* Next Session Alert */}
-                      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-700 flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-primary-blue shrink-0" />
-                        <span className="line-clamp-1">
-                          {language === 'ar' ? track.nextSessionAr : track.nextSessionEn}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400">
-                        {language === 'ar' ? `تاريخ القيد: ${track.enrolledAt}` : `Enrolled: ${track.enrolledAt}`}
-                      </span>
-                      <Link
-                        href="/edupath"
-                        className="text-xs font-bold text-primary-blue hover:text-secondary-blue flex items-center gap-1"
-                      >
-                        <span>{language === 'ar' ? 'متابعة المحاور' : 'Continue'}</span>
-                        <ChevronRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
-                      </Link>
-                    </div>
+              {enrolledTracks.length === 0 ? (
+                <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200/90 shadow-sm text-center max-w-2xl mx-auto space-y-5 my-4">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-primary-blue shadow-inner">
+                    <BookOpen className="w-8 h-8 text-primary-blue" />
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                      {language === 'ar'
+                        ? 'ليس لديك مسارات تدريبية قد بدأت فيها بالفعل'
+                        : 'You do not have any training tracks started yet'}
+                    </h3>
+                    <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                      {language === 'ar'
+                        ? 'حسابك جديد ونظيف! استعرض قائمة التخصصات والمسارات التدريبية المعتمدة، ثم اختر مسارك واضغط على "بدأ التدريب" للانطلاق في رحلتك التعليمية.'
+                        : 'Your account is ready! Explore our accredited specializations and choose a pathway to begin your certified journey.'}
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <Link
+                      href="/specializations"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                    >
+                      <span>{language === 'ar' ? 'استعراض التخصصات وبدء مسار الآن' : 'Explore Tracks & Start Now'}</span>
+                      <ArrowUpRight className={`w-4 h-4 ${isRTL ? 'rotate-[-90deg]' : ''}`} />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {enrolledTracks.map((track) => (
+                    <div
+                      key={track.id}
+                      className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-primary-blue border border-blue-100">
+                            {track.badge}
+                          </span>
+                          <span
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                              track.status === 'completed'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : track.status === 'in_progress'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            }`}
+                          >
+                            {track.status === 'completed'
+                              ? language === 'ar'
+                                ? 'تم الاعتماد'
+                                : 'Completed'
+                              : track.status === 'in_progress'
+                              ? language === 'ar'
+                                ? 'قيد التدريب'
+                                : 'In Progress'
+                              : language === 'ar'
+                              ? 'تسجيل مؤكد'
+                              : 'Confirmed'}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
+                          {language === 'ar' ? track.titleAr : track.titleEn}
+                        </h3>
+
+                        <p className="text-xs text-slate-500">
+                          {language === 'ar' ? `المشرف: ${track.mentorName}` : `Mentor: ${track.mentorName}`}
+                        </p>
+
+                        {/* Progress Bar */}
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-600">
+                              {language === 'ar' ? 'نسبة الإنجاز' : 'Progress'}
+                            </span>
+                            <span className="text-primary-blue">{track.progress}%</span>
+                          </div>
+                          <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                track.progress === 100
+                                  ? 'bg-emerald-500'
+                                  : 'bg-gradient-to-r from-primary-blue to-cyan-500'
+                              }`}
+                              style={{ width: `${track.progress}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {track.completedLessons} / {track.totalLessons}{' '}
+                            {language === 'ar' ? 'درساً ومحوراً معتمداً' : 'lessons completed'}
+                          </div>
+                        </div>
+
+                        {/* Next Session Alert */}
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-700 flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-primary-blue shrink-0" />
+                          <span className="line-clamp-1">
+                            {language === 'ar' ? track.nextSessionAr : track.nextSessionEn}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">
+                          {language === 'ar' ? `تاريخ القيد: ${track.enrolledAt}` : `Enrolled: ${track.enrolledAt}`}
+                        </span>
+                        <Link
+                          href="/edupath"
+                          className="text-xs font-bold text-primary-blue hover:text-secondary-blue flex items-center gap-1"
+                        >
+                          <span>{language === 'ar' ? 'متابعة المحاور' : 'Continue'}</span>
+                          <ChevronRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -602,85 +631,103 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {certificates.map((cert) => (
-                  <div
-                    key={cert.id}
-                    className="relative bg-gradient-to-br from-white via-amber-50/20 to-white rounded-3xl p-6 border border-amber-200/80 shadow-md flex flex-col justify-between overflow-hidden"
-                  >
-                    <div className="absolute -top-12 -left-12 w-32 h-32 bg-amber-100/40 rounded-full blur-2xl" />
-
-                    <div className="relative space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                          {language === 'ar' ? 'معتمد رسمياً' : 'Official Verified'}
-                        </span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          {cert.credentialId}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-black text-slate-900 leading-snug">
-                        {language === 'ar' ? cert.titleAr : cert.titleEn}
-                      </h3>
-
-                      <p className="text-xs text-slate-600 font-medium">
-                        {language === 'ar' ? cert.trackTitleAr : cert.trackTitleEn}
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-                        <div className="p-2.5 rounded-xl bg-white/80 border border-slate-200/60">
-                          <span className="text-slate-400 block text-[10px]">
-                            {language === 'ar' ? 'التقدير والنتيجة' : 'Grade'}
-                          </span>
-                          <span className="font-bold text-emerald-700">{cert.grade}</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-white/80 border border-slate-200/60">
-                          <span className="text-slate-400 block text-[10px]">
-                            {language === 'ar' ? 'الساعات المعتمدة' : 'Accredited Hours'}
-                          </span>
-                          <span className="font-bold text-slate-800">
-                            {cert.hours} {language === 'ar' ? 'ساعة تدريبية' : 'Training Hours'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-slate-500 pt-1">
-                        {language === 'ar'
-                          ? `جهة الإصدار: ${cert.issuerAr}`
-                          : `Issued by: ${cert.issuerEn}`}
-                      </p>
-                    </div>
-
-                    <div className="pt-5 mt-4 border-t border-amber-100 flex flex-wrap items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(cert.credentialId, cert.id)}
-                        className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>
-                          {copiedCode === cert.id
-                            ? language === 'ar'
-                              ? 'تم النسخ!'
-                              : 'Copied!'
-                            : language === 'ar'
-                            ? 'نسخ كود التحقق'
-                            : 'Copy Code'}
-                        </span>
-                      </button>
-
-                      <Link
-                        href={`/certificates?verify=${cert.credentialId}`}
-                        className="px-4 py-2 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>{language === 'ar' ? 'فحص السجل الرقمي' : 'Verify Record'}</span>
-                      </Link>
-                    </div>
+              {certificates.length === 0 ? (
+                <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-sm text-center max-w-xl mx-auto space-y-4 my-4">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shadow-inner">
+                    <Award className="w-7 h-7 text-amber-600" />
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      {language === 'ar' ? 'لا توجد شهادات صادرة بعد' : 'No certificates issued yet'}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                      {language === 'ar'
+                        ? 'ستظهر شهاداتك المعتمدة الموثقة برمز QR هنا فور إتمامك لمتطلبات أي مسار تدريبي واجتياز التقييم النهائي.'
+                        : 'Official certificates with verified QR codes will appear here once you fulfill a track requirements.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {certificates.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className="relative bg-gradient-to-br from-white via-amber-50/20 to-white rounded-3xl p-6 border border-amber-200/80 shadow-md flex flex-col justify-between overflow-hidden"
+                    >
+                      <div className="absolute -top-12 -left-12 w-32 h-32 bg-amber-100/40 rounded-full blur-2xl" />
+
+                      <div className="relative space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                            {language === 'ar' ? 'معتمد رسمياً' : 'Official Verified'}
+                          </span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {cert.credentialId}
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-black text-slate-900 leading-snug">
+                          {language === 'ar' ? cert.titleAr : cert.titleEn}
+                        </h3>
+
+                        <p className="text-xs text-slate-600 font-medium">
+                          {language === 'ar' ? cert.trackTitleAr : cert.trackTitleEn}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+                          <div className="p-2.5 rounded-xl bg-white/80 border border-slate-200/60">
+                            <span className="text-slate-400 block text-[10px]">
+                              {language === 'ar' ? 'التقدير والنتيجة' : 'Grade'}
+                            </span>
+                            <span className="font-bold text-emerald-700">{cert.grade}</span>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-white/80 border border-slate-200/60">
+                            <span className="text-slate-400 block text-[10px]">
+                              {language === 'ar' ? 'الساعات المعتمدة' : 'Accredited Hours'}
+                            </span>
+                            <span className="font-bold text-slate-800">
+                              {cert.hours} {language === 'ar' ? 'ساعة تدريبية' : 'Training Hours'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 pt-1">
+                          {language === 'ar'
+                            ? `جهة الإصدار: ${cert.issuerAr}`
+                            : `Issued by: ${cert.issuerEn}`}
+                        </p>
+                      </div>
+
+                      <div className="pt-5 mt-4 border-t border-amber-100 flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(cert.credentialId, cert.id)}
+                          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>
+                            {copiedCode === cert.id
+                              ? language === 'ar'
+                                ? 'تم النسخ!'
+                                : 'Copied!'
+                              : language === 'ar'
+                              ? 'نسخ كود التحقق'
+                              : 'Copy Code'}
+                          </span>
+                        </button>
+
+                        <Link
+                          href={`/certificates?verify=${cert.credentialId}`}
+                          className="px-4 py-2 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>{language === 'ar' ? 'فحص السجل الرقمي' : 'Verify Record'}</span>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -707,70 +754,88 @@ export default function ProfilePage() {
                 </Link>
               </div>
 
-              <div className="space-y-3">
-                {appointments.map((appItem) => (
-                  <div
-                    key={appItem.id}
-                    className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:border-primary-blue/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-primary-blue flex items-center justify-center shrink-0">
-                        {appItem.type === 'workshop' ? (
-                          <MapPin className="w-6 h-6 text-amber-600" />
-                        ) : appItem.type === 'consultation' ? (
-                          <Video className="w-6 h-6 text-primary-blue" />
-                        ) : (
-                          <Calendar className="w-6 h-6 text-emerald-600" />
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
-                            {language === 'ar' ? appItem.typeLabelAr : appItem.typeLabelEn}
-                          </span>
-                          <span className="text-xs font-bold text-primary-blue flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {appItem.date} ({appItem.time})
-                          </span>
+              {appointments.length === 0 ? (
+                <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/90 shadow-sm text-center max-w-xl mx-auto space-y-4 my-4">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-primary-blue shadow-inner">
+                    <Calendar className="w-7 h-7 text-primary-blue" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      {language === 'ar' ? 'لا توجد مواعيد أو ورشات مجدولة حالياً' : 'No upcoming appointments yet'}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                      {language === 'ar'
+                        ? 'عند تأكيد التحاقك بأي مسار أو حجز جلسة استشارة مع المدربين، ستظهر مواعيد لقاءاتك التفاعلية وروابط Zoom هنا.'
+                        : 'Your interactive workshops, zoom links, and mentoring meetings will show up here.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {appointments.map((appItem) => (
+                    <div
+                      key={appItem.id}
+                      className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:border-primary-blue/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-primary-blue flex items-center justify-center shrink-0">
+                          {appItem.type === 'workshop' ? (
+                            <MapPin className="w-6 h-6 text-amber-600" />
+                          ) : appItem.type === 'consultation' ? (
+                            <Video className="w-6 h-6 text-primary-blue" />
+                          ) : (
+                            <Calendar className="w-6 h-6 text-emerald-600" />
+                          )}
                         </div>
 
-                        <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                          {language === 'ar' ? appItem.titleAr : appItem.titleEn}
-                        </h3>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {language === 'ar' ? appItem.typeLabelAr : appItem.typeLabelEn}
+                            </span>
+                            <span className="text-xs font-bold text-primary-blue flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {appItem.date} ({appItem.time})
+                            </span>
+                          </div>
 
-                        <p className="text-xs text-slate-500">
-                          {language === 'ar' ? appItem.locationAr : appItem.locationEn} •{' '}
-                          {language === 'ar' ? `المشرف: ${appItem.mentorOrHost}` : `Host: ${appItem.mentorOrHost}`}
-                        </p>
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                            {language === 'ar' ? appItem.titleAr : appItem.titleEn}
+                          </h3>
+
+                          <p className="text-xs text-slate-500">
+                            {language === 'ar' ? appItem.locationAr : appItem.locationEn} •{' '}
+                            {language === 'ar' ? `المشرف: ${appItem.mentorOrHost}` : `Host: ${appItem.mentorOrHost}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="w-full sm:w-auto flex items-center gap-2 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        {appItem.link && (
+                          <a
+                            href={appItem.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors text-center shadow-xs"
+                          >
+                            {appItem.type === 'consultation'
+                              ? language === 'ar'
+                                ? 'دخول قاعة Zoom'
+                                : 'Join Zoom'
+                              : appItem.type === 'exam'
+                              ? language === 'ar'
+                                ? 'بدء الاختبار'
+                                : 'Start Exam'
+                              : language === 'ar'
+                              ? 'تفاصيل القاعة'
+                              : 'Location Details'}
+                          </a>
+                        )}
                       </div>
                     </div>
-
-                    <div className="w-full sm:w-auto flex items-center gap-2 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                      {appItem.link && (
-                        <a
-                          href={appItem.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors text-center shadow-xs"
-                        >
-                          {appItem.type === 'consultation'
-                            ? language === 'ar'
-                              ? 'دخول قاعة Zoom'
-                              : 'Join Zoom'
-                            : appItem.type === 'exam'
-                            ? language === 'ar'
-                              ? 'بدء الاختبار'
-                              : 'Start Exam'
-                            : language === 'ar'
-                            ? 'تفاصيل القاعة'
-                            : 'Location Details'}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

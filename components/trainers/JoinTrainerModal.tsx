@@ -334,9 +334,10 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                       icon: '🎯',
                     }))}
                     placeholder={t.form_specialty_select}
-                    showSearch={specialtiesList.length > 5}
+                    showSearch={true}
                     searchPlaceholder={language === 'ar' ? 'ابحث عن تخصص...' : 'Search specialty...'}
                     themeColor="blue"
+                    centerModal={true}
                     dropdownWidthClass="w-full min-w-[270px] sm:min-w-[320px]"
                   />
                 </div>
@@ -456,7 +457,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                 </label>
                 <textarea
                   id="join-bio"
-                  rows={2}
+                  rows={8}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder={t.form_bio_placeholder}

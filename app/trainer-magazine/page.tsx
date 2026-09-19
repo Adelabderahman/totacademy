@@ -993,7 +993,9 @@ export default function TrainerMagazinePage() {
                         icon: '📖',
                       }))}
                       placeholder={t.writer_section_placeholder}
-                      themeColor="blue"
+                      themeColor="amber"
+                      customLabelClass="text-amber-400 font-bold"
+                      customTriggerTextClass="text-amber-400 font-bold"
                       dropdownWidthClass="w-full min-w-[260px] sm:min-w-[320px]"
                     />
                   </div>
@@ -1014,7 +1016,7 @@ export default function TrainerMagazinePage() {
 
                   <div className="writer-full-col">
                     <label className="form-label">{t.writer_file}</label>
-                    <label className="form-file-box block">
+                    <label className="form-file-box flex items-center justify-center gap-2.5">
                       <input
                         type="file"
                         accept=".pdf,.docx,.doc"
@@ -1030,13 +1032,15 @@ export default function TrainerMagazinePage() {
                           }
                         }}
                       />
-                      <Download size={22} style={{ color: '#fbbf24', margin: '0 auto 8px' }} />
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#e2e8f0' }}>
+                      <Download size={16} style={{ color: '#fbbf24' }} className="shrink-0" />
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#e2e8f0' }} className="truncate">
                         {writerForm.fileName || t.writer_file_action}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4 }}>
-                        {writerForm.fileName ? '' : t.writer_no_file}
-                      </div>
+                      </span>
+                      {!writerForm.fileName && (
+                        <span style={{ fontSize: 11, color: '#94a3b8' }} className="hidden sm:inline">
+                          ({t.writer_no_file})
+                        </span>
+                      )}
                     </label>
                   </div>
 

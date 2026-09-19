@@ -1766,18 +1766,25 @@
 }
 
 .form-file-box {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border: 1.5px dashed rgba(251, 191, 36, 0.4);
+  border-radius: 10px;
+  padding: 6px 14px;
+  min-height: 34px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(251, 191, 36, 0.03);
+  box-sizing: border-box;
 }
 
 .form-file-box:hover {
   border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.05);
+  background: rgba(251, 191, 36, 0.08);
 }
 
 /* APA Citation Box */

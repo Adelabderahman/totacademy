@@ -107,6 +107,7 @@ export default function EduPathPage() {
   const panelElementsRef = useRef<(HTMLDivElement | null)[]>([]);
   const [isDownloadingReport, setIsDownloadingReport] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [isPathwayModalOpen, setIsPathwayModalOpen] = useState<boolean>(false);
 
   // Smooth swipe navigation state
   const [dragOffset, setDragOffset] = useState<number>(0);
@@ -161,15 +162,52 @@ export default function EduPathPage() {
     } catch {}
   };
 
+  // Open & Close Pathway Registration Modal with Back-Button Sync
+  const openPathwayModal = () => {
+    try {
+      window.history.pushState({ modal: 'pathway_modal' }, '');
+    } catch {}
+    setIsPathwayModalOpen(true);
+  };
+
+  const closePathwayModal = () => {
+    setIsPathwayModalOpen(false);
+    try {
+      if (window.history.state && window.history.state.modal === 'pathway_modal') {
+        window.history.back();
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     const handlePopState = () => {
       setShowReportModal(false);
+      setIsPathwayModalOpen(false);
     };
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  // Handle ESC key and body overflow for Pathway Modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isPathwayModalOpen) {
+        closePathwayModal();
+      }
+    };
+    if (isPathwayModalOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPathwayModalOpen]);
 
   // Load completion states from localStorage on mount
   useEffect(() => {
@@ -1591,12 +1629,13 @@ export default function EduPathPage() {
                 {strings.badge_new}
               </span>
             </div>
-            <a
-              href="#pathway-group"
-              className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition"
+            <button
+              type="button"
+              onClick={openPathwayModal}
+              className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition cursor-pointer"
             >
               {strings.btn_submit_pathway}
-            </a>
+            </button>
           </div>
 
           {/* Course Header Banner */}
@@ -1624,99 +1663,6 @@ export default function EduPathPage() {
               />
             </div>
           </div>
-
-          {/* ================= 2. Pathway Section & Registration Form ================= */}
-          <section className="pathway-section" id="pathway-group">
-            <div className="pathway-intro-container">
-              <div className="pathway-text-col">
-                <h2 className="pathway-main-title">{strings.pathway_title}</h2>
-                <p className="pathway-main-desc">{strings.pathway_desc}</p>
-              </div>
-
-              <div className="pathway-doc-col">
-                <div className="doc-icon text-primary-blue">
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                  </svg>
-                </div>
-                <h4 className="doc-title">{strings.doc_title}</h4>
-                <p className="doc-desc">{strings.doc_desc}</p>
-                <a
-                  href="https://docs.google.com/document/d/1lD7sOLC7cowcO0zqsltOWz_JPv_yBNQBfmEf9CQINeU/edit?usp=sharing"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="doc-btn"
-                >
-                  {strings.btn_download}
-                </a>
-              </div>
-
-              <div className="pathway-video-col">
-                <div className="course-video-wrapper">
-                  <iframe
-                    src="https://www.youtube.com/embed/PHya0gprvH8?rel=0&modestbranding=1"
-                    title="Pathway Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Registration Form Box */}
-            <div className="pathway-registration-layout">
-              <div className="reg-info-side">
-                <h3 className="reg-info-title">{strings.form_title}</h3>
-                <div className="form-elegant-info">
-                  <p>{strings.form_alert}</p>
-                </div>
-                <div className="form-elegant-info form-note-box">
-                  <p>{strings.form_note}</p>
-                </div>
-              </div>
-
-              <div className="reg-form-side">
-                <form
-                  className="premium-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    alert(lang === 'ar' ? 'تم تأكيد تسجيلك في المسار بنجاح!' : 'Your pathway registration is confirmed!');
-                  }}
-                >
-                  <div className="form-group">
-                    <label>{strings.label_name}</label>
-                    <input type="text" required placeholder={strings.ph_name} />
-                  </div>
-                  <div className="form-group">
-                    <label>{strings.label_email}</label>
-                    <input type="email" required placeholder={strings.ph_email} />
-                  </div>
-                  <div className="form-group full-width">
-                    <label>{strings.label_whatsapp}</label>
-                    <input type="tel" required placeholder={strings.ph_whatsapp} dir="ltr" />
-                  </div>
-                  <div className="form-group full-width">
-                    <label>{strings.label_pathway}</label>
-                    <input type="text" readOnly value={strings.pathway_name_value} className="bg-slate-100 font-bold" />
-                  </div>
-                  <div className="form-checkbox-group">
-                    <input type="checkbox" id="terms" required />
-                    <label htmlFor="terms">{strings.label_terms}</label>
-                  </div>
-                  <button type="submit" className="form-submit-btn">
-                    <span>{strings.btn_submit_pathway}</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </section>
         </div>
       </div>
 
@@ -3503,6 +3449,126 @@ export default function EduPathPage() {
           </div>
         </section>
       </div>
+
+      {/* ================= Pathway Registration Popup Modal ================= */}
+      {isPathwayModalOpen && (
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto"
+          style={{ animation: 'fadeInModal 0.2s ease-out' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closePathwayModal();
+          }}
+        >
+          <div className="relative w-full max-w-[1240px] max-h-[94vh] overflow-y-auto rounded-2xl sm:rounded-3xl shadow-2xl my-auto">
+            {/* Modal Floating Close Button */}
+            <div className="sticky top-2 end-2 float-end z-50 -mb-10 mr-2 rtl:mr-0 rtl:ml-2 pointer-events-auto">
+              <button
+                type="button"
+                onClick={closePathwayModal}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white flex items-center justify-center text-lg font-bold backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-2xl hover:scale-105"
+                aria-label={lang === 'ar' ? 'إغلاق' : 'Close'}
+                title={lang === 'ar' ? 'إغلاق النافذة' : 'Close'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* ================= 2. Pathway Section & Registration Form ================= */}
+            <section className="pathway-section !mb-0" id="pathway-group">
+              <div className="pathway-intro-container">
+                <div className="pathway-text-col">
+                  <h2 className="pathway-main-title">{strings.pathway_title}</h2>
+                  <p className="pathway-main-desc">{strings.pathway_desc}</p>
+                </div>
+
+                <div className="pathway-doc-col">
+                  <div className="doc-icon text-primary-blue">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <h4 className="doc-title">{strings.doc_title}</h4>
+                  <p className="doc-desc">{strings.doc_desc}</p>
+                  <a
+                    href="https://docs.google.com/document/d/1lD7sOLC7cowcO0zqsltOWz_JPv_yBNQBfmEf9CQINeU/edit?usp=sharing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="doc-btn"
+                  >
+                    {strings.btn_download}
+                  </a>
+                </div>
+
+                <div className="pathway-video-col">
+                  <div className="course-video-wrapper">
+                    <iframe
+                      src="https://www.youtube.com/embed/PHya0gprvH8?rel=0&modestbranding=1"
+                      title="Pathway Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Registration Form Box */}
+              <div className="pathway-registration-layout">
+                <div className="reg-info-side">
+                  <h3 className="reg-info-title">{strings.form_title}</h3>
+                  <div className="form-elegant-info">
+                    <p>{strings.form_alert}</p>
+                  </div>
+                  <div className="form-elegant-info form-note-box">
+                    <p>{strings.form_note}</p>
+                  </div>
+                </div>
+
+                <div className="reg-form-side">
+                  <form
+                    className="premium-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      alert(lang === 'ar' ? 'تم تأكيد تسجيلك في المسار بنجاح!' : 'Your pathway registration is confirmed!');
+                      closePathwayModal();
+                    }}
+                  >
+                    <div className="form-group">
+                      <label>{strings.label_name}</label>
+                      <input type="text" required placeholder={strings.ph_name} />
+                    </div>
+                    <div className="form-group">
+                      <label>{strings.label_email}</label>
+                      <input type="email" required placeholder={strings.ph_email} />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>{strings.label_whatsapp}</label>
+                      <input type="tel" required placeholder={strings.ph_whatsapp} dir="ltr" />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>{strings.label_pathway}</label>
+                      <input type="text" readOnly value={strings.pathway_name_value} className="bg-slate-100 font-bold" />
+                    </div>
+                    <div className="form-checkbox-group">
+                      <input type="checkbox" id="terms" required />
+                      <label htmlFor="terms">{strings.label_terms}</label>
+                    </div>
+                    <button type="submit" className="form-submit-btn">
+                      <span>{strings.btn_submit_pathway}</span>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
 
       {/* Dedicated Clean Academic Document for Native Printing and PDF Export */}
       <div id="tot-academic-print-document" aria-hidden="true">

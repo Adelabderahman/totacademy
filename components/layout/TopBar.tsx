@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage, Language } from '@/context/LanguageContext';
 import { useAuthModal } from '@/context/AuthModalContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 
 export const TopBar: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const { openAuthModal } = useAuthModal();
+  const { user, isAuthenticated } = useUserAccount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
@@ -142,14 +144,32 @@ export const TopBar: React.FC = () => {
               {t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}
             </Link>
 
-            {/* Registration button opening the modal */}
-            <button
-              type="button"
-              onClick={() => openAuthModal('register')}
-              className="px-3 sm:px-5 py-1.5 bg-primary-blue text-white border border-primary-blue rounded-lg text-xs sm:text-sm font-bold hover:bg-secondary-blue transition-all whitespace-nowrap shadow-sm cursor-pointer active:scale-95"
-            >
-              {t('التسجيل', 'Enroll', 'Inscription')}
-            </button>
+            {/* User Account / Registration button */}
+            {isAuthenticated ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 px-2.5 sm:px-4 py-1.5 bg-gradient-to-r from-primary-blue to-secondary-blue text-white rounded-xl text-xs sm:text-sm font-bold hover:shadow-md transition-all whitespace-nowrap shadow-xs cursor-pointer active:scale-95 group"
+                title={t('حسابي الشخصي', 'My Account', 'Mon Compte')}
+              >
+                <div className="relative">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover ring-1.5 ring-white/90"
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full ring-1 ring-white"></span>
+                </div>
+                <span>{t('حسابي', 'Account', 'Compte')}</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthModal('register')}
+                className="px-3 sm:px-5 py-1.5 bg-primary-blue text-white border border-primary-blue rounded-lg text-xs sm:text-sm font-bold hover:bg-secondary-blue transition-all whitespace-nowrap shadow-sm cursor-pointer active:scale-95"
+              >
+                {t('التسجيل', 'Enroll', 'Inscription')}
+              </button>
+            )}
 
             {/* Mobile-only Sleek Menu Burger Button (in top-left corner beside Registration button) */}
             <button
@@ -272,16 +292,31 @@ export const TopBar: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-primary-blue animate-pulse"></span>
                   <span>{t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}</span>
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    openAuthModal('register');
-                  }}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
-                >
-                  <span>{t('التسجيل', 'Enroll', 'Inscription')}</span>
-                </button>
+                {isAuthenticated ? (
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-primary-blue to-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  >
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-4 h-4 rounded-full object-cover ring-1 ring-white"
+                    />
+                    <span>{t('حسابي', 'My Account', 'Mon Compte')}</span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      openAuthModal('register');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-bold text-white bg-primary-blue hover:bg-secondary-blue rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md cursor-pointer"
+                  >
+                    <span>{t('التسجيل', 'Enroll', 'Inscription')}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

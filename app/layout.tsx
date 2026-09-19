@@ -6,6 +6,7 @@ import '@/components/tracks/tracks.css';
 import '@/components/trainers/trainers.css';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthModalProvider } from '@/context/AuthModalContext';
+import { UserAccountProvider } from '@/context/UserAccountContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 
 import { TopBar } from '@/components/layout/TopBar';
@@ -50,16 +51,18 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-bg-page text-text-dark antialiased">
         <LanguageProvider>
           <AuthModalProvider>
-            <TopBar />
-            <div className="hidden lg:block w-[98%] max-w-[1820px] mx-auto px-4">
-              <MainNavbar />
-            </div>
-            <main className="flex-1 w-full">{children}</main>
-            <Footer />
-            <MobileBottomNav />
-            <BackToTop />
-            <WhatsAppFloat />
-            <AuthModal />
+            <UserAccountProvider>
+              <TopBar />
+              <div className="hidden lg:block w-[98%] max-w-[1820px] mx-auto px-4">
+                <MainNavbar />
+              </div>
+              <main className="flex-1 w-full">{children}</main>
+              <Footer />
+              <MobileBottomNav />
+              <BackToTop />
+              <WhatsAppFloat />
+              <AuthModal />
+            </UserAccountProvider>
           </AuthModalProvider>
         </LanguageProvider>
       </body>

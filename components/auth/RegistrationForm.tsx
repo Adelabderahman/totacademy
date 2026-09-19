@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 
 interface RegistrationFormProps {
   initialMode?: 'login' | 'register';
@@ -251,6 +253,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   className = '',
 }) => {
   const { language } = useLanguage();
+  const { login } = useUserAccount();
   const isRTL = language === 'ar';
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
@@ -385,6 +388,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
+      login({
+        name: registerName,
+        email: registerEmail,
+        phone: registerPhone,
+        country: registerCountry || 'الجزائر',
+        role: registerRole.includes('trainer') ? 'trainer' : 'trainee',
+      });
       const msg =
         language === 'ar'
           ? `مرحباً بك يا ${registerName}! تم تسجيل حسابك بنجاح في الأكاديمية وصرت من المحترفين.`
@@ -402,6 +412,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
+      login({
+        email: loginEmail,
+      });
       const msg =
         language === 'ar'
           ? 'تم تسجيل الدخول بنجاح! مرحباً بعودتك إلى منصة أكاديمية TOT.'
@@ -423,16 +436,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           {language === 'ar' ? 'تمت العملية بنجاح' : 'Success'}
         </h3>
         <p className="text-xs sm:text-sm text-slate-600 mb-4">{statusMessage}</p>
-        <button
-          type="button"
-          onClick={() => {
-            setStatusMessage(null);
-            setMode('login');
-          }}
-          className="px-5 py-2 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors cursor-pointer"
-        >
-          {language === 'ar' ? 'متابعة الدخول إلى الحساب' : 'Continue to Dashboard'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2.5 justify-center">
+          <Link
+            href="/profile"
+            className="px-5 py-2.5 rounded-xl bg-primary-blue text-white text-xs font-bold hover:bg-secondary-blue transition-colors text-center shadow-xs"
+          >
+            {language === 'ar' ? 'الانتقال إلى حسابي ولوحة التحكم' : 'Go to My Dashboard'}
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusMessage(null);
+              setMode('login');
+            }}
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+          >
+            {language === 'ar' ? 'إغلاق' : 'Close'}
+          </button>
+        </div>
       </div>
     );
   }

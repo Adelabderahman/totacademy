@@ -130,143 +130,181 @@ export const AuthModal: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Question & Option Switcher: "هل لديك حساب؟ قم بتسجيل الدخول" vs "ليس لدي حساب: أنشئ حساب وصر من المحترفين" */}
-              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Option 1: Login */}
-                <button
-                  type="button"
-                  onClick={() => setMode('login')}
-                  className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer relative ${
-                    mode === 'login'
-                      ? 'border-primary-blue bg-blue-50/60 shadow-sm ring-2 ring-primary-blue/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">🔑</span>
-                    <span className="text-xs font-semibold text-text-light">
-                      {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have an account?'}
-                    </span>
-                  </div>
-                  <div className="text-sm font-bold text-primary-blue">
-                    {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
-                  </div>
-                  {mode === 'login' && (
-                    <span className="absolute top-2.5 end-2.5 w-2.5 h-2.5 rounded-full bg-primary-blue" />
-                  )}
-                </button>
-
-                {/* Option 2: Register */}
-                <button
-                  type="button"
-                  onClick={() => setMode('register')}
-                  className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer relative ${
-                    mode === 'register' || mode === 'prompt'
-                      ? 'border-primary-green bg-emerald-50/60 shadow-sm ring-2 ring-primary-green/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">🌟</span>
-                    <span className="text-xs font-semibold text-text-light">
-                      {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account yet?'}
-                    </span>
-                  </div>
-                  <div className="text-sm font-bold text-primary-green">
-                    {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créez un compte & devenez pro' : 'Create Account & Join Pros'}
-                  </div>
-                  {(mode === 'register' || mode === 'prompt') && (
-                    <span className="absolute top-2.5 end-2.5 w-2.5 h-2.5 rounded-full bg-primary-green" />
-                  )}
-                </button>
-              </div>
-
               {/* Form 1: LOGIN MODE */}
               {mode === 'login' ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-4 animate-fadeIn">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-dark mb-1.5">
-                      {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : language === 'fr' ? 'Email ou nom d\'utilisateur' : 'Email or Username'}
-                      <span className="text-red-500 ms-1">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="trainer@tot-academy.com"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
-                    />
-                  </div>
+                <div className="space-y-4 animate-fadeIn">
+                  {/* Row 1: The two switcher options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                    {/* Option 1: Login (Active) */}
+                    <button
+                      type="button"
+                      onClick={() => setMode('login')}
+                      className="p-3 rounded-xl border border-primary-blue bg-blue-50/70 shadow-xs ring-2 ring-primary-blue/20 text-start transition-all cursor-pointer relative flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">🔑</span>
+                        <div>
+                          <div className="text-xs font-semibold text-text-light">
+                            {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have an account?'}
+                          </div>
+                          <div className="text-sm font-bold text-primary-blue">
+                            {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary-blue" />
+                    </button>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-text-dark">
-                        {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
-                        <span className="text-red-500 ms-1">*</span>
-                      </label>
-                      <button
-                        type="button"
-                        className="text-xs text-primary-blue hover:underline cursor-pointer"
-                        onClick={() => alert(language === 'ar' ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب لاستعادة كلمة المرور.' : 'Please contact support via WhatsApp to reset password.')}
-                      >
-                        {language === 'ar' ? 'نسيت كلمة المرور؟' : language === 'fr' ? 'Mot de passe oublié ?' : 'Forgot Password?'}
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type={showLoginPassword ? 'text' : 'password'}
-                        required
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
-                      >
-                        {showLoginPassword ? '👁️' : '🔒'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="checkbox"
-                      id="remember-me"
-                      className="w-4 h-4 rounded border-slate-300 text-primary-blue focus:ring-primary-blue cursor-pointer"
-                    />
-                    <label htmlFor="remember-me" className="text-xs text-text-light cursor-pointer">
-                      {language === 'ar' ? 'تذكر بياناتي في هذا المتصفح' : language === 'fr' ? 'Se souvenir de moi' : 'Remember me on this device'}
-                    </label>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-blue to-secondary-blue hover:from-primary-blue-hover hover:to-secondary-blue text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
-                  >
-                    {language === 'ar' ? 'تسجيل الدخول إلى حسابي' : language === 'fr' ? 'Se connecter' : 'Log In to My Account'}
-                  </button>
-
-                  <p className="text-center text-xs text-text-light pt-2">
-                    {language === 'ar' ? 'ليس لديك حساب بعد؟' : 'Don\'t have an account?'}{' '}
+                    {/* Option 2: Switch to Register */}
                     <button
                       type="button"
                       onClick={() => setMode('register')}
-                      className="text-primary-green font-bold hover:underline cursor-pointer"
+                      className="p-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-start transition-all cursor-pointer relative flex items-center justify-between"
                     >
-                      {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : 'Create Account & Join Pros'}
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">🌟</span>
+                        <div>
+                          <div className="text-xs font-semibold text-text-light">
+                            {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account yet?'}
+                          </div>
+                          <div className="text-sm font-bold text-primary-green">
+                            {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créez un compte & devenez pro' : 'Create Account & Join Pros'}
+                          </div>
+                        </div>
+                      </div>
                     </button>
-                  </p>
-                </form>
+                  </div>
+
+                  <form onSubmit={handleLoginSubmit} className="space-y-4 pt-1">
+                    <div>
+                      <label className="block text-xs font-semibold text-text-dark mb-1.5">
+                        {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : language === 'fr' ? 'Email ou nom d\'utilisateur' : 'Email or Username'}
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="trainer@tot-academy.com"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-text-dark">
+                          {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
+                          <span className="text-red-500 ms-1">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="text-xs text-primary-blue hover:underline cursor-pointer"
+                          onClick={() => alert(language === 'ar' ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب لاستعادة كلمة المرور.' : 'Please contact support via WhatsApp to reset password.')}
+                        >
+                          {language === 'ar' ? 'نسيت كلمة المرور؟' : language === 'fr' ? 'Mot de passe oublié ?' : 'Forgot Password?'}
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showLoginPassword ? 'text' : 'password'}
+                          required
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
+                        >
+                          {showLoginPassword ? '👁️' : '🔒'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="remember-me"
+                        className="w-4 h-4 rounded border-slate-300 text-primary-blue focus:ring-primary-blue cursor-pointer"
+                      />
+                      <label htmlFor="remember-me" className="text-xs text-text-light cursor-pointer">
+                        {language === 'ar' ? 'تذكر بياناتي في هذا المتصفح' : language === 'fr' ? 'Se souvenir de moi' : 'Remember me on this device'}
+                      </label>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-blue to-secondary-blue hover:from-primary-blue-hover hover:to-secondary-blue text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
+                    >
+                      {language === 'ar' ? 'تسجيل الدخول إلى حسابي' : language === 'fr' ? 'Se connecter' : 'Log In to My Account'}
+                    </button>
+
+                    <p className="text-center text-xs text-text-light pt-2">
+                      {language === 'ar' ? 'ليس لديك حساب بعد؟' : 'Don\'t have an account?'}{' '}
+                      <button
+                        type="button"
+                        onClick={() => setMode('register')}
+                        className="text-primary-green font-bold hover:underline cursor-pointer"
+                      >
+                        {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : 'Create Account & Join Pros'}
+                      </button>
+                    </p>
+                  </form>
+                </div>
               ) : (
-                /* Form 2: REGISTER MODE - All fields in 2 columns and 4 rows (8 fields) */
+                /* Form 2: REGISTER MODE - Exact 2 columns × 5 rows */
                 <form onSubmit={handleRegisterSubmit} className="space-y-4 animate-fadeIn">
-                  {/* Grid: 2 columns and 4 rows */}
+                  {/* Grid: 2 columns × 5 rows */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-                    {/* Row 1, Col 1: الاسم واللقب الكامل */}
+                    {/* ======================================================== */}
+                    {/* الصف 1: هل لديك حساب... يقابله ليس لدي حساب... */}
+                    {/* ======================================================== */}
+                    {/* الصف 1، العمود 1: هل لديك حساب؟ قم بتسجيل الدخول */}
+                    <button
+                      type="button"
+                      onClick={() => setMode('login')}
+                      className="p-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-start transition-all cursor-pointer relative flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">🔑</span>
+                        <div>
+                          <div className="text-xs font-semibold text-text-light">
+                            {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have an account?'}
+                          </div>
+                          <div className="text-sm font-bold text-primary-blue">
+                            {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* الصف 1، العمود 2: ليس لدي حساب : أنشئ حساب وصر من المحترفين */}
+                    <button
+                      type="button"
+                      onClick={() => setMode('register')}
+                      className="p-3 rounded-xl border border-primary-green bg-emerald-50/70 shadow-xs ring-2 ring-primary-green/20 text-start transition-all cursor-pointer relative flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl">🌟</span>
+                        <div>
+                          <div className="text-xs font-semibold text-text-light">
+                            {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account yet?'}
+                          </div>
+                          <div className="text-sm font-bold text-primary-green">
+                            {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créez un compte & devenez pro' : 'Create Account & Join Pros'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary-green" />
+                    </button>
+
+                    {/* ======================================================== */}
+                    {/* الصف 2: الاسم واللقب الكامل | التخصص أو المسار المهتم به */}
+                    {/* ======================================================== */}
+                    {/* الصف 2، العمود 1: الاسم واللقب الكامل */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'الاسم واللقب الكامل' : language === 'fr' ? 'Nom et prénom' : 'Full Name'}
@@ -282,7 +320,7 @@ export const AuthModal: React.FC = () => {
                       />
                     </div>
 
-                    {/* Row 1, Col 2: التخصص أو المسار التدريبي */}
+                    {/* الصف 2، العمود 2: التخصص أو المسار المهتم به */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'التخصص أو المسار المهتم به' : language === 'fr' ? 'Spécialité / Parcours' : 'Specialty / Track'}
@@ -304,7 +342,10 @@ export const AuthModal: React.FC = () => {
                       </select>
                     </div>
 
-                    {/* Row 2, Col 1: البريد الإلكتروني */}
+                    {/* ======================================================== */}
+                    {/* الصف 3: البريد الإلكتروني | رقم الهاتف / واتساب */}
+                    {/* ======================================================== */}
+                    {/* الصف 3، العمود 1: البريد الإلكتروني */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'البريد الإلكتروني' : language === 'fr' ? 'Email' : 'Email'}
@@ -320,7 +361,7 @@ export const AuthModal: React.FC = () => {
                       />
                     </div>
 
-                    {/* Row 2, Col 2: رقم الهاتف / واتساب */}
+                    {/* الصف 3، العمود 2: رقم الهاتف / واتساب */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'رقم الهاتف / واتساب' : language === 'fr' ? 'Téléphone / WhatsApp' : 'Phone / WhatsApp'}
@@ -336,7 +377,10 @@ export const AuthModal: React.FC = () => {
                       />
                     </div>
 
-                    {/* Row 3, Col 1: بلد أو مدينة الإقامة */}
+                    {/* ======================================================== */}
+                    {/* الصف 4: بلد أو مدينة الإقامة | الصفة أو الفئة المستهدفة */}
+                    {/* ======================================================== */}
+                    {/* الصف 4، العمود 1: بلد أو مدينة الإقامة */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'بلد أو مدينة الإقامة' : language === 'fr' ? 'Pays / Ville' : 'Country / City'}
@@ -352,7 +396,7 @@ export const AuthModal: React.FC = () => {
                       />
                     </div>
 
-                    {/* Row 3, Col 2: الصفة أو الفئة التدريبية */}
+                    {/* الصف 4، العمود 2: الصفة أو الفئة المستهدفة */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'الصفة أو الفئة المستهدفة' : language === 'fr' ? 'Statut / Catégorie' : 'Role / Category'}
@@ -369,7 +413,10 @@ export const AuthModal: React.FC = () => {
                       </select>
                     </div>
 
-                    {/* Row 4, Col 1: كلمة المرور */}
+                    {/* ======================================================== */}
+                    {/* الصف 5: كلمة المرور | تأكيد كلمة المرور */}
+                    {/* ======================================================== */}
+                    {/* الصف 5، العمود 1: كلمة المرور */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'كلمة المرور' : language === 'fr' ? 'Mot de passe' : 'Password'}
@@ -394,7 +441,7 @@ export const AuthModal: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Row 4, Col 2: تأكيد كلمة المرور */}
+                    {/* الصف 5، العمود 2: تأكيد كلمة المرور */}
                     <div>
                       <label className="block text-xs font-semibold text-text-dark mb-1">
                         {language === 'ar' ? 'تأكيد كلمة المرور' : language === 'fr' ? 'Confirmer le mot de passe' : 'Confirm Password'}
@@ -411,8 +458,8 @@ export const AuthModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Agreement checkbox */}
-                  <div className="flex items-start gap-2 pt-1">
+                  {/* يتبع الشبكة: مربع الموافقة على الشروط */}
+                  <div className="flex items-start gap-2 pt-2">
                     <input
                       type="checkbox"
                       id="agree-terms"
@@ -430,16 +477,16 @@ export const AuthModal: React.FC = () => {
                     </label>
                   </div>
 
-                  {/* Submit button */}
+                  {/* يتبع الشبكة: زر الاعتماد (أنشئ حساب وصر من المحترفين) */}
                   <button
                     type="submit"
-                    className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-primary-green to-emerald-600 hover:from-emerald-600 hover:to-primary-green text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
+                    className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-primary-green to-emerald-600 hover:from-emerald-600 hover:to-primary-green text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer mt-2"
                   >
                     {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créer mon compte professionnel' : 'Create Account & Join Professionals'}
                   </button>
 
-                  {/* Switch to login link */}
-                  <p className="text-center text-xs text-text-light pt-2">
+                  {/* رابط التبديل المساعد */}
+                  <p className="text-center text-xs text-text-light pt-1">
                     {language === 'ar' ? 'هل لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
                     <button
                       type="button"

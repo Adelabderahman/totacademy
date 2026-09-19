@@ -404,53 +404,51 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       {/* ========================================================================= */}
       <div key={mode} className="animate-form-smooth">
         {mode === 'login' ? (
-          /* ======================== نموذج تسجيل الدخول ======================== */
-          <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5">
-              {/* الصف 2، العمود 1: البريد الإلكتروني أو اسم المستخدم */}
-              <div>
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : 'Email or Username'}
-                  <span className="text-red-500 ms-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="trainer@tot-academy.com"
-                  className="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/60 hover:bg-white focus:bg-white transition-all"
-                />
-              </div>
+          /* ======================== نموذج تسجيل الدخول (عمود واحد) ======================== */
+          <form onSubmit={handleLoginSubmit} className="space-y-3 sm:space-y-3.5">
+            {/* الحقل الأول: البريد الإلكتروني أو اسم المستخدم */}
+            <div>
+              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
+                {language === 'ar' ? 'البريد الإلكتروني أو اسم المستخدم' : 'Email or Username'}
+                <span className="text-red-500 ms-1">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="trainer@tot-academy.com"
+                className="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/60 hover:bg-white focus:bg-white transition-all"
+              />
+            </div>
 
-              {/* الصف 2، العمود 2: كلمة المرور */}
-              <div>
-                <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'ar' ? 'كلمة المرور' : 'Password'}
-                  <span className="text-red-500 ms-1">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2 sm:py-2.5 pe-8 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/60 hover:bg-white focus:bg-white transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1 cursor-pointer"
-                  >
-                    {showLoginPassword ? '👁️' : '🔒'}
-                  </button>
-                </div>
+            {/* الحقل الثاني: كلمة المرور */}
+            <div>
+              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
+                {language === 'ar' ? 'كلمة المرور' : 'Password'}
+                <span className="text-red-500 ms-1">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? 'text' : 'password'}
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 sm:py-2.5 pe-8 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:border-primary-blue focus:ring-2 focus:ring-primary-blue/20 bg-slate-50/60 hover:bg-white focus:bg-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1 cursor-pointer"
+                >
+                  {showLoginPassword ? '👁️' : '🔒'}
+                </button>
               </div>
             </div>
 
-            {/* الصف 3: خيارات التذكر واستعادة كلمة المرور في عمودين متوازيين */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 items-center pt-0.5">
+            {/* خيارات التذكر واستعادة كلمة المرور */}
+            <div className="flex items-center justify-between pt-0.5">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -574,24 +572,26 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   </div>
                 </button>
 
-                {/* القائمة المنسدلة الاحترافية والمنسقة بحجم خط صغير وتصميم انسيابي */}
+                {/* القائمة المنسدلة الاحترافية والمنسقة بعرض مريح وخلفية غير شفافة مع تضبيب */}
                 {isSpecialtyOpen && (
-                  <div className="absolute top-[calc(100%+4px)] start-0 end-0 z-50 bg-white/98 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn py-1 max-h-64 sm:max-h-72 overflow-y-auto divide-y divide-slate-100">
+                  <div className={`absolute top-[calc(100%+6px)] z-50 bg-white/98 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn py-1.5 max-h-72 sm:max-h-80 overflow-y-auto divide-y divide-slate-100 w-full min-w-[290px] sm:min-w-[360px] md:min-w-[420px] max-w-[90vw] ${
+                    isRTL ? 'end-0 sm:start-auto sm:end-0' : 'start-0 sm:end-auto sm:start-0'
+                  }`}>
                     {SPECIALTY_GROUPS.map((group, groupIdx) => (
-                      <div key={groupIdx} className="p-1.5">
+                      <div key={groupIdx} className="p-1.5 sm:p-2 bg-white/95">
                         {/* ترويسة المجموعة بتصميم ناعم ومقاس خط مصغر */}
-                        <div className="px-2 py-1 mb-1 rounded-md bg-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-600 tracking-normal">
-                          <span className="flex items-center gap-1">
-                            <span>{group.categoryIcon}</span>
+                        <div className="px-2.5 py-1.5 mb-1.5 rounded-lg bg-slate-100/90 flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-slate-700 tracking-normal">
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-xs">{group.categoryIcon}</span>
                             <span>{getCategoryLabel(group)}</span>
                           </span>
-                          <span className="text-[9px] text-slate-400 font-normal">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/90 text-slate-500 font-semibold border border-slate-200/60 shadow-2xs">
                             {group.options.length} {language === 'ar' ? 'مسارات' : 'tracks'}
                           </span>
                         </div>
 
-                        {/* خيارات التخصص المنسقة بخط أصغر وأنيق */}
-                        <div className="space-y-0.5">
+                        {/* خيارات التخصص المنسقة بخط أصغر وأنيق وعرض كافٍ للقراءة الكاملة */}
+                        <div className="space-y-1">
                           {group.options.map((opt) => {
                             const isSelected = registerSpecialty === opt.id;
                             return (
@@ -602,23 +602,23 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                                   setRegisterSpecialty(opt.id);
                                   setIsSpecialtyOpen(false);
                                 }}
-                                className={`w-full text-start px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors duration-150 cursor-pointer group ${
+                                className={`w-full text-start px-2.5 py-2 rounded-xl flex items-center justify-between transition-all duration-150 cursor-pointer group ${
                                   isSelected
-                                    ? 'bg-emerald-50 text-emerald-900 font-semibold border-s-2 border-primary-green'
-                                    : 'hover:bg-slate-50 text-slate-700 hover:text-slate-900'
+                                    ? 'bg-emerald-50/90 text-emerald-950 font-semibold border-s-4 border-primary-green shadow-xs'
+                                    : 'hover:bg-slate-50 text-slate-700 hover:text-slate-950'
                                 }`}
                               >
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1 pe-2">
-                                  <span className="text-xs shrink-0">{opt.icon}</span>
-                                  <span className="text-[10.5px] sm:text-[11px] leading-snug truncate">
+                                <div className="flex items-center gap-2 min-w-0 flex-1 pe-2">
+                                  <span className="text-xs sm:text-sm shrink-0">{opt.icon}</span>
+                                  <span className="text-[10.5px] sm:text-[11.5px] leading-snug whitespace-normal break-words">
                                     {getSpecialtyLabel(opt)}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-medium ${
+                                <div className="flex items-center gap-1.5 shrink-0 ms-2">
+                                  <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md font-medium shrink-0 ${
                                     isSelected
-                                      ? 'bg-emerald-200/70 text-emerald-900'
-                                      : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200/70'
+                                      ? 'bg-emerald-200/80 text-emerald-900 border border-emerald-300/60'
+                                      : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/80'
                                   }`}>
                                     {opt.badge}
                                   </span>

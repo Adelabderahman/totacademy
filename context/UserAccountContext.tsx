@@ -519,23 +519,28 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
             });
           }
         } catch (fbError: any) {
+          const isOpNotAllowed =
+            fbError?.code === 'auth/operation-not-allowed' ||
+            fbError?.message?.includes('operation-not-allowed') ||
+            String(fbError).includes('operation-not-allowed');
+
           // If Email/Password provider is not yet enabled in Firebase Console (auth/operation-not-allowed),
           // fallback smoothly to local authenticated account so the user is never blocked!
-          if (fbError.code === 'auth/operation-not-allowed') {
+          if (isOpNotAllowed) {
             console.warn(
               'Notice: Email/Password provider is not enabled in Firebase Console. Proceeding with immediate authenticated profile.'
             );
             // Fall through to local profile creation with createdUid
           } else {
             // Translate common Firebase errors to user-friendly Arabic
-            let errorMsg = fbError.message || 'حدث خطأ أثناء إنشاء الحساب';
-            if (fbError.code === 'auth/email-already-in-use') {
+            let errorMsg = fbError?.message || 'حدث خطأ أثناء إنشاء الحساب';
+            if (fbError?.code === 'auth/email-already-in-use' || String(fbError).includes('email-already-in-use')) {
               errorMsg = 'البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول أو استخدام بريد آخر.';
-            } else if (fbError.code === 'auth/weak-password') {
+            } else if (fbError?.code === 'auth/weak-password' || String(fbError).includes('weak-password')) {
               errorMsg = 'كلمة المرور ضعيفة، يجب أن تحتوي على 6 خانات على الأقل.';
-            } else if (fbError.code === 'auth/invalid-email') {
+            } else if (fbError?.code === 'auth/invalid-email' || String(fbError).includes('invalid-email')) {
               errorMsg = 'صيغة البريد الإلكتروني غير صحيحة.';
-            } else if (fbError.code === 'auth/network-request-failed') {
+            } else if (fbError?.code === 'auth/network-request-failed') {
               errorMsg = 'تعذر الاتصال بالشبكة، يرجى التحقق من اتصال الإنترنت.';
             }
             return { success: false, error: errorMsg };
@@ -602,22 +607,28 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           localStorage.setItem(AUTH_STATE_KEY, 'true');
           return { success: true };
         } catch (fbError: any) {
-          if (fbError.code === 'auth/operation-not-allowed') {
+          const isOpNotAllowed =
+            fbError?.code === 'auth/operation-not-allowed' ||
+            fbError?.message?.includes('operation-not-allowed') ||
+            String(fbError).includes('operation-not-allowed');
+
+          if (isOpNotAllowed) {
             console.warn(
               'Notice: Email/Password provider not enabled in Firebase Console. Logging in via session profile.'
             );
             // Fall through to local session authentication below
           } else {
-            let errorMsg = fbError.message || 'فشل تسجيل الدخول';
+            let errorMsg = fbError?.message || 'فشل تسجيل الدخول';
             if (
-              fbError.code === 'auth/wrong-password' ||
-              fbError.code === 'auth/user-not-found' ||
-              fbError.code === 'auth/invalid-credential'
+              fbError?.code === 'auth/wrong-password' ||
+              fbError?.code === 'auth/user-not-found' ||
+              fbError?.code === 'auth/invalid-credential' ||
+              String(fbError).includes('invalid-credential')
             ) {
               errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة، يرجى المحاولة ثانية.';
-            } else if (fbError.code === 'auth/invalid-email') {
+            } else if (fbError?.code === 'auth/invalid-email' || String(fbError).includes('invalid-email')) {
               errorMsg = 'صيغة البريد الإلكتروني غير صالحة.';
-            } else if (fbError.code === 'auth/network-request-failed') {
+            } else if (fbError?.code === 'auth/network-request-failed') {
               errorMsg = 'تعذر الاتصال، يرجى التأكد من اتصال الإنترنت.';
             }
             return { success: false, error: errorMsg };

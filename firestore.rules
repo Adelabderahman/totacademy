@@ -46,6 +46,13 @@ service cloud.firestore {
         allow delete: if isOwner(userId) && isValidId(userId);
       }
 
+      // User's Confirmed Enrollments (تأكيد التسجيل في المسار - غير قابل للإلغاء أو الحذف)
+      match /confirmedEnrollments/{trackId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(trackId);
+        allow delete: if false; // لا يمكن إلغاء التأكيد أو حذف المسار المؤكد أبداً
+      }
+
       // User's Certificates Subcollection
       match /certificates/{certId} {
         allow get, list: if isOwner(userId) && isValidId(userId);

@@ -12,6 +12,7 @@ import {
   getTrainerName,
   METRIC_ICONS
 } from '@/data/tracksData';
+import { levelModules } from '@/lib/edupath-data';
 
 interface TrackFlipCardProps {
   track: TrackItem;
@@ -37,8 +38,32 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
   const durationUnit = language === 'ar' ? 'سا' : language === 'fr' ? 'h' : 'hrs';
   const durationLabel = `${track.duration} ${durationUnit}`;
 
-  const currentLevelMetrics =
-    (track.levels[activeLevel] && (track.levels[activeLevel][language] || track.levels[activeLevel].ar)) || [];
+  const isTotTrack =
+    track.id === 'trk-tot-foundation' ||
+    track.title.ar.includes('تدريب المدربين') ||
+    track.title.en.toLowerCase().includes('tot') ||
+    spec.key === 'tot';
+
+  // Bind metrics directly to the actual 3 levels from levelModules in lib/edupath-data.ts
+  let currentLevelMetrics: string[] = [];
+  if (isTotTrack) {
+    const moduleLevelKey =
+      activeLevel === 'foundation'
+        ? 'foundation'
+        : activeLevel === 'enable'
+        ? 'empowerment'
+        : 'consolidation';
+
+    const modules = levelModules[moduleLevelKey] || [];
+    currentLevelMetrics = modules.map(
+      (m) => m.title[language as 'ar' | 'en' | 'fr'] || m.title.ar
+    );
+  } else {
+    currentLevelMetrics =
+      (track.levels[activeLevel] &&
+        (track.levels[activeLevel][language] || track.levels[activeLevel].ar)) ||
+      [];
+  }
 
   const targetTrackId = track.id || `trk-${encodeURIComponent(track.title.ar.substring(0, 15))}`;
   const trackEduPathUrl = `/edupath?track=${encodeURIComponent(targetTrackId)}`;

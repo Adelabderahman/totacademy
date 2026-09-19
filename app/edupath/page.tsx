@@ -30,8 +30,23 @@ export default function EduPathPage() {
     enrollInTrack,
     updateTrackProgress,
     getTrackProgress,
+    isTrackConfirmed,
+    confirmTrackEnrollment: contextConfirmTrackEnrollment,
+    deleteTrackFromAccount,
+    resetTrackProgress,
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
+
+  const currentTrackKey = 'tot-foundation';
+  const isConfirmed = isTrackConfirmed(currentTrackKey);
+  const isEnrolledInCurrent = enrolledTracks.some(
+    (t) => t.trackKey === currentTrackKey || t.id === currentTrackKey
+  );
+
+  // Deletion modal states
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
+  const [isDeletingTrack, setIsDeletingTrack] = useState<boolean>(false);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   // Form dropdown states
   const [workshopDays, setWorkshopDays] = useState<string>('');
@@ -248,16 +263,11 @@ export default function EduPathPage() {
     return Math.min(100, Math.round((completedCount / totalItems) * 100));
   };
 
-  // Current pilot track identifier
-  const currentTrackKey = 'tot-foundation';
-
   // Enrollment check: User must be authenticated and have this track in enrolledTracks
   const isEnrolled = useMemo(() => {
     if (!isAuthenticated) return false;
-    return enrolledTracks.some(
-      (t) => t.trackKey === currentTrackKey || t.id === currentTrackKey || t.id.includes(currentTrackKey)
-    );
-  }, [isAuthenticated, enrolledTracks]);
+    return isEnrolledInCurrent;
+  }, [isAuthenticated, isEnrolledInCurrent]);
 
   // Load completion states from Firebase Firestore with user-scoped localStorage fallback
   useEffect(() => {
@@ -366,18 +376,50 @@ export default function EduPathPage() {
     return getQuizzesForModule(activeModule.id, lang);
   }, [activeModule.id, lang]);
 
-  // Direct 1-Click Track Enrollment confirmation
+  // Handle Track Deletion from Account (Only permitted before confirmation)
+  const handleDeleteTrack = async () => {
+    setIsDeletingTrack(true);
+    try {
+      const res = await deleteTrackFromAccount(currentTrackKey);
+      if (res.success) {
+        setCompletedLessons({});
+        setCompletedQuizzes({});
+        const userPrefix = user?.id ? `tot_${user.id}_` : 'tot_usr_';
+        try {
+          for (let i = 1; i <= 8; i++) {
+            localStorage.removeItem(`${userPrefix}progress_module_${i}`);
+            localStorage.removeItem(`${userPrefix}quizzes_progress_module_${i}`);
+          }
+        } catch {}
+        setShowDeleteConfirmModal(false);
+        setDeleteNotice(
+          lang === 'ar'
+            ? 'تم حذف المسار من حسابك بنجاح. إذا أعدت بدأ التدريب فيه سيبدأ من الصفر (0%).'
+            : 'Track removed from your account. If restarted, it will begin from 0%.'
+        );
+        setTimeout(() => setDeleteNotice(null), 6000);
+      } else {
+        alert(res.error || (lang === 'ar' ? 'تعذر حذف المسار' : 'Could not delete track'));
+      }
+    } catch (err) {
+      console.error('Delete track error:', err);
+    } finally {
+      setIsDeletingTrack(false);
+    }
+  };
+
+  // Direct Track Enrollment confirmation (Creates permanent snapshot in File 2: confirmedEnrollments)
   const confirmTrackEnrollment = async () => {
     if (!isAuthenticated) {
       openAuthModal(
         'register',
         '/edupath',
         lang === 'ar'
-          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لاحتساب درجاتك وتحديد الأنشطة كمكتملة.'
-          : 'Please sign in or create an account to enroll and start this track from 0%.',
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لاعتماده وتفعيله رسمياً.'
+          : 'Please sign in or create an account to confirm your enrollment in this track.',
         {
-          id: 'tot-foundation',
-          trackKey: 'tot-foundation',
+          id: currentTrackKey,
+          trackKey: currentTrackKey,
           titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
           titleEn: 'Foundation Training Track (TOTF126)',
           categoryAr: 'تدريب المدربين (TOT)',
@@ -391,63 +433,52 @@ export default function EduPathPage() {
 
     setIsEnrollingPathway(true);
     try {
-      await enrollInTrack({
-        id: 'tot-foundation',
-        trackKey: 'tot-foundation',
-        titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
-        titleEn: 'Foundation Training Track (TOTF126)',
-        categoryAr: 'تدريب المدربين (TOT)',
-        categoryEn: 'Training of Trainers (TOT)',
-        badge: 'TOT/P-F',
-        totalLessons: 18,
-        progress: 0,
-        completedLessons: 0,
-        status: 'in_progress',
-        mentorName: 'د. عبد الكريم بلخيري',
-      });
-
-      // Explicitly initialize 0% progress in Firestore
-      await updateTrackProgress('tot-foundation', {
-        completedLessons: {},
-        completedQuizzes: {},
-        activeModuleId: 'module_1',
-        activeLevel: 'foundation',
-        overallProgress: 0,
-        reportCode,
-      });
-
-      setCompletedLessons({});
-      setCompletedQuizzes({});
-
-      setPathwaySuccessMsg(
-        lang === 'ar'
-          ? 'تم تأكيد تسجيلك في المسار بنجاح! تم ضبط تقدمك على 0%، ويمكنك الآن الشروع في إنجاز الدروس والأنشطة وحفظ تقدمك.'
-          : 'Track enrollment confirmed with initial 0% progress! You can now start completing activities.'
+      const res = await contextConfirmTrackEnrollment(
+        currentTrackKey,
+        strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+        {
+          overallProgress,
+          completedLessons,
+          completedQuizzes,
+          activeLevel,
+          activeModuleId,
+          reportCode,
+        }
       );
+
+      if (res.success) {
+        setPathwaySuccessMsg(
+          lang === 'ar'
+            ? 'تم تأكيد تسجيلك في المسار رسمياً وحفظ نسخة قيدك الدائمة في سجلات الأكاديمية! المسار أصبح مفعلاً الآن لاجتياز الاختبار العام وطلب الشهادة.'
+            : 'Track enrollment confirmed and permanently recorded! The track is now active for the final exam and certificate.'
+        );
+      } else {
+        alert(res.error || (lang === 'ar' ? 'حدث خطأ أثناء تأكيد التسجيل' : 'Confirmation failed'));
+      }
 
       setTimeout(() => {
         setPathwaySuccessMsg(null);
         setIsEnrollingPathway(false);
         closePathwayModal();
-      }, 1500);
+      }, 1600);
     } catch (err) {
-      console.error('Track enrollment error:', err);
+      console.error('Track confirmation error:', err);
       setIsEnrollingPathway(false);
     }
   };
 
-  // Toggle Lesson Completion with Firebase cloud persistence & enrollment gating
-  const toggleLesson = (lessonId: string) => {
+  // Toggle Lesson Completion with Firebase cloud persistence (File 1: trackProgress)
+  const toggleLesson = async (lessonId: string) => {
     if (!isAuthenticated) {
       openAuthModal(
         'register',
         '/edupath',
         lang === 'ar'
-          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتحديد الدروس كمكتملة واحتساب تقدمك.'
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً للقيام بالتكوين وتحديد مدى تقدمك وحفظه.'
           : 'Please sign in or create an account to start the track and save completed lessons.',
         {
-          id: 'tot-foundation',
-          trackKey: 'tot-foundation',
+          id: currentTrackKey,
+          trackKey: currentTrackKey,
           titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
           titleEn: 'Foundation Training Track (TOTF126)',
           categoryAr: 'تدريب المدربين (TOT)',
@@ -459,9 +490,26 @@ export default function EduPathPage() {
       return;
     }
 
-    if (!isEnrolled) {
-      setIsPathwayModalOpen(true);
-      return;
+    // Auto-ensure enrolled track record in File 1
+    if (!isEnrolledInCurrent) {
+      try {
+        await enrollInTrack({
+          id: currentTrackKey,
+          trackKey: currentTrackKey,
+          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          badge: 'TOT/P-F',
+          totalLessons: 18,
+          progress: 0,
+          completedLessons: 0,
+          status: 'in_progress',
+          mentorName: 'د. عبد الكريم بلخيري',
+        });
+      } catch (e) {
+        console.warn('Auto enrollment notice:', e);
+      }
     }
 
     const list = completedLessons[activeModule.id] || [];
@@ -479,7 +527,7 @@ export default function EduPathPage() {
     } catch {}
 
     const newOverall = calculateTotalProgress(newRecord, completedQuizzes);
-    updateTrackProgress('tot-foundation', {
+    updateTrackProgress(currentTrackKey, {
       completedLessons: newRecord,
       completedQuizzes,
       activeModuleId,
@@ -489,18 +537,18 @@ export default function EduPathPage() {
     });
   };
 
-  // Toggle Quiz Checkbox with Firebase cloud persistence & enrollment gating
-  const toggleQuizCompletion = (qIndex: number) => {
+  // Toggle Quiz Checkbox with Firebase cloud persistence (File 1: trackProgress)
+  const toggleQuizCompletion = async (qIndex: number) => {
     if (!isAuthenticated) {
       openAuthModal(
         'register',
         '/edupath',
         lang === 'ar'
-          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتسجيل درجات الاختبارات.'
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً للقيام بالتكوين وحل الاختبارات وحفظ درجاتك.'
           : 'Please sign in or create an account to save quiz progress.',
         {
-          id: 'tot-foundation',
-          trackKey: 'tot-foundation',
+          id: currentTrackKey,
+          trackKey: currentTrackKey,
           titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
           titleEn: 'Foundation Training Track (TOTF126)',
           categoryAr: 'تدريب المدربين (TOT)',
@@ -512,9 +560,26 @@ export default function EduPathPage() {
       return;
     }
 
-    if (!isEnrolled) {
-      setIsPathwayModalOpen(true);
-      return;
+    // Auto-ensure enrolled track record in File 1
+    if (!isEnrolledInCurrent) {
+      try {
+        await enrollInTrack({
+          id: currentTrackKey,
+          trackKey: currentTrackKey,
+          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          badge: 'TOT/P-F',
+          totalLessons: 18,
+          progress: 0,
+          completedLessons: 0,
+          status: 'in_progress',
+          mentorName: 'د. عبد الكريم بلخيري',
+        });
+      } catch (e) {
+        console.warn('Auto enrollment notice:', e);
+      }
     }
 
     const qKey = `qz_${qIndex}`;
@@ -533,7 +598,7 @@ export default function EduPathPage() {
     } catch {}
 
     const newOverall = calculateTotalProgress(completedLessons, newRecord);
-    updateTrackProgress('tot-foundation', {
+    updateTrackProgress(currentTrackKey, {
       completedLessons,
       completedQuizzes: newRecord,
       activeModuleId,
@@ -1995,30 +2060,22 @@ export default function EduPathPage() {
               <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full text-accent-yellow font-bold">
                 {strings.badge_new}
               </span>
-              {/* Firebase Live Cloud Persistence Indicator */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>
-                  {lang === 'ar'
-                    ? `حفظ سحابي مباشر: ${user.name}`
-                    : `Live cloud saved: ${user.name}`}
-                </span>
-              </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href="/profile"
-                className="text-xs font-bold bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg transition"
-              >
-                {lang === 'ar' ? 'لوحة التحكم والمسارات' : 'Dashboard'}
-              </Link>
-              <button
-                type="button"
-                onClick={openPathwayModal}
-                className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition cursor-pointer"
-              >
-                {strings.btn_submit_pathway}
-              </button>
+              {isConfirmed ? (
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-sm transition">
+                  <span className="text-sm">✓</span>
+                  <span>{lang === 'ar' ? 'مسار مؤكد' : 'Confirmed Track'}</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openPathwayModal}
+                  className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition cursor-pointer"
+                >
+                  {strings.btn_submit_pathway}
+                </button>
+              )}
             </div>
           </div>
 
@@ -2052,47 +2109,132 @@ export default function EduPathPage() {
 
       {/* ================= Main Content Master Container ================= */}
       <div id="module-master-container" className="container mx-auto px-4 max-w-[95%]">
-        {/* ================= Interactive Enrollment & Progress Gating Alert ================= */}
-        {!isEnrolled ? (
-          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        {/* Delete notification notice */}
+        {deleteNotice && (
+          <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold animate-fadeIn flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>ℹ️</span>
+              <span>{deleteNotice}</span>
+            </div>
+            <button
+              onClick={() => setDeleteNotice(null)}
+              className="text-blue-500 hover:text-blue-800 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal (Only accessible before confirmation) */}
+        {showDeleteConfirmModal && (
+          <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-rose-200 text-center space-y-4 animate-fadeIn">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold">
+                ⚠️
+              </div>
+              <h3 className="font-extrabold text-lg text-slate-900">
+                {lang === 'ar' ? 'تأكيد حذف المسار من حسابك' : 'Confirm Track Deletion'}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {lang === 'ar'
+                  ? 'هل أنت متأكد من رغبتك في حذف هذا المسار من حسابك؟ تنبيه هام: قبل تأكيد التسجيل يمكنك حذف المسار، ولكن إذا أعدت بدأ التدريب فيه لاحقاً فسيبدأ من الصفر (0%) وسيتم تصفير جميع درجاتك ونشاطاتك الحالية.'
+                  : 'Are you sure you want to delete this track from your account? Notice: If you restart training in the future, it will start from 0%.'}
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteTrack}
+                  disabled={isDeletingTrack}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow transition disabled:opacity-50 cursor-pointer"
+                >
+                  {isDeletingTrack
+                    ? (lang === 'ar' ? 'جاري الحذف...' : 'Deleting...')
+                    : (lang === 'ar' ? 'نعم، احذف المسار' : 'Yes, Delete Track')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  disabled={isDeletingTrack}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                >
+                  {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= Interactive Enrollment & Progress Status Bar ================= */}
+        {isConfirmed ? (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-emerald-50/95 border-2 border-emerald-400 text-emerald-950 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow flex items-center gap-1.5 shrink-0">
+                <span className="text-sm">✓</span>
+                <span>{lang === 'ar' ? 'مسار مؤكد' : 'Confirmed Track'}</span>
+              </span>
+              <div>
+                <p className="font-bold text-xs sm:text-sm text-emerald-900">
+                  {lang === 'ar'
+                    ? `تم تأكيد تسجيلك رسمياً في هذا المسار | التقدم الحالي: ${overallProgress}%`
+                    : `Officially Confirmed Track | Current Progress: ${overallProgress}%`}
+                </p>
+                <p className="text-[11px] text-emerald-700 mt-0.5">
+                  {lang === 'ar'
+                    ? 'المسار مفعل ومثبت في حسابك الدائم، ومتاح لاجتياز الاختبار العام والحصول على الشهادة الرسمية.'
+                    : 'The track is officially active. You are eligible for the final exam and certificate.'}
+                </p>
+              </div>
+            </div>
+            <div className="text-[11px] font-semibold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-lg border border-emerald-300/60 shrink-0">
+              🔒 {lang === 'ar' ? 'مسار مثبت ومعتمد (لا يمكن حذفه)' : 'Permanent Record'}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-amber-200/70 border border-amber-300 flex items-center justify-center text-xl shrink-0">
-                🔒
+                📖
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
                     {lang === 'ar'
-                      ? 'وضع المعاينة التجريبية للمسار (التقدم الحالي: 0%)'
-                      : 'Pilot Track Preview Mode (Current Progress: 0%)'}
+                      ? `مرحلة التكوين والتدريب (التقدم الحالي: ${overallProgress}%)`
+                      : `Training & Formation Stage (Progress: ${overallProgress}%)`}
                   </h3>
                   <span className="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-[11px] font-bold">
-                    {lang === 'ar' ? 'يلزم تأكيد التسجيل' : 'Enrollment Required'}
+                    {lang === 'ar' ? 'غير مؤكد بعد' : 'Unconfirmed'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
                   {lang === 'ar'
-                    ? 'هذا مسار تجريبي؛ يبدأ التقدم من 0%، ولا يمكنك تحديد الأنشطة أو الاختبارات كمكتملة وحفظ إنجازك في سحابة حسابك إلا بعد تأكيد التسجيل في المسار.'
-                    : 'This is a pilot track starting at 0% progress. You cannot mark activities as complete or save progress until track registration is confirmed.'}
+                    ? 'يمكنك الاطلاع على كافة الوحدات والدروس وتحديد مدى تقدمك بحرية. لتفعيل المسار واجتياز الاختبار العام والحصول على الشهادة، يمكنك تأكيد التسجيل في أي وقت.'
+                    : 'Explore all modules and mark your progress. To activate the track for the final exam and certificate, confirm your enrollment at any time.'}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto flex-wrap">
               {isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={confirmTrackEnrollment}
-                  disabled={isEnrollingPathway}
-                  className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>✍️</span>
-                  <span>
-                    {isEnrollingPathway
-                      ? lang === 'ar' ? 'جاري تأكيد التسجيل...' : 'Confirming...'
-                      : lang === 'ar' ? 'تأكيد التسجيل في المسار (0%)' : 'Confirm Enrollment (0%)'}
-                  </span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={openPathwayModal}
+                    className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>✍️</span>
+                    <span>{lang === 'ar' ? 'تأكيد التسجيل في المسار' : 'Confirm Track'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirmModal(true)}
+                    className="flex-1 md:flex-initial px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    title={lang === 'ar' ? 'حذف المسار من حسابي' : 'Delete track from account'}
+                  >
+                    <span>🗑️</span>
+                    <span>{lang === 'ar' ? 'حذف المسار من حسابي' : 'Delete'}</span>
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
@@ -2101,11 +2243,11 @@ export default function EduPathPage() {
                       'register',
                       '/edupath',
                       lang === 'ar'
-                        ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتحديد الأنشطة كمكتملة واحتساب تقدمك.'
-                        : 'Please sign in or create an account to start this track and record completion.',
+                        ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً للقيام بالتكوين وتحديد مدى تقدمك.'
+                        : 'Please sign in or create an account to start training.',
                       {
-                        id: 'tot-foundation',
-                        trackKey: 'tot-foundation',
+                        id: currentTrackKey,
+                        trackKey: currentTrackKey,
                         titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
                         titleEn: 'Foundation Training Track (TOTF126)',
                         categoryAr: 'تدريب المدربين (TOT)',
@@ -2118,38 +2260,9 @@ export default function EduPathPage() {
                   className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>🚀</span>
-                  <span>{lang === 'ar' ? 'تسجيل حساب وتأكيد المسار' : 'Register & Confirm Track'}</span>
+                  <span>{lang === 'ar' ? 'تسجيل حساب والبدء في التدريب' : 'Register & Start Training'}</span>
                 </button>
               )}
-              <button
-                type="button"
-                onClick={openPathwayModal}
-                className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-300 transition-all cursor-pointer"
-              >
-                {lang === 'ar' ? 'بيانات القيد' : 'Form'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-6 p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-bold text-xs text-emerald-900">
-                {lang === 'ar'
-                  ? `✓ أنت مسجل رسمياً في هذا المسار | التقدم المحرز: ${overallProgress}%`
-                  : `✓ Officially enrolled in this track | Progress: ${overallProgress}%`}
-              </span>
-              <span className="text-[11px] text-emerald-700 hidden md:inline">
-                ({lang === 'ar' ? 'يتم حفظ أي نشاط تنجزه تلقائياً في حسابك وقاعدة البيانات' : 'Your completed items are synced with your cloud account'})
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/profile"
-                className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline"
-              >
-                {lang === 'ar' ? 'عرض المسار في لوحة حسابي ←' : 'View in Profile →'}
-              </Link>
             </div>
           </div>
         )}
@@ -3205,6 +3318,26 @@ export default function EduPathPage() {
             <span>{strings.fe_title}</span>
           </h2>
 
+          {!isConfirmed && (
+            <div className="mb-4 p-4 rounded-2xl bg-amber-500/20 border border-amber-400/50 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">⚠️</span>
+                <span className="text-xs font-bold text-white leading-relaxed">
+                  {lang === 'ar'
+                    ? 'تنبيه أكاديمي: لابد من تأكيد التسجيل في المسار حتى يعتبر المسار مفعلاً وتتمكن من اجتياز الامتحان العام واعتماد نتيجتك.'
+                    : 'Academic Notice: Track enrollment must be confirmed before taking the final exam.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={openPathwayModal}
+                className="px-3.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs shrink-0 cursor-pointer shadow transition active:scale-95"
+              >
+                {lang === 'ar' ? 'تأكيد التسجيل في المسار الآن' : 'Confirm Track Now'}
+              </button>
+            </div>
+          )}
+
           <div className="fe-layout">
             {/* Desktop Tabs */}
             <div className="fe-sidebar">
@@ -3281,6 +3414,15 @@ export default function EduPathPage() {
                 className="w-full"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (!isConfirmed) {
+                    alert(
+                      lang === 'ar'
+                        ? 'لابد من تأكيد التسجيل في المسار أولاً حتى يعتبر المسار مفعلاً وتتمكن من اجتياز الاختبار العام واعتماد النتيجة.'
+                        : 'You must confirm track enrollment before submitting the final exam.'
+                    );
+                    openPathwayModal();
+                    return;
+                  }
                   setExamSubmitted(true);
                   alert(
                     lang === 'ar'
@@ -3780,6 +3922,26 @@ export default function EduPathPage() {
             </div>
           </div>
 
+          {!isConfirmed && (
+            <div className="mb-4 p-4 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">⚠️</span>
+                <span className="text-xs font-bold leading-relaxed">
+                  {lang === 'ar'
+                    ? 'تنبيه أكاديمي: لا يمكن إصدار شهادة إتمام المسار والاعتماد النهائي إلا بعد تأكيد التسجيل في المسار واجتياز متطلباته.'
+                    : 'Academic Notice: Official certificate issuance requires confirmed track enrollment.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={openPathwayModal}
+                className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow transition active:scale-95"
+              >
+                {lang === 'ar' ? 'تأكيد التسجيل في المسار الآن' : 'Confirm Track Now'}
+              </button>
+            </div>
+          )}
+
           <div className="grand-alert alert-orange mb-3 sm:mb-6">
             {strings.cert_alert}
           </div>
@@ -3788,6 +3950,15 @@ export default function EduPathPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!isConfirmed) {
+                  alert(
+                    lang === 'ar'
+                      ? 'لابد من تأكيد التسجيل في المسار أولاً حتى يعتبر المسار مفعلاً وتتمكن من طلب الشهادة المعتمدة.'
+                      : 'You must confirm track enrollment before requesting your certificate.'
+                  );
+                  openPathwayModal();
+                  return;
+                }
                 alert(lang === 'ar' ? 'تم استلام طلب الاعتماد والشهادة بنجاح! سيتم مراجعة ملفك والتواصل معك.' : 'Certificate application submitted!');
               }}
             >
@@ -4018,6 +4189,29 @@ export default function EduPathPage() {
                         {lang === 'ar'
                           ? 'جاري إغلاق النافذة والعودة إلى المسار...'
                           : 'Closing and resuming track...'}
+                      </div>
+                    </div>
+                  ) : isConfirmed ? (
+                    <div className="p-6 sm:p-8 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-center space-y-4 animate-fadeIn">
+                      <div className="w-14 h-14 mx-auto rounded-full bg-emerald-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-md">
+                        ✓
+                      </div>
+                      <h4 className="text-lg font-extrabold text-emerald-950">
+                        {lang === 'ar' ? 'المسار مؤكد ومفعل رسمياً في حسابك' : 'Track Officially Confirmed'}
+                      </h4>
+                      <p className="text-xs text-emerald-800 leading-relaxed max-w-md mx-auto">
+                        {lang === 'ar'
+                          ? `قيدك موثق في سجلات الأكاديمية بنسبة تقدم (${overallProgress}%). لا يمكن إلغاء التأكيد، والمسار متاح لاجتياز الاختبار العام واستخراج الشهادة.`
+                          : `Your registration is permanently confirmed with ${overallProgress}% progress. The track is active for the final exam and certificate.`}
+                      </p>
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={closePathwayModal}
+                          className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition cursor-pointer"
+                        >
+                          {lang === 'ar' ? 'إغلاق ومتابعة التدريب' : 'Close & Continue'}
+                        </button>
                       </div>
                     </div>
                   ) : (

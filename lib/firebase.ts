@@ -17,6 +17,7 @@ import {
   getDocFromServer,
   setDoc,
   updateDoc,
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -24,7 +25,13 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import firebaseConfigJson from '@/firebase-applet-config.json';
-import { UserProfile, EnrolledTrack, UserCertificate, UserAppointment } from '@/types/user';
+import {
+  UserProfile,
+  EnrolledTrack,
+  UserCertificate,
+  UserAppointment,
+  ConfirmedEnrollmentRecord,
+} from '@/types/user';
 
 export enum OperationType {
   CREATE = 'create',
@@ -237,6 +244,78 @@ export async function saveTrackProgressToFirestore(
       },
       { merge: true }
     );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteTrackProgressFromFirestore(uid: string, trackKey: string): Promise<void> {
+  if (!db || !uid || !trackKey) return;
+  const path = `users/${uid}/trackProgress/${trackKey}`;
+  try {
+    const progressRef = doc(db, 'users', uid, 'trackProgress', trackKey);
+    await deleteDoc(progressRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function deleteEnrolledTrackFromFirestore(uid: string, trackId: string): Promise<void> {
+  if (!db || !uid || !trackId) return;
+  const path = `users/${uid}/enrolledTracks/${trackId}`;
+  try {
+    const trackRef = doc(db, 'users', uid, 'enrolledTracks', trackId);
+    await deleteDoc(trackRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// --- Confirmed Enrollments (الملف الثاني لتأكيد التسجيل في المسار وحفظ نسخة كاملة) ---
+
+export async function fetchUserConfirmedEnrollments(uid: string): Promise<ConfirmedEnrollmentRecord[]> {
+  if (!db || !uid) return [];
+  const path = `users/${uid}/confirmedEnrollments`;
+  try {
+    const collRef = collection(db, 'users', uid, 'confirmedEnrollments');
+    const snap = await getDocs(collRef);
+    return snap.docs.map((d) => d.data() as ConfirmedEnrollmentRecord);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function fetchConfirmedEnrollment(
+  uid: string,
+  trackKey: string
+): Promise<ConfirmedEnrollmentRecord | null> {
+  if (!db || !uid || !trackKey) return null;
+  const path = `users/${uid}/confirmedEnrollments/${trackKey}`;
+  try {
+    const docRef = doc(db, 'users', uid, 'confirmedEnrollments', trackKey);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as ConfirmedEnrollmentRecord;
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+  }
+  return null;
+}
+
+export async function saveConfirmedEnrollmentToFirestore(
+  uid: string,
+  record: ConfirmedEnrollmentRecord
+): Promise<void> {
+  if (!db || !uid || !record.trackKey) return;
+  const path = `users/${uid}/confirmedEnrollments/${record.trackKey}`;
+  try {
+    const docRef = doc(db, 'users', uid, 'confirmedEnrollments', record.trackKey);
+    await setDoc(docRef, {
+      ...record,
+      confirmedAt: record.confirmedAt || new Date().toISOString(),
+    }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

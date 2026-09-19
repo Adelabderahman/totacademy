@@ -29,12 +29,35 @@ export interface EnrolledTrack {
   enrolledAt: string;
   progress: number; // 0 - 100
   status: 'confirmed' | 'in_progress' | 'completed';
+  isConfirmed?: boolean;
   nextSessionAr: string;
   nextSessionEn: string;
   mentorName: string;
   badge: string;
   totalLessons: number;
   completedLessons: number;
+}
+
+export interface ConfirmedEnrollmentRecord {
+  trackKey: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  membershipNumber?: string;
+  confirmedAt: string; // ISO or Arabic date
+  status: 'confirmed';
+  isConfirmed: true;
+  // Deep progress snapshots
+  overallProgressSnapshot: number;
+  completedLessonsSnapshot: Record<string, string[]>;
+  completedQuizzesSnapshot: Record<string, string[]>;
+  activeLevelSnapshot?: string;
+  activeModuleIdSnapshot?: string;
+  trackTitleAr: string;
+  trackTitleEn?: string;
+  reportCode?: string;
+  notes?: string;
 }
 
 export interface UserCertificate {

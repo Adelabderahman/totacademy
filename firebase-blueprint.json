@@ -190,6 +190,59 @@
       },
       "required": ["trackKey", "userId"]
     },
+    "ConfirmedEnrollment": {
+      "title": "ConfirmedEnrollment",
+      "description": "Irreversible official registration confirmation record with snapshot of user progress",
+      "type": "object",
+      "properties": {
+        "trackKey": {
+          "type": "string",
+          "description": "Key of the educational track"
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID of the confirmed user"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Name of the user"
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Email address"
+        },
+        "confirmedAt": {
+          "type": "string",
+          "description": "ISO timestamp of official enrollment confirmation"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["confirmed"],
+          "description": "Confirmation status"
+        },
+        "isConfirmed": {
+          "type": "boolean",
+          "description": "Confirmation boolean flag"
+        },
+        "overallProgressSnapshot": {
+          "type": "number",
+          "description": "Progress percentage at time of confirmation"
+        },
+        "completedLessonsSnapshot": {
+          "type": "object",
+          "description": "Snapshot of completed lessons"
+        },
+        "completedQuizzesSnapshot": {
+          "type": "object",
+          "description": "Snapshot of completed quizzes"
+        },
+        "trackTitleAr": {
+          "type": "string",
+          "description": "Arabic track title"
+        }
+      },
+      "required": ["trackKey", "userId", "confirmedAt", "status", "isConfirmed"]
+    },
     "CMSConfig": {
       "title": "CMSConfig",
       "description": "Live CMS studio content configuration",
@@ -227,6 +280,10 @@
     "/users/{userId}/trackProgress/{trackId}": {
       "schema": "TrackProgress",
       "description": "Detailed lesson progress and active module resume state"
+    },
+    "/users/{userId}/confirmedEnrollments/{trackId}": {
+      "schema": "ConfirmedEnrollment",
+      "description": "Official confirmation record of user track enrollment with progress snapshots"
     },
     "/users/{userId}/certificates/{certId}": {
       "schema": "Certificate",

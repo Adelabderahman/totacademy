@@ -303,98 +303,98 @@ export const SPECIALIZATIONS: Specialization[] = [
         levels: {
           foundation: {
             ar: [
-              "المفاهيم الأساسية والأدوار للمدرب",
-              "أنماط المتدربين وتعليم الكبار",
-              "لغة الجسد والحضور الصوتي",
-              "تحليل الاحتياجات التدريبية (TNA)",
-              "صياغة الأهداف السلوكية (بلوم)",
-              "استراتيجيات التيسير التفاعلي",
-              "إدارة الأسئلة والمداخلات",
-              "كتابة سيناريو الجلسة التدريبية"
+              "معمارية التعلم",
+              "التيسير الكاريزمي",
+              "الهندسة التعليمية",
+              "الابتكار البيداغوجي",
+              "التحول الرقمي",
+              "تحليلات الأثر",
+              "الحوكمة الاستراتيجية",
+              "العلامة الشخصية للمدرب"
             ],
             en: [
-              "Core Trainer Roles & Concepts",
-              "Adult Learning Styles & Andragogy",
-              "Body Language & Vocal Impact",
-              "Training Needs Analysis (TNA)",
-              "Bloom's Behavioral Objectives",
-              "Interactive Facilitation Strategies",
-              "Managing Q&A & Dynamics",
-              "Session Scenario Scripting"
+              "Architecture of Learning",
+              "Charismatic Facilitation",
+              "Instructional Engineering",
+              "Pedagogical Innovation",
+              "Digital Transformation",
+              "Impact Analytics",
+              "Strategic Governance",
+              "Trainer's Branding"
             ],
             fr: [
-              "Rôles fondamentaux du formateur",
-              "Andragogie et styles d'apprentissage",
-              "Langage corporel et impact vocal",
-              "Analyse des besoins de formation",
-              "Objectifs pédagogiques de Bloom",
-              "Stratégies d'animation interactive",
-              "Gestion des questions du public",
-              "Scénarisation de session"
+              "L'Architecture de l'Apprentissage",
+              "Facilitation Charismatique",
+              "Ingénierie Pédagogique",
+              "Innovation Pédagogique",
+              "Transformation Numérique",
+              "Analytique d'Impact",
+              "Gouvernance Stratégique",
+              "Branding du Formateur"
             ]
           },
           enable: {
             ar: [
-              "هندسة وتصميم الحقائب التدريبية",
-              "صناعة وتطوير الأنشطة التفاعلية",
-              "بناء العروض التقديمية الاحترافية",
-              "تطبيق نموذج كيركباتريك للتقييم",
-              "التعامل مع الفئات الصعبة في القاعة",
-              "تصميم الاستبيانات والاختبارات",
-              "إدارة الوقت والجدول التدريبي",
-              "الألعاب والتمارين التدريبية"
+              "ديناميكيات المجموعات المتقدمة وإدارة الصراعات",
+              "التصميم التعليمي الرشيق (Agile & SAM)",
+              "الكوتشينج والتوجيه في التدريب",
+              "التيسير البصري والمحاكاة المتقدمة",
+              "تصميم تجارب التعلم المدمج",
+              "علم الأعصاب الإدراكي للمدربين",
+              "تسويق الخدمات وبناء النماذج الربحية",
+              "قياس العائد على الاستثمار المعمق"
             ],
             en: [
-              "Training Kit Engineering & Design",
-              "Interactive Activity Development",
-              "High-Impact Presentation Slides",
-              "Kirkpatrick 4-Level Evaluation",
-              "Handling Difficult Behaviors",
-              "Survey & Quiz Formulation",
-              "Time Management & Flow",
-              "Training Games & Dynamics"
+              "Advanced Group Dynamics",
+              "Agile Instructional Design (Agile & SAM)",
+              "Coaching & Mentoring in Training",
+              "Visual Facilitation & Simulation",
+              "Blended Learning Design",
+              "Neuroscience in Training",
+              "Consulting & Monetization",
+              "Advanced ROI Analytics"
             ],
             fr: [
-              "Ingénierie de mallettes pédagogiques",
-              "Conception d'activités interactives",
-              "Présentations visuelles professionnelles",
-              "Modèle d'évaluation de Kirkpatrick",
-              "Gestion des profils difficiles",
-              "Formulation de questionnaires",
-              "Gestion du temps en salle",
-              "Dynamiques de groupe et jeux"
+              "Dynamiques de Groupe Avancées",
+              "Design Pédagogique Agile (Agile & SAM)",
+              "Coaching et Mentorat en Formation",
+              "Facilitation Visuelle & Simulation",
+              "Conception du Blended Learning",
+              "Neurosciences en Formation",
+              "Consulting et Monétisation",
+              "ROI Avancé"
             ]
           },
           reinforce: {
             ar: [
-              "التحكيم والاعتماد الأكاديمي الرسمي",
-              "التدريب التوليدي والذكاء الاصطناعي",
-              "تسويق الذات وبناء البراند كمدرب",
-              "استشارات التدريب والتطوير المؤسسي",
-              "إدارة الأزمات في القاعات الكبرى",
-              "إعداد وتقديم مشروع التخرج",
-              "الامتحان الشامل لنهاية المسار",
-              "الميثاق الأخلاقي لمهنة التدريب"
+              "إدارة وتأسيس الأكاديميات التدريبية",
+              "هندسة التعلم والتطوير المؤسسي (L&D)",
+              "الكوتشينج التنفيذي والقيادي",
+              "الاعتمادات الدولية وضمان الجودة",
+              "المناهج المبنية على الكفاءات",
+              "قيادة التحول الرقمي المتقدم",
+              "اقتصاديات المعرفة والملكية الفكرية",
+              "البحث العلمي والابتكار البيداغوجي"
             ],
             en: [
-              "Official Academic Accreditation",
-              "Generative AI in Modern Training",
-              "Personal Branding for Trainers",
-              "Corporate Training Consulting",
-              "Crisis Management in Large Halls",
-              "Graduation Capstone Project",
-              "Final Comprehensive Exam",
-              "Trainer Code of Professional Ethics"
+              "Training Academy Management",
+              "Corporate L&D Engineering",
+              "Executive Coaching",
+              "Global Accreditations & QA",
+              "Competency-Based Curricula",
+              "Leading EdTech Transformation",
+              "Knowledge Economics & IP",
+              "Scientific Research in L&D"
             ],
             fr: [
-              "Accréditation académique officielle",
-              "L'IA générative dans la formation",
-              "Marque personnelle du formateur",
-              "Conseil en formation d'entreprise",
-              "Gestion de crises en grande salle",
-              "Projet de fin de parcours",
-              "Examen final récapitulatif",
-              "Charte éthique du formateur"
+              "Gestion des Académies",
+              "Ingénierie L&D d'Entreprise",
+              "Coaching Exécutif",
+              "Accréditations Mondiales & QA",
+              "Programmes Basés sur les Compétences",
+              "Leadership en Transformation Numérique",
+              "Économie du Savoir et PI",
+              "Recherche Scientifique en L&D"
             ]
           }
         }

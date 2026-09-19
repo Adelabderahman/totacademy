@@ -9,6 +9,7 @@ import {
   ContributedArticle,
   SupervisedStudent,
   SupervisingProfessor,
+  ConfirmedEnrollmentRecord,
 } from '@/types/user';
 import {
   auth,
@@ -20,6 +21,10 @@ import {
   saveEnrolledTrackToFirestore,
   fetchTrackProgressFromFirestore,
   saveTrackProgressToFirestore,
+  deleteTrackProgressFromFirestore,
+  deleteEnrolledTrackFromFirestore,
+  fetchUserConfirmedEnrollments,
+  saveConfirmedEnrollmentToFirestore,
   fetchUserCertificatesFromFirestore,
   fetchUserAppointmentsFromFirestore,
   TrackProgressRecord,
@@ -61,6 +66,22 @@ interface UserAccountContextType {
   quickDemoLogin: (role?: 'trainer' | 'trainee') => void;
   logout: () => Promise<void>;
   enrollInTrack: (trackData: Partial<EnrolledTrack> & { trackKey: string; titleAr: string }) => Promise<{ success: boolean; error?: string }>;
+  confirmedEnrollments: Record<string, ConfirmedEnrollmentRecord>;
+  isTrackConfirmed: (trackKey: string) => boolean;
+  confirmTrackEnrollment: (
+    trackKey: string,
+    trackTitleAr?: string,
+    snapshotData?: {
+      overallProgress?: number;
+      completedLessons?: Record<string, string[]>;
+      completedQuizzes?: Record<string, string[]>;
+      activeLevel?: string;
+      activeModuleId?: string;
+      reportCode?: string;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  deleteTrackFromAccount: (trackKey: string) => Promise<{ success: boolean; error?: string }>;
+  resetTrackProgress: (trackKey: string) => Promise<void>;
   updateTrackProgress: (
     trackKey: string,
     data: {
@@ -382,6 +403,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [loading, setLoading] = useState<boolean>(true);
 
   const [enrolledTracks, setEnrolledTracks] = useState<EnrolledTrack[]>([]);
+  const [confirmedEnrollments, setConfirmedEnrollments] = useState<Record<string, ConfirmedEnrollmentRecord>>({});
   const [certificates, setCertificates] = useState<UserCertificate[]>([]);
   const [appointments, setAppointments] = useState<UserAppointment[]>([]);
   const [articles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
@@ -405,6 +427,10 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       const savedTracks = localStorage.getItem('tot_user_enrolled_tracks');
       if (savedTracks) {
         setEnrolledTracks(JSON.parse(savedTracks));
+      }
+      const savedConfirmed = localStorage.getItem('tot_user_confirmed_enrollments');
+      if (savedConfirmed) {
+        setConfirmedEnrollments(JSON.parse(savedConfirmed));
       }
     } catch {
       // ignore local cache errors
@@ -468,6 +494,21 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           } else {
             // New registered user has NO enrolled tracks yet (empty state)
             setEnrolledTracks([]);
+          }
+
+          // Load confirmed enrollments from Firestore (الملف الثاني)
+          const remoteConfirmed = await fetchUserConfirmedEnrollments(fUser.uid);
+          if (remoteConfirmed && remoteConfirmed.length > 0) {
+            const confirmedMap: Record<string, ConfirmedEnrollmentRecord> = {};
+            remoteConfirmed.forEach((c) => {
+              if (c.trackKey) confirmedMap[c.trackKey] = c;
+            });
+            setConfirmedEnrollments(confirmedMap);
+            try {
+              localStorage.setItem('tot_user_confirmed_enrollments', JSON.stringify(confirmedMap));
+            } catch {}
+          } else {
+            setConfirmedEnrollments({});
           }
 
           // Load certificates and appointments if any
@@ -821,6 +862,174 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     return await fetchTrackProgressFromFirestore(targetUid, trackKey);
   };
 
+  // Check if a track is officially confirmed
+  const isTrackConfirmed = (trackKey: string): boolean => {
+    if (confirmedEnrollments[trackKey]?.isConfirmed) return true;
+    const found = enrolledTracks.find(
+      (t) => t.trackKey === trackKey || t.id === trackKey || t.id.includes(trackKey)
+    );
+    return Boolean(found?.isConfirmed || (found?.status === 'confirmed' && confirmedEnrollments[trackKey]));
+  };
+
+  // Confirm track registration permanently: saves ConfirmedEnrollmentRecord (الملف الثاني في فايربيز)
+  // This cannot be undone once confirmed.
+  const confirmTrackEnrollment = async (
+    trackKey: string,
+    trackTitleAr?: string,
+    snapshotData?: {
+      overallProgress?: number;
+      completedLessons?: Record<string, string[]>;
+      completedQuizzes?: Record<string, string[]>;
+      activeLevel?: string;
+      activeModuleId?: string;
+      reportCode?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    const resolvedTitle = trackTitleAr || 'المسار التأصيلي الشامل لتدريب المدربين (TOTF126)';
+
+    // Build the permanent immutable record (الملف الثاني)
+    const confirmedRecord: ConfirmedEnrollmentRecord = {
+      trackKey,
+      userId: targetUid,
+      userName: user.name,
+      userEmail: user.email,
+      userPhone: user.phone,
+      membershipNumber: user.membershipNumber,
+      confirmedAt: new Date().toISOString(),
+      status: 'confirmed',
+      isConfirmed: true,
+      overallProgressSnapshot: snapshotData?.overallProgress ?? 0,
+      completedLessonsSnapshot: snapshotData?.completedLessons ?? {},
+      completedQuizzesSnapshot: snapshotData?.completedQuizzes ?? {},
+      activeLevelSnapshot: snapshotData?.activeLevel || 'foundation',
+      activeModuleIdSnapshot: snapshotData?.activeModuleId || 'module_1',
+      trackTitleAr: resolvedTitle,
+      reportCode: snapshotData?.reportCode,
+      notes: 'تم تأكيد القيد الرسمي للمسار في سجل الأكاديمية بنجاح.',
+    };
+
+    // 1. Save Confirmed Enrollment to Firestore (الملف الثاني)
+    if (targetUid) {
+      await saveConfirmedEnrollmentToFirestore(targetUid, confirmedRecord).catch((err) => {
+        console.warn('Failed to save confirmed enrollment to Firestore:', err);
+      });
+    }
+
+    // 2. Update local confirmedEnrollments state & localStorage
+    setConfirmedEnrollments((prev) => {
+      const updated = { ...prev, [trackKey]: confirmedRecord };
+      try {
+        localStorage.setItem('tot_user_confirmed_enrollments', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    // 3. Mark the track in enrolledTracks as confirmed (permanent)
+    setEnrolledTracks((prev) => {
+      const idx = prev.findIndex((t) => t.trackKey === trackKey || t.id === trackKey || t.id.includes(trackKey));
+      let nextList: EnrolledTrack[];
+      if (idx >= 0) {
+        nextList = [...prev];
+        nextList[idx] = {
+          ...nextList[idx],
+          status: 'confirmed',
+          isConfirmed: true,
+        };
+      } else {
+        const newEnrolled: EnrolledTrack = {
+          id: `trk-${trackKey}`,
+          trackKey,
+          titleAr: resolvedTitle,
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+          progress: snapshotData?.overallProgress ?? 0,
+          status: 'confirmed',
+          isConfirmed: true,
+          nextSessionAr: 'تم تأكيد قيدك بنجاح، المسار مفعل بالكامل.',
+          nextSessionEn: 'Registration confirmed. Track is fully active.',
+          mentorName: 'د. عبد الكريم بلخيري',
+          badge: 'TOT/P-F',
+          totalLessons: 18,
+          completedLessons: 0,
+        };
+        nextList = [newEnrolled, ...prev];
+      }
+      try {
+        localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(nextList));
+      } catch {}
+
+      if (targetUid && nextList[idx >= 0 ? idx : 0]) {
+        saveEnrolledTrackToFirestore(targetUid, nextList[idx >= 0 ? idx : 0]).catch(() => {});
+      }
+      return nextList;
+    });
+
+    return { success: true };
+  };
+
+  // Delete track before confirmation: deletes from account and clears progress (starts from 0% if restarted)
+  const deleteTrackFromAccount = async (trackKey: string): Promise<{ success: boolean; error?: string }> => {
+    // If the track is confirmed, it CANNOT be deleted
+    if (isTrackConfirmed(trackKey)) {
+      return {
+        success: false,
+        error: 'لا يمكن حذف هذا المسار؛ لقد تم تأكيد التسجيل فيه رسمياً وهو مفعل في سجلاتك.',
+      };
+    }
+
+    const targetUid = firebaseUser?.uid || user.id;
+
+    // 1. Delete from Firestore subcollections (الملف الأول)
+    if (targetUid) {
+      await Promise.allSettled([
+        deleteTrackProgressFromFirestore(targetUid, trackKey),
+        deleteEnrolledTrackFromFirestore(targetUid, `trk-${trackKey}`),
+        deleteEnrolledTrackFromFirestore(targetUid, trackKey),
+      ]);
+    }
+
+    // 2. Remove from enrolledTracks local state and storage
+    setEnrolledTracks((prev) => {
+      const filtered = prev.filter((t) => t.trackKey !== trackKey && t.id !== trackKey && !t.id.includes(trackKey));
+      try {
+        localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(filtered));
+      } catch {}
+      return filtered;
+    });
+
+    // 3. Clear any cached local progress so if user restarts, it starts from ZERO (0%)
+    try {
+      const userPrefix = targetUid ? `tot_${targetUid}_` : 'tot_usr_';
+      localStorage.removeItem(`tot_track_progress_${trackKey}`);
+      localStorage.removeItem('tot_edupath_state_v1');
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith(userPrefix) || key.includes(trackKey))) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch {}
+
+    return { success: true };
+  };
+
+  // Reset track progress back to 0%
+  const resetTrackProgress = async (trackKey: string): Promise<void> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    if (targetUid) {
+      await saveTrackProgressToFirestore(targetUid, trackKey, {
+        activeLevel: 'foundation',
+        activeModuleId: 'module_1',
+        completedLessons: {},
+        completedQuizzes: {},
+        overallProgress: 0,
+      }).catch(() => {});
+    }
+  };
+
   // Sign out
   const logout = async () => {
     try {
@@ -831,12 +1040,14 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       setIsAuthenticated(false);
       setFirebaseUser(null);
       setEnrolledTracks([]);
+      setConfirmedEnrollments({});
       setCertificates([]);
       setAppointments([]);
       try {
         localStorage.setItem(AUTH_STATE_KEY, 'false');
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem('tot_user_enrolled_tracks');
+        localStorage.removeItem('tot_user_confirmed_enrollments');
       } catch {}
     }
   };
@@ -849,6 +1060,11 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         isAuthenticated,
         loading,
         enrolledTracks,
+        confirmedEnrollments,
+        isTrackConfirmed,
+        confirmTrackEnrollment,
+        deleteTrackFromAccount,
+        resetTrackProgress,
         certificates,
         appointments,
         articles,

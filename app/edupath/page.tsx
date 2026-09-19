@@ -249,12 +249,40 @@ export default function EduPathPage() {
     return Math.min(100, Math.round((completedCount / totalItems) * 100));
   };
 
-  // Load completion states from Firebase Firestore with localStorage fallback
+  // Current pilot track identifier
+  const currentTrackKey = 'tot-foundation';
+
+  // Enrollment check: User must be authenticated and have this track in enrolledTracks
+  const isEnrolled = useMemo(() => {
+    if (!isAuthenticated) return false;
+    return enrolledTracks.some(
+      (t) => t.trackKey === currentTrackKey || t.id === currentTrackKey || t.id.includes(currentTrackKey)
+    );
+  }, [isAuthenticated, enrolledTracks]);
+
+  // Load completion states from Firebase Firestore with user-scoped localStorage fallback
   useEffect(() => {
     let isMounted = true;
 
     async function loadSavedProgress() {
-      // 1. Instant local cache load
+      // If user is not authenticated or not enrolled in this track:
+      // The progress MUST be 0%, and completed lessons/quizzes must be clean!
+      const userEnrolled = isAuthenticated && enrolledTracks.some(
+        (t) => t.trackKey === currentTrackKey || t.id === currentTrackKey || t.id.includes(currentTrackKey)
+      );
+
+      if (!userEnrolled) {
+        if (isMounted) {
+          setCompletedLessons({});
+          setCompletedQuizzes({});
+        }
+        generateNewReportCode();
+        return;
+      }
+
+      // User IS enrolled:
+      // 1. Instant user-scoped local cache load
+      const userPrefix = user?.id ? `tot_${user.id}_` : 'tot_usr_';
       try {
         const storedLessons: Record<string, string[]> = {};
         const storedQuizzes: Record<string, string[]> = {};
@@ -265,8 +293,8 @@ export default function EduPathPage() {
         ];
 
         currentMods.forEach((m) => {
-          const lKey = `tot_progress_${m.id}`;
-          const qKey = `tot_quizzes_progress_${m.id}`;
+          const lKey = `${userPrefix}progress_${m.id}`;
+          const qKey = `${userPrefix}quizzes_progress_${m.id}`;
           const lVal = localStorage.getItem(lKey);
           const qVal = localStorage.getItem(qKey);
           if (lVal) storedLessons[m.id] = JSON.parse(lVal);
@@ -279,7 +307,7 @@ export default function EduPathPage() {
         }
       } catch {}
 
-      // 2. Fetch latest cloud progress from Firestore
+      // 2. Fetch latest cloud progress from Firestore for this user
       try {
         const cloudProgress = await getTrackProgress('tot-foundation');
         if (cloudProgress && isMounted) {
@@ -311,12 +339,13 @@ export default function EduPathPage() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id, isAuthenticated]);
+  }, [user?.id, isAuthenticated, enrolledTracks]);
 
-  // Calculate Overall Progress
+  // Calculate Overall Progress - strictly 0% if user is not enrolled in the track!
   const overallProgress = useMemo(() => {
+    if (!isEnrolled) return 0;
     return calculateTotalProgress(completedLessons, completedQuizzes);
-  }, [completedLessons, completedQuizzes]);
+  }, [isEnrolled, completedLessons, completedQuizzes]);
 
   // Current Active Module Data
   const currentModulesList = levelModules[activeLevel] || levelModules.foundation;
@@ -338,8 +367,104 @@ export default function EduPathPage() {
     return getQuizzesForModule(activeModule.id, lang);
   }, [activeModule.id, lang]);
 
-  // Toggle Lesson Completion with Firebase cloud persistence
+  // Direct 1-Click Track Enrollment confirmation
+  const confirmTrackEnrollment = async () => {
+    if (!isAuthenticated) {
+      openAuthModal(
+        'register',
+        '/edupath',
+        lang === 'ar'
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لاحتساب درجاتك وتحديد الأنشطة كمكتملة.'
+          : 'Please sign in or create an account to enroll and start this track from 0%.',
+        {
+          id: 'tot-foundation',
+          trackKey: 'tot-foundation',
+          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          mentorName: 'د. عبد الكريم بلخيري',
+          badge: 'TOT/P-F',
+        }
+      );
+      return;
+    }
+
+    setIsEnrollingPathway(true);
+    try {
+      await enrollInTrack({
+        id: 'tot-foundation',
+        trackKey: 'tot-foundation',
+        titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+        titleEn: 'Foundation Training Track (TOTF126)',
+        categoryAr: 'تدريب المدربين (TOT)',
+        categoryEn: 'Training of Trainers (TOT)',
+        badge: 'TOT/P-F',
+        totalLessons: 18,
+        progress: 0,
+        completedLessons: 0,
+        status: 'in_progress',
+        mentorName: 'د. عبد الكريم بلخيري',
+      });
+
+      // Explicitly initialize 0% progress in Firestore
+      await updateTrackProgress('tot-foundation', {
+        completedLessons: {},
+        completedQuizzes: {},
+        activeModuleId: 'module_1',
+        activeLevel: 'foundation',
+        overallProgress: 0,
+        reportCode,
+      });
+
+      setCompletedLessons({});
+      setCompletedQuizzes({});
+
+      setPathwaySuccessMsg(
+        lang === 'ar'
+          ? 'تم تأكيد تسجيلك في المسار بنجاح! تم ضبط تقدمك على 0%، ويمكنك الآن الشروع في إنجاز الدروس والأنشطة وحفظ تقدمك.'
+          : 'Track enrollment confirmed with initial 0% progress! You can now start completing activities.'
+      );
+
+      setTimeout(() => {
+        setPathwaySuccessMsg(null);
+        setIsEnrollingPathway(false);
+        closePathwayModal();
+      }, 1500);
+    } catch (err) {
+      console.error('Track enrollment error:', err);
+      setIsEnrollingPathway(false);
+    }
+  };
+
+  // Toggle Lesson Completion with Firebase cloud persistence & enrollment gating
   const toggleLesson = (lessonId: string) => {
+    if (!isAuthenticated) {
+      openAuthModal(
+        'register',
+        '/edupath',
+        lang === 'ar'
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتحديد الدروس كمكتملة واحتساب تقدمك.'
+          : 'Please sign in or create an account to start the track and save completed lessons.',
+        {
+          id: 'tot-foundation',
+          trackKey: 'tot-foundation',
+          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          mentorName: 'د. عبد الكريم بلخيري',
+          badge: 'TOT/P-F',
+        }
+      );
+      return;
+    }
+
+    if (!isEnrolled) {
+      setIsPathwayModalOpen(true);
+      return;
+    }
+
     const list = completedLessons[activeModule.id] || [];
     let updated: string[];
     if (list.includes(lessonId)) {
@@ -349,8 +474,9 @@ export default function EduPathPage() {
     }
     const newRecord = { ...completedLessons, [activeModule.id]: updated };
     setCompletedLessons(newRecord);
+    const userPrefix = user?.id ? `tot_${user.id}_` : 'tot_usr_';
     try {
-      localStorage.setItem(`tot_progress_${activeModule.id}`, JSON.stringify(updated));
+      localStorage.setItem(`${userPrefix}progress_${activeModule.id}`, JSON.stringify(updated));
     } catch {}
 
     const newOverall = calculateTotalProgress(newRecord, completedQuizzes);
@@ -364,8 +490,34 @@ export default function EduPathPage() {
     });
   };
 
-  // Toggle Quiz Checkbox with Firebase cloud persistence
+  // Toggle Quiz Checkbox with Firebase cloud persistence & enrollment gating
   const toggleQuizCompletion = (qIndex: number) => {
+    if (!isAuthenticated) {
+      openAuthModal(
+        'register',
+        '/edupath',
+        lang === 'ar'
+          ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتسجيل درجات الاختبارات.'
+          : 'Please sign in or create an account to save quiz progress.',
+        {
+          id: 'tot-foundation',
+          trackKey: 'tot-foundation',
+          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+          titleEn: 'Foundation Training Track (TOTF126)',
+          categoryAr: 'تدريب المدربين (TOT)',
+          categoryEn: 'Training of Trainers (TOT)',
+          mentorName: 'د. عبد الكريم بلخيري',
+          badge: 'TOT/P-F',
+        }
+      );
+      return;
+    }
+
+    if (!isEnrolled) {
+      setIsPathwayModalOpen(true);
+      return;
+    }
+
     const qKey = `qz_${qIndex}`;
     const list = completedQuizzes[activeModule.id] || [];
     let updated: string[];
@@ -376,8 +528,9 @@ export default function EduPathPage() {
     }
     const newRecord = { ...completedQuizzes, [activeModule.id]: updated };
     setCompletedQuizzes(newRecord);
+    const userPrefix = user?.id ? `tot_${user.id}_` : 'tot_usr_';
     try {
-      localStorage.setItem(`tot_quizzes_progress_${activeModule.id}`, JSON.stringify(updated));
+      localStorage.setItem(`${userPrefix}quizzes_progress_${activeModule.id}`, JSON.stringify(updated));
     } catch {}
 
     const newOverall = calculateTotalProgress(completedLessons, newRecord);
@@ -1924,6 +2077,108 @@ export default function EduPathPage() {
 
       {/* ================= Main Content Master Container ================= */}
       <div id="module-master-container" className="container mx-auto px-4 max-w-[95%]">
+        {/* ================= Interactive Enrollment & Progress Gating Alert ================= */}
+        {!isEnrolled ? (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-200/70 border border-amber-300 flex items-center justify-center text-xl shrink-0">
+                🔒
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
+                    {lang === 'ar'
+                      ? 'وضع المعاينة التجريبية للمسار (التقدم الحالي: 0%)'
+                      : 'Pilot Track Preview Mode (Current Progress: 0%)'}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-[11px] font-bold">
+                    {lang === 'ar' ? 'يلزم تأكيد التسجيل' : 'Enrollment Required'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
+                  {lang === 'ar'
+                    ? 'هذا مسار تجريبي؛ يبدأ التقدم من 0%، ولا يمكنك تحديد الأنشطة أو الاختبارات كمكتملة وحفظ إنجازك في سحابة حسابك إلا بعد تأكيد التسجيل في المسار.'
+                    : 'This is a pilot track starting at 0% progress. You cannot mark activities as complete or save progress until track registration is confirmed.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={confirmTrackEnrollment}
+                  disabled={isEnrollingPathway}
+                  className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>✍️</span>
+                  <span>
+                    {isEnrollingPathway
+                      ? lang === 'ar' ? 'جاري تأكيد التسجيل...' : 'Confirming...'
+                      : lang === 'ar' ? 'تأكيد التسجيل في المسار (0%)' : 'Confirm Enrollment (0%)'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openAuthModal(
+                      'register',
+                      '/edupath',
+                      lang === 'ar'
+                        ? 'يرجى تسجيل الدخول أو إنشاء حسابك أولاً، ثم تأكيد التسجيل في المسار لتحديد الأنشطة كمكتملة واحتساب تقدمك.'
+                        : 'Please sign in or create an account to start this track and record completion.',
+                      {
+                        id: 'tot-foundation',
+                        trackKey: 'tot-foundation',
+                        titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+                        titleEn: 'Foundation Training Track (TOTF126)',
+                        categoryAr: 'تدريب المدربين (TOT)',
+                        categoryEn: 'Training of Trainers (TOT)',
+                        mentorName: 'د. عبد الكريم بلخيري',
+                        badge: 'TOT/P-F',
+                      }
+                    )
+                  }
+                  className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>🚀</span>
+                  <span>{lang === 'ar' ? 'تسجيل حساب وتأكيد المسار' : 'Register & Confirm Track'}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={openPathwayModal}
+                className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-300 transition-all cursor-pointer"
+              >
+                {lang === 'ar' ? 'بيانات القيد' : 'Form'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-bold text-xs text-emerald-900">
+                {lang === 'ar'
+                  ? `✓ أنت مسجل رسمياً في هذا المسار | التقدم المحرز: ${overallProgress}%`
+                  : `✓ Officially enrolled in this track | Progress: ${overallProgress}%`}
+              </span>
+              <span className="text-[11px] text-emerald-700 hidden md:inline">
+                ({lang === 'ar' ? 'يتم حفظ أي نشاط تنجزه تلقائياً في حسابك وقاعدة البيانات' : 'Your completed items are synced with your cloud account'})
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 underline"
+              >
+                {lang === 'ar' ? 'عرض المسار في لوحة حسابي ←' : 'View in Profile →'}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* ================= 3. Level Selector ================= */}
         <div className="level-selector-container" id="level-selector-wrapper">
           <h3 className="level-selector-title">{strings.level_select_title}</h3>
@@ -2124,16 +2379,23 @@ export default function EduPathPage() {
                             </a>
                           )}
 
-                          <label className={`lesson-progress ${isFinished ? 'completed' : ''}`}>
+                          <label className={`lesson-progress ${isFinished ? 'completed' : ''} ${!isEnrolled ? 'opacity-85' : ''}`}>
                             <input
                               type="checkbox"
                               checked={isFinished}
                               onChange={() => toggleLesson(lesson.id)}
                             />
-                            <span className="prog-text">
-                              {isFinished
-                                ? (lang === 'ar' ? 'مكتمل' : 'Completed')
-                                : (lang === 'ar' ? 'تحديد كمكتمل' : 'Mark Complete')}
+                            <span className="prog-text flex items-center gap-1">
+                              {!isEnrolled ? (
+                                <>
+                                  <span className="text-xs">🔒</span>
+                                  <span>{lang === 'ar' ? 'تأكيد التسجيل مطلوب' : 'Enrollment Required'}</span>
+                                </>
+                              ) : isFinished ? (
+                                lang === 'ar' ? 'مكتمل' : 'Completed'
+                              ) : (
+                                lang === 'ar' ? 'تحديد كمكتمل' : 'Mark Complete'
+                              )}
                             </span>
                           </label>
                         </div>
@@ -2316,14 +2578,18 @@ export default function EduPathPage() {
                                 ⏳ {lang === 'ar' ? '90s' : '90s'}
                               </span>
                               <span
-                                className={`qz-intro-badge ${isDone ? 'qz-badge-green' : 'qz-badge-yellow'} cursor-pointer flex items-center gap-1`}
+                                className={`qz-intro-badge ${!isEnrolled ? 'bg-slate-700/80 text-amber-300 border border-amber-400/40' : isDone ? 'qz-badge-green' : 'qz-badge-yellow'} cursor-pointer flex items-center gap-1`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleQuizCompletion(idx);
                                 }}
-                                title={lang === 'ar' ? 'تغيير حالة الإنجاز' : 'Toggle Done'}
+                                title={!isEnrolled ? (lang === 'ar' ? 'يلزم تأكيد التسجيل لاحتساب الإنجاز' : 'Enrollment required') : (lang === 'ar' ? 'تغيير حالة الإنجاز' : 'Toggle Done')}
                               >
-                                {isDone ? '✓ ' + (lang === 'ar' ? 'مكتمل' : 'Done') : '▶ ' + (lang === 'ar' ? 'بدء' : 'Start')}
+                                {!isEnrolled
+                                  ? '🔒 ' + (lang === 'ar' ? 'تأكيد التسجيل' : 'Enroll')
+                                  : isDone
+                                  ? '✓ ' + (lang === 'ar' ? 'مكتمل' : 'Done')
+                                  : '▶ ' + (lang === 'ar' ? 'بدء' : 'Start')}
                               </span>
                             </div>
                           </div>
@@ -3784,29 +4050,7 @@ export default function EduPathPage() {
                       className="premium-form"
                       onSubmit={async (e) => {
                         e.preventDefault();
-                        setIsEnrollingPathway(true);
-                        try {
-                          await enrollInTrack({
-                            trackKey: 'tot-foundation',
-                            titleAr: strings.pathway_name_value,
-                            badge: 'TOT/P-F',
-                            totalLessons: 18,
-                            progress: overallProgress,
-                          });
-                          setPathwaySuccessMsg(
-                            lang === 'ar'
-                              ? 'تم قيد مسارك الأكاديمي في حسابك وسحابة Firebase بنجاح، يمكنك الآن مواصلة التعلم والتقييم.'
-                              : 'Your pathway registration is confirmed and saved to your account!'
-                          );
-                          setTimeout(() => {
-                            setPathwaySuccessMsg(null);
-                            setIsEnrollingPathway(false);
-                            closePathwayModal();
-                          }, 1800);
-                        } catch {
-                          setIsEnrollingPathway(false);
-                          closePathwayModal();
-                        }
+                        await confirmTrackEnrollment();
                       }}
                     >
                       <div className="form-group">

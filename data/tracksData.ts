@@ -38,7 +38,7 @@ export interface TrackItem {
 }
 
 export interface Specialization {
-  key: 'tech' | 'marketing' | 'media' | 'creativity';
+  key: 'tot' | 'tech' | 'marketing' | 'media' | 'creativity';
   icon: string;
   color: string;
   name: LocalizedString;
@@ -244,6 +244,9 @@ export const coreI18n: Record<'ar' | 'en' | 'fr', Record<string, string>> = {
 };
 
 export const TRAINER_NAMES: Record<string, { en: string; fr: string }> = {
+  "د. عبد الكريم بلخيري": { en: "Dr. Abdelkrim Belkheiri", fr: "Dr. Abdelkrim Belkheiri" },
+  "د. كمال منصوري": { en: "Dr. Kamel Mansouri", fr: "Dr. Kamel Mansouri" },
+  "د. سمية العربي": { en: "Dr. Soumaya El Arbi", fr: "Dr. Soumaya El Arbi" },
   "كريم زروقي": { en: "Karim Zerrougui", fr: "Karim Zerrougui" },
   "نور الهدى صالحي": { en: "Nour El Houda Salhi", fr: "Nour El Houda Salhi" },
   "عادل بلحاج": { en: "Adel Belhadj", fr: "Adel Belhadj" },
@@ -263,6 +266,141 @@ export function getTrainerName(nameAr: string, lang: 'ar' | 'en' | 'fr'): string
 export const METRIC_ICONS = ['🎯', '📊', '🧩', '🛠️', '📈', '🔍', '💡', '✅'];
 
 export const SPECIALIZATIONS: Specialization[] = [
+  {
+    key: "tot",
+    icon: "🎓",
+    color: "#1152cf",
+    name: {
+      ar: "تدريب المدربين والتأهيل الأكاديمي (TOT)",
+      en: "Training of Trainers (TOT)",
+      fr: "Formation des Formateurs (TOT)"
+    },
+    tracks: [
+      {
+        id: "tot-foundation",
+        title: {
+          ar: "البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)",
+          en: "Comprehensive Foundation Training Track for Trainers (TOTF126)",
+          fr: "Programme fondamental complet de formation des formateurs (TOTF126)"
+        },
+        summary: {
+          ar: "المسار المعتمد الفعلي والنشط حالياً بالأكاديمية؛ ينقلك من التأسيس إلى التمكين ثم التمتين مع دروس فيديو، وثائق، اختبارات ومحاكاة عملية للمدربين.",
+          en: "The active pilot accredited pathway at the academy, guiding you from foundation to enablement and reinforcement with real video lectures, docs, and assessments.",
+          fr: "Le parcours accrédité actif à l'académie, vous guidant de la fondation à l'habilitation et au renforcement avec vidéos réelles, documents et examens."
+        },
+        image: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=700&q=80",
+        status: { ar: "متاح للتجربة والتعلم", en: "Available for Testing", fr: "Disponible pour essai" },
+        statusKey: "available",
+        duration: 45,
+        mode: { ar: "عن بعد", en: "Remote", fr: "À distance" },
+        modeKey: "remote",
+        url: "/edupath",
+        trainers: [
+          { name: "د. عبد الكريم بلخيري", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" },
+          { name: "د. كمال منصوري", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop" },
+          { name: "د. سمية العربي", img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200&auto=format&fit=crop" }
+        ],
+        levels: {
+          foundation: {
+            ar: [
+              "المفاهيم الأساسية والأدوار للمدرب",
+              "أنماط المتدربين وتعليم الكبار",
+              "لغة الجسد والحضور الصوتي",
+              "تحليل الاحتياجات التدريبية (TNA)",
+              "صياغة الأهداف السلوكية (بلوم)",
+              "استراتيجيات التيسير التفاعلي",
+              "إدارة الأسئلة والمداخلات",
+              "كتابة سيناريو الجلسة التدريبية"
+            ],
+            en: [
+              "Core Trainer Roles & Concepts",
+              "Adult Learning Styles & Andragogy",
+              "Body Language & Vocal Impact",
+              "Training Needs Analysis (TNA)",
+              "Bloom's Behavioral Objectives",
+              "Interactive Facilitation Strategies",
+              "Managing Q&A & Dynamics",
+              "Session Scenario Scripting"
+            ],
+            fr: [
+              "Rôles fondamentaux du formateur",
+              "Andragogie et styles d'apprentissage",
+              "Langage corporel et impact vocal",
+              "Analyse des besoins de formation",
+              "Objectifs pédagogiques de Bloom",
+              "Stratégies d'animation interactive",
+              "Gestion des questions du public",
+              "Scénarisation de session"
+            ]
+          },
+          enable: {
+            ar: [
+              "هندسة وتصميم الحقائب التدريبية",
+              "صناعة وتطوير الأنشطة التفاعلية",
+              "بناء العروض التقديمية الاحترافية",
+              "تطبيق نموذج كيركباتريك للتقييم",
+              "التعامل مع الفئات الصعبة في القاعة",
+              "تصميم الاستبيانات والاختبارات",
+              "إدارة الوقت والجدول التدريبي",
+              "الألعاب والتمارين التدريبية"
+            ],
+            en: [
+              "Training Kit Engineering & Design",
+              "Interactive Activity Development",
+              "High-Impact Presentation Slides",
+              "Kirkpatrick 4-Level Evaluation",
+              "Handling Difficult Behaviors",
+              "Survey & Quiz Formulation",
+              "Time Management & Flow",
+              "Training Games & Dynamics"
+            ],
+            fr: [
+              "Ingénierie de mallettes pédagogiques",
+              "Conception d'activités interactives",
+              "Présentations visuelles professionnelles",
+              "Modèle d'évaluation de Kirkpatrick",
+              "Gestion des profils difficiles",
+              "Formulation de questionnaires",
+              "Gestion du temps en salle",
+              "Dynamiques de groupe et jeux"
+            ]
+          },
+          reinforce: {
+            ar: [
+              "التحكيم والاعتماد الأكاديمي الرسمي",
+              "التدريب التوليدي والذكاء الاصطناعي",
+              "تسويق الذات وبناء البراند كمدرب",
+              "استشارات التدريب والتطوير المؤسسي",
+              "إدارة الأزمات في القاعات الكبرى",
+              "إعداد وتقديم مشروع التخرج",
+              "الامتحان الشامل لنهاية المسار",
+              "الميثاق الأخلاقي لمهنة التدريب"
+            ],
+            en: [
+              "Official Academic Accreditation",
+              "Generative AI in Modern Training",
+              "Personal Branding for Trainers",
+              "Corporate Training Consulting",
+              "Crisis Management in Large Halls",
+              "Graduation Capstone Project",
+              "Final Comprehensive Exam",
+              "Trainer Code of Professional Ethics"
+            ],
+            fr: [
+              "Accréditation académique officielle",
+              "L'IA générative dans la formation",
+              "Marque personnelle du formateur",
+              "Conseil en formation d'entreprise",
+              "Gestion de crises en grande salle",
+              "Projet de fin de parcours",
+              "Examen final récapitulatif",
+              "Charte éthique du formateur"
+            ]
+          }
+        }
+      }
+    ]
+  },
   {
     key: "tech",
     icon: "💻",

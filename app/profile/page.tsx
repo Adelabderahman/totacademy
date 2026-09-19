@@ -478,10 +478,14 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Link
-                  href="/edupath"
+                  href={enrolledTracks.length > 0 ? '/edupath' : '/specializations'}
                   className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-primary-blue hover:bg-blue-100 text-xs font-bold border border-blue-200 transition-colors flex items-center gap-1"
                 >
-                  <span>{language === 'ar' ? 'المسار التعليمي' : 'Go to EduPath'}</span>
+                  <span>
+                    {enrolledTracks.length > 0
+                      ? language === 'ar' ? 'متابعة المسار التعليمي' : 'Continue EduPath'
+                      : language === 'ar' ? 'استعراض التخصصات' : 'Explore Tracks'}
+                  </span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
               </div>

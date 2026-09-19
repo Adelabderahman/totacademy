@@ -9,6 +9,19 @@ interface TrainersHeroProps {
   categories: TrainerCategory[];
 }
 
+const TRAINER_ORBIT_NAMES: Record<string, { ar: string; en: string; fr: string }> = {
+  'bilal-aouiche': { ar: 'بلال عويش', en: 'Bilal Aouiche', fr: 'Bilal Aouiche' },
+  'leila-ben-omar': { ar: 'ليلى بنعمر', en: 'Leila Benomar', fr: 'Leila Benomar' },
+  'adel-belhadj': { ar: 'عادل بلحاج', en: 'Adel Belhadj', fr: 'Adel Belhadj' },
+  'karim-zerrougui': { ar: 'كريم زروقي', en: 'Karim Zerrougui', fr: 'Karim Zerrougui' },
+  'nour-salhi': { ar: 'نور صالحي', en: 'Nour Salhi', fr: 'Nour Salhi' },
+  'ahmed-bencheikh': { ar: 'أحمد بنشيخ', en: 'Ahmed Bencheikh', fr: 'Ahmed Bencheikh' },
+  'sara-merabet': { ar: 'سارة مرابط', en: 'Sara Merabet', fr: 'Sara Merabet' },
+  'youcef-hamdi': { ar: 'يوسف حمدي', en: 'Youcef Hamdi', fr: 'Youcef Hamdi' },
+  'lina-bouziane': { ar: 'لينة بوزيان', en: 'Lina Bouziane', fr: 'Lina Bouziane' },
+  'imane-touati': { ar: 'إيمان تواتي', en: 'Imane Touati', fr: 'Imane Touati' },
+};
+
 export default function TrainersHero({ categories }: TrainersHeroProps) {
   const { language } = useLanguage();
   const t = coreI18n[language] || coreI18n.ar;
@@ -38,7 +51,10 @@ export default function TrainersHero({ categories }: TrainersHeroProps) {
         <div className="orbit-ring inner" aria-hidden="true" />
 
         {all.slice(0, 10).map((item, i) => {
-          const name = item.trainer.name[language] || item.trainer.name.ar;
+          const orbitNameEntry = TRAINER_ORBIT_NAMES[item.trainer.id];
+          const name = orbitNameEntry
+            ? (orbitNameEntry[language] || orbitNameEntry.ar)
+            : (item.trainer.name[language] || item.trainer.name.ar);
           return (
             <div key={item.trainer.id} className={`orbit-chip c${i + 1}`}>
               <img src={item.trainer.image} alt={name} loading="lazy" className="trainer-chip-img" />

@@ -5,16 +5,16 @@ import { useLanguage } from '@/context/LanguageContext';
 import { getTranslation, getLocalized } from '@/data/eventsData';
 
 const EVENT_ORBIT_ITEMS = [
-  { icon: '🛠️', title: { ar: 'ورشات تدريبية متقدمة', en: 'Advanced Workshops', fr: 'Ateliers Avancés' } },
-  { icon: '📅', title: { ar: 'أيام دراسية مكثفة', en: 'Intensive Training Days', fr: 'Journées de Formation' } },
-  { icon: '⚡', title: { ar: 'معسكرات تقنية تفاعلية', en: 'Tech Bootcamps', fr: 'Bootcamps Techniques' } },
-  { icon: '🏕️', title: { ar: 'مخيمات تدريب وتطوير', en: 'Training Camps', fr: 'Camps de Formation' } },
-  { icon: '👥', title: { ar: 'لقاءات تدريبية دورية', en: 'Periodic Meetups', fr: 'Rencontres Périodiques' } },
-  { icon: '🏆', title: { ar: 'المؤتمر السنوي الدولي', en: 'Annual Conference', fr: 'Conférence Annuelle' } },
-  { icon: '🎓', title: { ar: 'شهادات مهنية معتمدة', en: 'Accredited Credentials', fr: 'Certificats Agréés' } },
-  { icon: '🌟', title: { ar: 'نخبة المدربين الدوليين', en: 'International Trainers', fr: 'Formateurs Internationaux' } },
-  { icon: '🌐', title: { ar: 'حضور وتدريب هجين', en: 'In-Person & Hybrid', fr: 'Présentiel & Hybride' } },
-  { icon: '💼', title: { ar: 'مشاريع تطبيقية واقعية', en: 'Real-World Projects', fr: 'Projets Pratiques' } },
+  { icon: '🛠️', title: { ar: 'ورشات تدريبية', en: 'Training Workshops', fr: 'Ateliers Pratiques' } },
+  { icon: '📅', title: { ar: 'أيام دراسية', en: 'Study Days', fr: 'Sessions Intensives' } },
+  { icon: '⚡', title: { ar: 'معسكرات تقنية', en: 'Tech Bootcamps', fr: 'Bootcamps Techniques' } },
+  { icon: '🏕️', title: { ar: 'مخيمات تدريبية', en: 'Training Camps', fr: 'Camps Formation' } },
+  { icon: '👥', title: { ar: 'لقاءات دورية', en: 'Periodic Meetups', fr: 'Rencontres Périodiques' } },
+  { icon: '🏆', title: { ar: 'مؤتمرات سنوية', en: 'Annual Conferences', fr: 'Conférences Annuelles' } },
+  { icon: '🎓', title: { ar: 'شهادات معتمدة', en: 'Certified Credentials', fr: 'Certificats Agréés' } },
+  { icon: '🌟', title: { ar: 'نخبة المدربين', en: 'Elite Trainers', fr: 'Formateurs Émérites' } },
+  { icon: '🌐', title: { ar: 'تدريب هجين', en: 'Hybrid Training', fr: 'Formation Hybride' } },
+  { icon: '💼', title: { ar: 'مشاريع تطبيقية', en: 'Practical Projects', fr: 'Projets Pratiques' } },
 ];
 
 export const EventsHero: React.FC = () => {

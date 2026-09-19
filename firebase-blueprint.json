@@ -146,6 +146,50 @@
       },
       "required": ["id", "userId", "code", "title"]
     },
+    "TrackProgress": {
+      "title": "TrackProgress",
+      "description": "Detailed lesson and quiz progress tracking for an enrolled user",
+      "type": "object",
+      "properties": {
+        "trackKey": {
+          "type": "string",
+          "description": "Key of the educational track"
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID of the enrolled user"
+        },
+        "activeLevel": {
+          "type": "string",
+          "description": "Currently active level"
+        },
+        "activeModuleId": {
+          "type": "string",
+          "description": "Currently active module ID"
+        },
+        "completedLessons": {
+          "type": "object",
+          "description": "Completed lesson IDs by module"
+        },
+        "completedQuizzes": {
+          "type": "object",
+          "description": "Completed quiz IDs by module"
+        },
+        "overallProgress": {
+          "type": "number",
+          "description": "Calculated progress percentage"
+        },
+        "reportCode": {
+          "type": "string",
+          "description": "Latest assessment report reference code"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "ISO timestamp of last progress update"
+        }
+      },
+      "required": ["trackKey", "userId"]
+    },
     "CMSConfig": {
       "title": "CMSConfig",
       "description": "Live CMS studio content configuration",
@@ -180,9 +224,17 @@
       "schema": "EnrolledTrack",
       "description": "User track enrollments and course progress"
     },
+    "/users/{userId}/trackProgress/{trackId}": {
+      "schema": "TrackProgress",
+      "description": "Detailed lesson progress and active module resume state"
+    },
     "/users/{userId}/certificates/{certId}": {
       "schema": "Certificate",
       "description": "Official academy certificates issued to the user"
+    },
+    "/users/{userId}/appointments/{apptId}": {
+      "schema": "object",
+      "description": "Scheduled appointments and interactive workshops"
     },
     "/cms/{documentId}": {
       "schema": "CMSConfig",

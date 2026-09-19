@@ -16,6 +16,13 @@ import {
   googleProvider,
   fetchUserProfileFromFirestore,
   saveUserProfileToFirestore,
+  fetchUserEnrolledTracks,
+  saveEnrolledTrackToFirestore,
+  fetchTrackProgressFromFirestore,
+  saveTrackProgressToFirestore,
+  fetchUserCertificatesFromFirestore,
+  fetchUserAppointmentsFromFirestore,
+  TrackProgressRecord,
 } from '@/lib/firebase';
 import {
   onAuthStateChanged,
@@ -53,6 +60,19 @@ interface UserAccountContextType {
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   quickDemoLogin: (role?: 'trainer' | 'trainee') => void;
   logout: () => Promise<void>;
+  enrollInTrack: (trackData: Partial<EnrolledTrack> & { trackKey: string; titleAr: string }) => Promise<{ success: boolean; error?: string }>;
+  updateTrackProgress: (
+    trackKey: string,
+    data: {
+      completedLessons: Record<string, string[]>;
+      completedQuizzes: Record<string, string[]>;
+      activeModuleId?: string;
+      activeLevel?: 'foundation' | 'empowerment' | 'consolidation';
+      overallProgress?: number;
+      reportCode?: string;
+    }
+  ) => Promise<void>;
+  getTrackProgress: (trackKey: string) => Promise<TrackProgressRecord | null>;
 }
 
 const DEFAULT_TRAINER_PROFILE: UserProfile = {
@@ -340,9 +360,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [enrolledTracks] = useState<EnrolledTrack[]>(INITIAL_TRACKS);
-  const [certificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
-  const [appointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
+  const [enrolledTracks, setEnrolledTracks] = useState<EnrolledTrack[]>(INITIAL_TRACKS);
+  const [certificates, setCertificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
+  const [appointments, setAppointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
   const [articles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
   const [students] = useState<SupervisedStudent[]>(INITIAL_STUDENTS);
   const [professors] = useState<SupervisingProfessor[]>(INITIAL_PROFESSORS);
@@ -410,8 +430,26 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
             setUser(newProfile);
             await saveUserProfileToFirestore(newProfile).catch(() => {});
           }
+
+          // Load enrolled tracks from Firestore
+          const remoteTracks = await fetchUserEnrolledTracks(fUser.uid);
+          if (remoteTracks && remoteTracks.length > 0) {
+            setEnrolledTracks(remoteTracks);
+          } else {
+            // Seed initial track for the new user and persist to Firestore
+            for (const trk of INITIAL_TRACKS) {
+              await saveEnrolledTrackToFirestore(fUser.uid, trk).catch(() => {});
+            }
+          }
+
+          // Load certificates and appointments if any
+          const remoteCerts = await fetchUserCertificatesFromFirestore(fUser.uid);
+          if (remoteCerts && remoteCerts.length > 0) setCertificates(remoteCerts);
+
+          const remoteAppts = await fetchUserAppointmentsFromFirestore(fUser.uid);
+          if (remoteAppts && remoteAppts.length > 0) setAppointments(remoteAppts);
         } catch (err) {
-          console.warn('Note loading user profile:', err);
+          console.warn('Note loading user data from Firestore:', err);
         }
       } else {
         // If not signed into Firebase Auth, rely on local session flag if set
@@ -584,7 +622,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Google Sign In
   const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (!auth) {
+      if (!auth || !googleProvider) {
         quickDemoLogin('trainer');
         return { success: true };
       }
@@ -629,6 +667,110 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     } catch {}
   };
 
+  // Enroll in track and persist to Firestore
+  const enrollInTrack = async (
+    trackData: Partial<EnrolledTrack> & { trackKey: string; titleAr: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    const trackId = trackData.id || `trk-${trackData.trackKey}`;
+    const newTrack: EnrolledTrack = {
+      id: trackId,
+      trackKey: trackData.trackKey,
+      titleAr: trackData.titleAr,
+      titleEn: trackData.titleEn || trackData.titleAr,
+      categoryAr: trackData.categoryAr || 'المسارات التدريبية المعتمدة',
+      categoryEn: trackData.categoryEn || 'Accredited Training Tracks',
+      enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+      progress: trackData.progress || 0,
+      status: trackData.status || 'confirmed',
+      nextSessionAr: trackData.nextSessionAr || 'تم تأكيد القيد بنجاح، يمكنك متابعة المحاور من حيث توقفت.',
+      nextSessionEn: trackData.nextSessionEn || 'Registration confirmed. You can start learning now.',
+      mentorName: trackData.mentorName || 'طاقم أكاديمية TOT',
+      badge: trackData.badge || 'TOT-PRO',
+      totalLessons: trackData.totalLessons || 18,
+      completedLessons: trackData.completedLessons || 0,
+    };
+
+    setEnrolledTracks((prev) => {
+      const existingIdx = prev.findIndex((t) => t.id === trackId || t.trackKey === newTrack.trackKey);
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = { ...copy[existingIdx], ...newTrack };
+        return copy;
+      }
+      return [newTrack, ...prev];
+    });
+
+    const targetUid = firebaseUser?.uid || user.id;
+    if (targetUid) {
+      await saveEnrolledTrackToFirestore(targetUid, newTrack).catch((err) => {
+        console.warn('Sync enrolled track to Firestore error:', err);
+      });
+    }
+
+    return { success: true };
+  };
+
+  // Update track progress in Firestore and state
+  const updateTrackProgress = async (
+    trackKey: string,
+    data: {
+      completedLessons: Record<string, string[]>;
+      completedQuizzes: Record<string, string[]>;
+      activeModuleId?: string;
+      activeLevel?: 'foundation' | 'empowerment' | 'consolidation';
+      overallProgress?: number;
+      reportCode?: string;
+    }
+  ): Promise<void> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    if (!targetUid) return;
+
+    // Calculate total completed lessons count
+    const totalLessonsDone = Object.values(data.completedLessons).reduce(
+      (acc, curr) => acc + (curr?.length || 0),
+      0
+    );
+
+    // 1. Save track progress record in Firestore
+    await saveTrackProgressToFirestore(targetUid, trackKey, {
+      activeLevel: data.activeLevel || 'foundation',
+      activeModuleId: data.activeModuleId || 'module_1',
+      completedLessons: data.completedLessons,
+      completedQuizzes: data.completedQuizzes,
+      overallProgress: data.overallProgress || 0,
+      reportCode: data.reportCode,
+    }).catch((err) => {
+      console.warn('Failed to save track progress to Firestore:', err);
+    });
+
+    // 2. Also update enrolledTracks item for this track
+    setEnrolledTracks((prev) => {
+      const idx = prev.findIndex((t) => t.trackKey === trackKey || t.id.includes(trackKey));
+      if (idx >= 0) {
+        const updatedTrack: EnrolledTrack = {
+          ...prev[idx],
+          progress: data.overallProgress !== undefined ? data.overallProgress : prev[idx].progress,
+          completedLessons: totalLessonsDone,
+          status: (data.overallProgress || prev[idx].progress) >= 100 ? 'completed' : 'in_progress',
+        };
+        const copy = [...prev];
+        copy[idx] = updatedTrack;
+
+        // Persist track update to Firestore
+        saveEnrolledTrackToFirestore(targetUid, updatedTrack).catch(() => {});
+        return copy;
+      }
+      return prev;
+    });
+  };
+
+  // Retrieve track progress from Firestore
+  const getTrackProgress = async (trackKey: string): Promise<TrackProgressRecord | null> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    if (!targetUid) return null;
+    return await fetchTrackProgressFromFirestore(targetUid, trackKey);
+  };
+
   // Sign out
   const logout = async () => {
     try {
@@ -664,6 +806,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         loginWithGoogle,
         quickDemoLogin,
         logout,
+        enrollInTrack,
+        updateTrackProgress,
+        getTrackProgress,
       }}
     >
       {children}

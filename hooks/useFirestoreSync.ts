@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, isFirebaseConfigured } from '@/lib/firebase';
 
 export function useFirestoreSync<T>(
   collectionName: string,
@@ -21,14 +21,14 @@ export function useFirestoreSync<T>(
     return initialData;
   });
   const [isLoading, setIsLoading] = useState<boolean>(() => {
-    return Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+    return Boolean(isFirebaseConfigured);
   });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (!db || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    if (!db || !isFirebaseConfigured) {
       if (isMounted) setIsLoading(false);
       return;
     }
@@ -94,7 +94,7 @@ export function useFirestoreSync<T>(
         }
       }
 
-      if (!db || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      if (!db || !isFirebaseConfigured) {
         return;
       }
 

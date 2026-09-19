@@ -23,7 +23,15 @@ export default function EduPathPage() {
   const lang = (language as LangKey) || 'ar';
   const strings = coreI18n[lang] || coreI18n.ar;
 
-  const { isAuthenticated, user, quickDemoLogin } = useUserAccount();
+  const {
+    isAuthenticated,
+    user,
+    quickDemoLogin,
+    enrolledTracks,
+    enrollInTrack,
+    updateTrackProgress,
+    getTrackProgress,
+  } = useUserAccount();
   const { openAuthModal } = useAuthModal();
 
   // Form dropdown states
@@ -113,6 +121,8 @@ export default function EduPathPage() {
   const [isDownloadingReport, setIsDownloadingReport] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [isPathwayModalOpen, setIsPathwayModalOpen] = useState<boolean>(false);
+  const [isEnrollingPathway, setIsEnrollingPathway] = useState<boolean>(false);
+  const [pathwaySuccessMsg, setPathwaySuccessMsg] = useState<string | null>(null);
 
   // Smooth swipe navigation state
   const [dragOffset, setDragOffset] = useState<number>(0);
@@ -214,62 +224,98 @@ export default function EduPathPage() {
     };
   }, [isPathwayModalOpen]);
 
-  // Load completion states from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedLessons: Record<string, string[]> = {};
-      const storedQuizzes: Record<string, string[]> = {};
-
-      const currentMods = [
-        ...levelModules.foundation,
-        ...levelModules.empowerment,
-        ...levelModules.consolidation,
-      ];
-
-      currentMods.forEach((m) => {
-        const lKey = `tot_progress_${m.id}`;
-        const qKey = `tot_quizzes_progress_${m.id}`;
-        const lVal = localStorage.getItem(lKey);
-        const qVal = localStorage.getItem(qKey);
-        if (lVal) storedLessons[m.id] = JSON.parse(lVal);
-        if (qVal) storedQuizzes[m.id] = JSON.parse(qVal);
-      });
-
-      setCompletedLessons(storedLessons);
-      setCompletedQuizzes(storedQuizzes);
-
-      // Initial unique report code
-      generateNewReportCode();
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // Calculate Overall Progress
-  const overallProgress = useMemo(() => {
+  // Helper to calculate overall percentage across all modules
+  const calculateTotalProgress = (
+    lessonsMap: Record<string, string[]>,
+    quizzesMap: Record<string, string[]>
+  ) => {
     let totalItems = 0;
     let completedCount = 0;
-
     const currentMods = [
       ...levelModules.foundation,
       ...levelModules.empowerment,
       ...levelModules.consolidation,
     ];
-
     currentMods.forEach((mod) => {
       const lessons = allLessonsDB[mod.id] || [];
       totalItems += lessons.length;
-      const finishedL = completedLessons[mod.id] || [];
+      const finishedL = lessonsMap[mod.id] || [];
       completedCount += finishedL.length;
-
-      // 6 quizzes per module
       totalItems += 6;
-      const finishedQ = completedQuizzes[mod.id] || [];
+      const finishedQ = quizzesMap[mod.id] || [];
       completedCount += finishedQ.length;
     });
-
     if (totalItems === 0) return 0;
     return Math.min(100, Math.round((completedCount / totalItems) * 100));
+  };
+
+  // Load completion states from Firebase Firestore with localStorage fallback
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSavedProgress() {
+      // 1. Instant local cache load
+      try {
+        const storedLessons: Record<string, string[]> = {};
+        const storedQuizzes: Record<string, string[]> = {};
+        const currentMods = [
+          ...levelModules.foundation,
+          ...levelModules.empowerment,
+          ...levelModules.consolidation,
+        ];
+
+        currentMods.forEach((m) => {
+          const lKey = `tot_progress_${m.id}`;
+          const qKey = `tot_quizzes_progress_${m.id}`;
+          const lVal = localStorage.getItem(lKey);
+          const qVal = localStorage.getItem(qKey);
+          if (lVal) storedLessons[m.id] = JSON.parse(lVal);
+          if (qVal) storedQuizzes[m.id] = JSON.parse(qVal);
+        });
+
+        if (isMounted && Object.keys(storedLessons).length > 0) {
+          setCompletedLessons(storedLessons);
+          setCompletedQuizzes(storedQuizzes);
+        }
+      } catch {}
+
+      // 2. Fetch latest cloud progress from Firestore
+      try {
+        const cloudProgress = await getTrackProgress('tot-foundation');
+        if (cloudProgress && isMounted) {
+          if (cloudProgress.completedLessons && Object.keys(cloudProgress.completedLessons).length > 0) {
+            setCompletedLessons(cloudProgress.completedLessons);
+          }
+          if (cloudProgress.completedQuizzes && Object.keys(cloudProgress.completedQuizzes).length > 0) {
+            setCompletedQuizzes(cloudProgress.completedQuizzes);
+          }
+          if (cloudProgress.activeLevel) {
+            setActiveLevel(cloudProgress.activeLevel);
+          }
+          if (cloudProgress.activeModuleId) {
+            setActiveModuleId(cloudProgress.activeModuleId);
+          }
+          if (cloudProgress.reportCode) {
+            setReportCode(cloudProgress.reportCode);
+          }
+        }
+      } catch (err) {
+        console.warn('Note retrieving cloud progress from Firestore:', err);
+      }
+
+      generateNewReportCode();
+    }
+
+    loadSavedProgress();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isAuthenticated]);
+
+  // Calculate Overall Progress
+  const overallProgress = useMemo(() => {
+    return calculateTotalProgress(completedLessons, completedQuizzes);
   }, [completedLessons, completedQuizzes]);
 
   // Current Active Module Data
@@ -292,7 +338,7 @@ export default function EduPathPage() {
     return getQuizzesForModule(activeModule.id, lang);
   }, [activeModule.id, lang]);
 
-  // Toggle Lesson Completion
+  // Toggle Lesson Completion with Firebase cloud persistence
   const toggleLesson = (lessonId: string) => {
     const list = completedLessons[activeModule.id] || [];
     let updated: string[];
@@ -306,9 +352,19 @@ export default function EduPathPage() {
     try {
       localStorage.setItem(`tot_progress_${activeModule.id}`, JSON.stringify(updated));
     } catch {}
+
+    const newOverall = calculateTotalProgress(newRecord, completedQuizzes);
+    updateTrackProgress('tot-foundation', {
+      completedLessons: newRecord,
+      completedQuizzes,
+      activeModuleId,
+      activeLevel,
+      overallProgress: newOverall,
+      reportCode,
+    });
   };
 
-  // Toggle Quiz Checkbox from Intro list
+  // Toggle Quiz Checkbox with Firebase cloud persistence
   const toggleQuizCompletion = (qIndex: number) => {
     const qKey = `qz_${qIndex}`;
     const list = completedQuizzes[activeModule.id] || [];
@@ -323,18 +379,38 @@ export default function EduPathPage() {
     try {
       localStorage.setItem(`tot_quizzes_progress_${activeModule.id}`, JSON.stringify(updated));
     } catch {}
+
+    const newOverall = calculateTotalProgress(completedLessons, newRecord);
+    updateTrackProgress('tot-foundation', {
+      completedLessons,
+      completedQuizzes: newRecord,
+      activeModuleId,
+      activeLevel,
+      overallProgress: newOverall,
+      reportCode,
+    });
   };
 
   // Level Switch Handler
   const handleLevelSwitch = (lvl: 'foundation' | 'empowerment' | 'consolidation') => {
     setActiveLevel(lvl);
     const mods = levelModules[lvl];
+    const newModId = mods && mods.length > 0 ? mods[0].id : activeModuleId;
     if (mods && mods.length > 0) {
-      setActiveModuleId(mods[0].id);
+      setActiveModuleId(newModId);
     }
     setActiveQuizTab(0);
     setQuizScreen('intro');
     setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
+
+    updateTrackProgress('tot-foundation', {
+      completedLessons,
+      completedQuizzes,
+      activeModuleId: newModId,
+      activeLevel: lvl,
+      overallProgress,
+      reportCode,
+    });
   };
 
   // Select Module Handler
@@ -344,6 +420,15 @@ export default function EduPathPage() {
     setActiveQuizTab(0);
     setQuizScreen('intro');
     setQuizStates({ 0: 'intro', 1: 'intro', 2: 'intro', 3: 'intro', 4: 'intro', 5: 'intro' });
+
+    updateTrackProgress('tot-foundation', {
+      completedLessons,
+      completedQuizzes,
+      activeModuleId: modId,
+      activeLevel,
+      overallProgress,
+      reportCode,
+    });
 
     // Smooth scroll to lessons section
     const el = document.getElementById('axis1-group');
@@ -1774,22 +1859,39 @@ export default function EduPathPage() {
       <div className="learning-wrapper">
         <div className="container mx-auto px-4">
           {/* Top Bar inside banner */}
-          <div className="flex justify-between items-center py-4 border-b border-white/10 text-sm">
-            <div className="flex items-center gap-3">
+          <div className="flex justify-between items-center py-4 border-b border-white/10 text-sm flex-wrap gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="font-bold text-white/90">
                 {lang === 'ar' ? 'أكاديمية TOT' : 'TOT Academy'}
               </span>
               <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full text-accent-yellow font-bold">
                 {strings.badge_new}
               </span>
+              {/* Firebase Live Cloud Persistence Indicator */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>
+                  {lang === 'ar'
+                    ? `حفظ سحابي مباشر: ${user.name}`
+                    : `Live cloud saved: ${user.name}`}
+                </span>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={openPathwayModal}
-              className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition cursor-pointer"
-            >
-              {strings.btn_submit_pathway}
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="text-xs font-bold bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg transition"
+              >
+                {lang === 'ar' ? 'لوحة التحكم والمسارات' : 'Dashboard'}
+              </Link>
+              <button
+                type="button"
+                onClick={openPathwayModal}
+                className="signup-btn font-bold text-xs bg-accent-yellow text-black px-4 py-1.5 rounded-lg shadow hover:bg-white transition cursor-pointer"
+              >
+                {strings.btn_submit_pathway}
+              </button>
+            </div>
           </div>
 
           {/* Course Header Banner */}
@@ -3660,42 +3762,113 @@ export default function EduPathPage() {
                 </div>
 
                 <div className="reg-form-side">
-                  <form
-                    className="premium-form"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      alert(lang === 'ar' ? 'تم تأكيد تسجيلك في المسار بنجاح!' : 'Your pathway registration is confirmed!');
-                      closePathwayModal();
-                    }}
-                  >
-                    <div className="form-group">
-                      <label>{strings.label_name}</label>
-                      <input type="text" required placeholder={strings.ph_name} />
+                  {pathwaySuccessMsg ? (
+                    <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3 animate-fadeIn">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                        ✓
+                      </div>
+                      <h4 className="text-base font-bold text-emerald-900">
+                        {lang === 'ar' ? 'تم تأكيد تسجيلك وحفظ قيدك بنجاح!' : 'Enrollment Confirmed!'}
+                      </h4>
+                      <p className="text-xs text-emerald-700 leading-relaxed">
+                        {pathwaySuccessMsg}
+                      </p>
+                      <div className="text-[11px] text-slate-500 pt-2">
+                        {lang === 'ar'
+                          ? 'جاري إغلاق النافذة والعودة إلى المسار...'
+                          : 'Closing and resuming track...'}
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>{strings.label_email}</label>
-                      <input type="email" required placeholder={strings.ph_email} />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>{strings.label_whatsapp}</label>
-                      <input type="tel" required placeholder={strings.ph_whatsapp} dir="ltr" />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>{strings.label_pathway}</label>
-                      <input type="text" readOnly value={strings.pathway_name_value} className="bg-slate-100 font-bold" />
-                    </div>
-                    <div className="form-checkbox-group">
-                      <input type="checkbox" id="terms" required />
-                      <label htmlFor="terms">{strings.label_terms}</label>
-                    </div>
-                    <button type="submit" className="form-submit-btn">
-                      <span>{strings.btn_submit_pathway}</span>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    </button>
-                  </form>
+                  ) : (
+                    <form
+                      className="premium-form"
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        setIsEnrollingPathway(true);
+                        try {
+                          await enrollInTrack({
+                            trackKey: 'tot-foundation',
+                            titleAr: strings.pathway_name_value,
+                            badge: 'TOT/P-F',
+                            totalLessons: 18,
+                            progress: overallProgress,
+                          });
+                          setPathwaySuccessMsg(
+                            lang === 'ar'
+                              ? 'تم قيد مسارك الأكاديمي في حسابك وسحابة Firebase بنجاح، يمكنك الآن مواصلة التعلم والتقييم.'
+                              : 'Your pathway registration is confirmed and saved to your account!'
+                          );
+                          setTimeout(() => {
+                            setPathwaySuccessMsg(null);
+                            setIsEnrollingPathway(false);
+                            closePathwayModal();
+                          }, 1800);
+                        } catch {
+                          setIsEnrollingPathway(false);
+                          closePathwayModal();
+                        }
+                      }}
+                    >
+                      <div className="form-group">
+                        <label>{strings.label_name}</label>
+                        <input
+                          type="text"
+                          required
+                          defaultValue={user?.name || ''}
+                          placeholder={strings.ph_name}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>{strings.label_email}</label>
+                        <input
+                          type="email"
+                          required
+                          defaultValue={user?.email || ''}
+                          placeholder={strings.ph_email}
+                        />
+                      </div>
+                      <div className="form-group full-width">
+                        <label>{strings.label_whatsapp}</label>
+                        <input
+                          type="tel"
+                          required
+                          defaultValue={user?.phone || ''}
+                          placeholder={strings.ph_whatsapp}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="form-group full-width">
+                        <label>{strings.label_pathway}</label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={strings.pathway_name_value}
+                          className="bg-slate-100 font-bold"
+                        />
+                      </div>
+                      <div className="form-checkbox-group">
+                        <input type="checkbox" id="terms" required defaultChecked />
+                        <label htmlFor="terms">{strings.label_terms}</label>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isEnrollingPathway}
+                        className="form-submit-btn disabled:opacity-50 cursor-pointer"
+                      >
+                        <span>
+                          {isEnrollingPathway
+                            ? lang === 'ar'
+                              ? 'جاري حفظ التسجيل...'
+                              : 'Registering...'
+                            : strings.btn_submit_pathway}
+                        </span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                          <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                      </button>
+                    </form>
+                  )}
                 </div>
               </div>
             </section>

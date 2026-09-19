@@ -14,14 +14,65 @@ import {
   Firestore,
   doc,
   getDoc,
+  getDocFromServer,
   setDoc,
   updateDoc,
   collection,
   getDocs,
+  query,
+  onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
 import firebaseConfigJson from '@/firebase-applet-config.json';
-import { UserProfile, EnrolledTrack } from '@/types/user';
+import { UserProfile, EnrolledTrack, UserCertificate, UserAppointment } from '@/types/user';
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo:
+        auth?.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || firebaseConfigJson.apiKey || '',
@@ -38,19 +89,20 @@ const firestoreDbId =
   '(default)';
 
 // Singleton initialization pattern
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let googleProvider: GoogleAuthProvider;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
 try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   try {
     // Try custom database ID if available
-    db = firestoreDbId && firestoreDbId !== '(default)'
-      ? getFirestore(app, firestoreDbId)
-      : getFirestore(app);
+    db =
+      firestoreDbId && firestoreDbId !== '(default)'
+        ? getFirestore(app, firestoreDbId)
+        : getFirestore(app);
   } catch {
     db = getFirestore(app);
   }
@@ -60,12 +112,28 @@ try {
   console.warn('Firebase initialization note:', err);
 }
 
+export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey);
+
 export { app, auth, db, googleProvider };
+
+// Connection test on boot as required by Firebase skill
+if (typeof window !== 'undefined' && db && isFirebaseConfigured) {
+  (async function testConnection() {
+    try {
+      await getDocFromServer(doc(db, 'test', 'connection'));
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('the client is offline')) {
+        console.warn('Firebase connection check: client is offline or network restricted.');
+      }
+    }
+  })();
+}
 
 // --- Profile & Database Helpers ---
 
 export async function fetchUserProfileFromFirestore(uid: string): Promise<UserProfile | null> {
-  if (!db) return null;
+  if (!db || !uid) return null;
+  const path = `users/${uid}`;
   try {
     const userDocRef = doc(db, 'users', uid);
     const snap = await getDoc(userDocRef);
@@ -73,13 +141,14 @@ export async function fetchUserProfileFromFirestore(uid: string): Promise<UserPr
       return snap.data() as UserProfile;
     }
   } catch (error) {
-    console.warn('Firestore fetch user profile note:', error);
+    handleFirestoreError(error, OperationType.GET, path);
   }
   return null;
 }
 
 export async function saveUserProfileToFirestore(profile: UserProfile): Promise<void> {
   if (!db || !profile.id) return;
+  const path = `users/${profile.id}`;
   try {
     const userDocRef = doc(db, 'users', profile.id);
     await setDoc(
@@ -91,17 +160,110 @@ export async function saveUserProfileToFirestore(profile: UserProfile): Promise<
       { merge: true }
     );
   } catch (error) {
-    console.error('Firestore save user profile error:', error);
-    throw error;
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchUserEnrolledTracks(uid: string): Promise<EnrolledTrack[]> {
+  if (!db || !uid) return [];
+  const path = `users/${uid}/enrolledTracks`;
+  try {
+    const tracksColl = collection(db, 'users', uid, 'enrolledTracks');
+    const snap = await getDocs(tracksColl);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as EnrolledTrack));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
   }
 }
 
 export async function saveEnrolledTrackToFirestore(uid: string, track: EnrolledTrack): Promise<void> {
-  if (!db || !uid) return;
+  if (!db || !uid || !track.id) return;
+  const path = `users/${uid}/enrolledTracks/${track.id}`;
   try {
     const trackRef = doc(db, 'users', uid, 'enrolledTracks', track.id);
     await setDoc(trackRef, track, { merge: true });
   } catch (error) {
-    console.warn('Firestore save enrolled track error:', error);
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export interface TrackProgressRecord {
+  trackKey: string;
+  userId: string;
+  activeLevel: 'foundation' | 'empowerment' | 'consolidation';
+  activeModuleId: string;
+  completedLessons: Record<string, string[]>;
+  completedQuizzes: Record<string, string[]>;
+  overallProgress: number;
+  reportCode?: string;
+  lastUpdated: string;
+}
+
+export async function fetchTrackProgressFromFirestore(
+  uid: string,
+  trackKey: string
+): Promise<TrackProgressRecord | null> {
+  if (!db || !uid || !trackKey) return null;
+  const path = `users/${uid}/trackProgress/${trackKey}`;
+  try {
+    const progressRef = doc(db, 'users', uid, 'trackProgress', trackKey);
+    const snap = await getDoc(progressRef);
+    if (snap.exists()) {
+      return snap.data() as TrackProgressRecord;
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+  }
+  return null;
+}
+
+export async function saveTrackProgressToFirestore(
+  uid: string,
+  trackKey: string,
+  data: Partial<TrackProgressRecord>
+): Promise<void> {
+  if (!db || !uid || !trackKey) return;
+  const path = `users/${uid}/trackProgress/${trackKey}`;
+  try {
+    const progressRef = doc(db, 'users', uid, 'trackProgress', trackKey);
+    await setDoc(
+      progressRef,
+      {
+        ...data,
+        trackKey,
+        userId: uid,
+        lastUpdated: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchUserCertificatesFromFirestore(uid: string): Promise<UserCertificate[]> {
+  if (!db || !uid) return [];
+  const path = `users/${uid}/certificates`;
+  try {
+    const certColl = collection(db, 'users', uid, 'certificates');
+    const snap = await getDocs(certColl);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserCertificate));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function fetchUserAppointmentsFromFirestore(uid: string): Promise<UserAppointment[]> {
+  if (!db || !uid) return [];
+  const path = `users/${uid}/appointments`;
+  try {
+    const apptColl = collection(db, 'users', uid, 'appointments');
+    const snap = await getDocs(apptColl);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserAppointment));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
   }
 }

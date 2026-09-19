@@ -16,36 +16,56 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128;
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // User Profile Rules
+    // Connection check for boot verification
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // User Profile Rules (Protected with ownership checks & PII isolation)
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if isOwner(userId) && isValidId(userId);
       allow delete: if false;
 
       // User's Enrolled Tracks Subcollection
       match /enrolledTracks/{trackId} {
-        allow read, write: if isOwner(userId);
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(trackId);
+        allow delete: if isOwner(userId) && isValidId(userId);
+      }
+
+      // User's Track Progress Subcollection
+      match /trackProgress/{trackId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(trackId);
+        allow delete: if isOwner(userId) && isValidId(userId);
       }
 
       // User's Certificates Subcollection
       match /certificates/{certId} {
-        allow read, write: if isOwner(userId);
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(certId);
+        allow delete: if false;
       }
 
       // User's Appointments Subcollection
       match /appointments/{apptId} {
-        allow read, write: if isOwner(userId);
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(apptId);
+        allow delete: if isOwner(userId) && isValidId(userId);
       }
     }
 
     // CMS Studio settings
     match /cms/{documentId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+      allow get, list: if true;
+      allow create, update: if isSignedIn() && isValidId(documentId);
+      allow delete: if false;
     }
   }
 }

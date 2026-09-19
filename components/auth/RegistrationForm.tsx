@@ -576,7 +576,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <div className="text-end">
                 <button
                   type="button"
-                  onClick={() => alert(language === 'ar' ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب أو الدعم لاستعادة كلمة المرور.' : 'Please contact Academy support via WhatsApp to reset password.')}
+                  onClick={() =>
+                    setErrorMessage(
+                      language === 'ar'
+                        ? 'يرجى مراجعة إدارة الأكاديمية عبر واتساب أو الدعم الفني لاستعادة كلمة المرور.'
+                        : 'Please contact Academy support via WhatsApp to reset your password.'
+                    )
+                  }
                   className="text-[11px] text-primary-blue hover:underline cursor-pointer font-medium"
                 >
                   {language === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}

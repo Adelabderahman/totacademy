@@ -32,16 +32,16 @@ export default function TrainersHero({ categories }: TrainersHeroProps) {
 
   return (
     <section className="tracks-hero trainers-hero" id="trainers-hero-section">
-      {/* Centered Orbit with Ring Backgrounds & 10 Trainer Chips */}
-      <div className="tracks-orbit trainers-orbit" id="trainer-orbit">
+      {/* Centered Orbit with Ring Backgrounds & 10 Trainer Chips (Identical to Specializations) */}
+      <div className="tracks-orbit" id="trainer-orbit">
         <div className="orbit-ring outer" aria-hidden="true" />
         <div className="orbit-ring inner" aria-hidden="true" />
 
-        {all.map((item, i) => {
+        {all.slice(0, 10).map((item, i) => {
           const name = item.trainer.name[language] || item.trainer.name.ar;
           return (
-            <div key={item.trainer.id} className={`orbit-chip trainer-orbit-chip c${i + 1}`}>
-              <img src={item.trainer.image} alt={name} loading="lazy" />
+            <div key={item.trainer.id} className={`orbit-chip c${i + 1}`}>
+              <img src={item.trainer.image} alt={name} loading="lazy" className="trainer-chip-img" />
               <span>{name}</span>
             </div>
           );

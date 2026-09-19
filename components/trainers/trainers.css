@@ -9,69 +9,19 @@
   text-align: center;
   color: #fff;
 }
-.trainers-orbit {
-  position: absolute;
-  top: 36%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(1200px, 98vw);
-  height: min(500px, 82%);
-  z-index: 8;
-  pointer-events: none;
-}
-.trainers-orbit .orbit-ring {
-  pointer-events: none;
-}
-.trainers-orbit .trainer-orbit-chip {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: max-content;
-  max-width: 240px;
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 30px;
-  padding: 5px 12px 5px 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #fff;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
-  pointer-events: none;
-}
-html[dir="rtl"] .trainers-orbit .trainer-orbit-chip {
-  padding: 5px 6px 5px 12px;
-}
-.trainer-orbit-chip img {
-  display: block;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  flex: 0 0 32px;
-  overflow: hidden;
+/* ===== Trainer Orbit Chip Image (Inherits standard .tracks-orbit & .orbit-chip from tracks.css) ===== */
+.trainer-chip-img {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  vertical-align: middle;
+  margin-inline-end: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   background: #fff;
 }
-.trainer-orbit-chip span {
-  display: block;
-  white-space: nowrap;
-}
-
-/* 10 chips distributed around center on desktop */
-.trainers-orbit .c1  { top: 4%;  right: 22%; animation: floatChip 6s ease-in-out infinite 0s; }
-.trainers-orbit .c2  { top: 18%; right: 4%;  animation: floatChip 7s ease-in-out infinite -1s; }
-.trainers-orbit .c3  { top: 46%; right: 1%;  animation: floatChip 6.5s ease-in-out infinite -2s; }
-.trainers-orbit .c4  { top: 74%; right: 5%;  animation: floatChip 7.5s ease-in-out infinite -3s; }
-.trainers-orbit .c5  { top: 90%; right: 24%; animation: floatChip 6.2s ease-in-out infinite -4s; }
-.trainers-orbit .c6  { top: 4%;  left: 22%;  animation: floatChip 7.2s ease-in-out infinite -5s; }
-.trainers-orbit .c7  { top: 18%; left: 4%;   animation: floatChip 6.7s ease-in-out infinite -6s; }
-.trainers-orbit .c8  { top: 46%; left: 1%;   animation: floatChip 7.7s ease-in-out infinite -7s; }
-.trainers-orbit .c9  { top: 74%; left: 5%;   animation: floatChip 6.4s ease-in-out infinite -8s; }
-.trainers-orbit .c10 { top: 90%; left: 24%;  animation: floatChip 7.4s ease-in-out infinite -9s; }
 
 .trainer-count-note {
   font-size: 0.78rem;
@@ -80,60 +30,13 @@ html[dir="rtl"] .trainers-orbit .trainer-orbit-chip {
 }
 
 @media (max-width: 767px) {
-  .trainers-orbit {
-    top: 24%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-    z-index: 8;
-    pointer-events: none;
-  }
-  .trainers-orbit .trainer-orbit-chip {
-    top: 50%;
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    margin-top: -14px;
-    margin-left: -48px;
-    padding: 3px 8px 3px 4px;
-    font-size: 0.58rem;
-    opacity: 0.75;
-    animation: trainerMobileOrbit 24s linear infinite;
-    will-change: transform;
-    pointer-events: none;
-    z-index: 8;
-  }
-  html[dir="rtl"] .trainers-orbit .trainer-orbit-chip {
-    padding: 3px 4px 3px 8px;
-  }
-  .trainer-orbit-chip img {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    flex-basis: 24px;
+  .trainer-chip-img {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    margin-inline-end: 4px;
     border-width: 1px;
   }
-  .trainers-orbit .c1  { animation-delay: 0s; }
-  .trainers-orbit .c2  { animation-delay: -2.4s; }
-  .trainers-orbit .c3  { animation-delay: -4.8s; }
-  .trainers-orbit .c4  { animation-delay: -7.2s; }
-  .trainers-orbit .c5  { animation-delay: -9.6s; }
-  .trainers-orbit .c6  { animation-delay: -12s; }
-  .trainers-orbit .c7  { animation-delay: -14.4s; }
-  .trainers-orbit .c8  { animation-delay: -16.8s; }
-  .trainers-orbit .c9  { animation-delay: -19.2s; }
-  .trainers-orbit .c10 { animation-delay: -21.6s; }
-}
-
-@keyframes trainerMobileOrbit {
-  0%   { transform: rotate(0deg) translateX(min(37vw, 144px)) rotate(0deg); }
-  25%  { transform: rotate(90deg) translateX(min(37vw, 144px)) rotate(-90deg); }
-  50%  { transform: rotate(180deg) translateX(min(37vw, 144px)) rotate(-180deg); }
-  75%  { transform: rotate(270deg) translateX(min(37vw, 144px)) rotate(-270deg); }
-  100% { transform: rotate(360deg) translateX(min(37vw, 144px)) rotate(-360deg); }
 }
 
 /* ===== Trainer Portrait Front ===== */

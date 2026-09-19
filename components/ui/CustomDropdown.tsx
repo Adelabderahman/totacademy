@@ -32,7 +32,9 @@ export interface CustomDropdownProps {
   centerModal?: boolean;
   className?: string;
   dropdownWidthClass?: string;
+  customTriggerClass?: string;
   customTriggerTextClass?: string;
+  customMenuClass?: string;
   customLabelClass?: string;
   showSearch?: boolean;
   searchPlaceholder?: string;
@@ -53,7 +55,9 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   centerModal = false,
   className = '',
   dropdownWidthClass,
+  customTriggerClass = '',
   customTriggerTextClass = '',
+  customMenuClass = '',
   customLabelClass = '',
   showSearch = false,
   searchPlaceholder = 'ابحث في الخيارات...',
@@ -153,27 +157,27 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const borderColorActive = isAmber ? 'border-amber-400' : isGreen ? 'border-primary-green' : 'border-primary-blue';
   
   const selectedBg = isAmber
-    ? 'border-amber-500/50 bg-amber-500/15 hover:bg-amber-500/25 text-[#f59e0b]'
+    ? 'border-amber-400/50 bg-black/40 hover:bg-black/50 text-[#f59e0b]'
     : isGreen
     ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70 text-slate-800'
     : 'border-blue-200 bg-blue-50/40 hover:bg-blue-50/70 text-slate-800';
 
   const defaultTriggerBg = isAmber
-    ? 'border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/15 text-[#f59e0b] hover:border-amber-400'
+    ? 'border-amber-400/30 bg-black/30 hover:bg-black/40 text-amber-400/90 hover:border-amber-400'
     : 'border-slate-200 bg-slate-50/70 hover:bg-white text-slate-500 hover:border-slate-300';
 
   const itemActiveBg = isAmber
-    ? 'bg-amber-500/20 text-[#f59e0b] font-bold border-s-4 border-amber-500 shadow-xs'
+    ? 'bg-amber-500/25 text-[#f59e0b] font-bold border-s-4 border-amber-400 shadow-xs'
     : isGreen
     ? 'bg-emerald-50/90 text-emerald-950 font-semibold border-s-4 border-primary-green shadow-xs'
     : 'bg-blue-50/90 text-blue-950 font-semibold border-s-4 border-primary-blue shadow-xs';
 
   const itemNormalColor = isAmber
-    ? 'hover:bg-amber-500/10 text-amber-500 hover:text-amber-400 font-medium'
+    ? 'hover:bg-amber-500/15 text-amber-300 hover:text-amber-200 font-medium'
     : 'hover:bg-slate-50 text-slate-700 hover:text-slate-950';
 
   const badgeActiveBg = isAmber
-    ? 'bg-amber-500/25 text-amber-900 border border-amber-500/40 font-bold'
+    ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 font-bold'
     : isGreen
     ? 'bg-emerald-200/80 text-emerald-900 border border-emerald-300/60'
     : 'bg-blue-200/80 text-blue-900 border border-blue-300/60';
@@ -204,11 +208,11 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
           disabled
             ? 'opacity-60 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-400'
             : isOpen
-            ? `${borderColorActive} ring-2 ${ringColor} bg-white`
+            ? `${borderColorActive} ring-2 ${ringColor} ${isAmber ? 'bg-[#0f172a]' : 'bg-white'}`
             : value && value !== 'all' && value !== ''
             ? selectedBg
             : defaultTriggerBg
-        }`}
+        } ${customTriggerClass}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -434,11 +438,13 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       {/* Floating Dropdown Menu (Standard Mode) */}
       {isOpen && !disabled && !centerModal && (
         <div
-          className={`absolute top-[calc(100%+6px)] z-50 bg-white/98 backdrop-blur-md rounded-2xl border ${
-            isAmber ? 'border-amber-400/40 shadow-amber-500/10' : 'border-slate-200'
-          } shadow-2xl overflow-hidden py-1.5 max-h-72 sm:max-h-80 overflow-y-auto divide-y divide-slate-100 ${defaultWidth} ${
+          className={`absolute top-[calc(100%+6px)] z-50 rounded-2xl border shadow-2xl overflow-hidden py-1.5 max-h-72 sm:max-h-80 overflow-y-auto ${
+            isAmber
+              ? 'bg-[#0f172a] border-amber-400/40 divide-y divide-slate-800/80 shadow-black/80'
+              : 'bg-white/98 backdrop-blur-md border-slate-200 divide-y divide-slate-100'
+          } ${defaultWidth} ${
             isRTL ? 'end-0 sm:start-auto sm:end-0' : 'start-0 sm:end-auto sm:start-0'
-          }`}
+          } ${customMenuClass}`}
           role="listbox"
         >
           {/* Optional Search Bar */}
@@ -477,16 +483,18 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
           {/* Render Grouped Options */}
           {filteredGroups && filteredGroups.length > 0 ? (
             filteredGroups.map((group, groupIdx) => (
-              <div key={groupIdx} className="p-1.5 sm:p-2 bg-white/95">
+              <div key={groupIdx} className={`p-1.5 sm:p-2 ${isAmber ? 'bg-[#0f172a]' : 'bg-white/95'}`}>
                 {/* Group Header */}
                 <div className={`px-2.5 py-1.5 mb-1.5 rounded-lg flex items-center justify-between text-[10px] sm:text-[11px] font-bold tracking-normal ${
-                  isAmber ? 'bg-amber-100/70 text-amber-950 border border-amber-200/50' : 'bg-slate-100/90 text-slate-700'
+                  isAmber ? 'bg-amber-500/15 text-amber-300 border border-amber-400/30' : 'bg-slate-100/90 text-slate-700'
                 }`}>
                   <span className="flex items-center gap-1.5">
                     {group.categoryIcon && <span className="text-xs">{group.categoryIcon}</span>}
                     <span>{group.categoryName}</span>
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/90 text-slate-500 font-semibold border border-slate-200/60 shadow-2xs">
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold border ${
+                    isAmber ? 'bg-black/40 text-amber-300 border-amber-400/30' : 'bg-white/90 text-slate-500 border-slate-200/60'
+                  } shadow-2xs`}>
                     {group.options.length}
                   </span>
                 </div>
@@ -546,7 +554,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
             ))
           ) : filteredOptions && filteredOptions.length > 0 ? (
             /* Render Flat Options */
-            <div className="p-1.5 sm:p-2 bg-white/95 space-y-1">
+            <div className={`p-1.5 sm:p-2 space-y-1 ${isAmber ? 'bg-[#0f172a]' : 'bg-white/95'}`}>
               {filteredOptions.map((opt) => {
                 const isSelected = value === opt.value;
                 return (

@@ -224,10 +224,12 @@
 /* ===== Tracks body / filters ===== */
 .tracks-body {
   background: var(--bg-page, #f7f9fc);
-  padding: 60px 20px 90px;
+  padding: 24px 10px 50px;
+  width: 100%;
 }
 .tracks-body-inner {
-  max-width: 1200px;
+  width: 98%;
+  max-width: 1820px;
   margin: 0 auto;
 }
 .section-heading {

@@ -878,7 +878,7 @@ export default function TrainerMagazinePage() {
             if (e.target === e.currentTarget) setIsWriterModalOpen(false);
           }}
         >
-          <div className="modal-container" style={{ maxWidth: 640 }}>
+          <div className="modal-container" style={{ maxWidth: 680 }}>
             <button
               type="button"
               className="modal-close-btn"
@@ -994,8 +994,10 @@ export default function TrainerMagazinePage() {
                       }))}
                       placeholder={t.writer_section_placeholder}
                       themeColor="amber"
-                      customLabelClass="text-amber-400 font-bold"
-                      customTriggerTextClass="text-amber-400 font-bold"
+                      customLabelClass="form-label !mb-[6px] !text-[#cbd5e1] !font-bold"
+                      customTriggerClass="!bg-[rgba(0,0,0,0.3)] !border-[rgba(255,255,255,0.14)] hover:!border-amber-400/60 focus:!border-amber-400 !rounded-[10px] !h-[45px] !py-[12px] !px-[14px]"
+                      customTriggerTextClass="text-[#fbbf24] font-bold text-[14px]"
+                      customMenuClass="!bg-[#0f172a] !border-amber-400/40 shadow-2xl"
                       dropdownWidthClass="w-full min-w-[260px] sm:min-w-[320px]"
                     />
                   </div>

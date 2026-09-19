@@ -2421,3 +2421,20 @@ html[dir="ltr"] .whatsapp-float:hover .whatsapp-label {
   }
 }
 
+/* Fluid Mode Morph Animations for Auth & Registration Forms */
+@keyframes formSmoothSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-form-smooth {
+  animation: formSmoothSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+

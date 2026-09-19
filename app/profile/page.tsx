@@ -48,6 +48,7 @@ export default function ProfilePage() {
     professors,
     toggleRole,
     updateProfile,
+    quickDemoLogin,
     logout,
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
@@ -121,6 +122,14 @@ export default function ProfilePage() {
               className="w-full py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition-all cursor-pointer"
             >
               {language === 'ar' ? 'إنشاء حساب جديد بالأكاديمية' : 'Create New Account'}
+            </button>
+            <button
+              type="button"
+              onClick={() => quickDemoLogin('trainer')}
+              className="w-full py-2.5 px-4 rounded-xl border border-primary-blue/30 bg-primary-blue/5 hover:bg-primary-blue/10 text-primary-blue font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span>⚡</span>
+              <span>{language === 'ar' ? 'دخول تجريبي فوري كمدرب معتمد (Demo Preview)' : 'Instant Demo Preview'}</span>
             </button>
           </div>
         </div>

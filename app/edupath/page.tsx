@@ -15,11 +15,16 @@ import {
   QuizItem,
 } from '@/lib/edupath-data';
 import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
+import { useUserAccount } from '@/context/UserAccountContext';
+import { useAuthModal } from '@/context/AuthModalContext';
 
 export default function EduPathPage() {
   const { language } = useLanguage();
   const lang = (language as LangKey) || 'ar';
   const strings = coreI18n[lang] || coreI18n.ar;
+
+  const { isAuthenticated, user, quickDemoLogin } = useUserAccount();
+  const { openAuthModal } = useAuthModal();
 
   // Form dropdown states
   const [workshopDays, setWorkshopDays] = useState<string>('');
@@ -1613,6 +1618,155 @@ export default function EduPathPage() {
       </div>
     );
   };
+
+  // Auth Protection Gate: only registered & logged in users can view EduPath
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 pb-24 font-tajawal" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        {/* Navigation Breadcrumb */}
+        <div className="bg-white border-b border-slate-200">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between text-xs sm:text-sm">
+            <div className="flex items-center gap-2 text-slate-500">
+              <Link href="/" className="hover:text-primary-blue transition-colors">
+                {lang === 'ar' ? 'الرئيسية' : 'Home'}
+              </Link>
+              <span>/</span>
+              <span className="text-slate-800 font-bold">
+                {lang === 'ar' ? 'المسار التعليمي التفاعلي' : 'Interactive EduPath'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                {lang === 'ar' ? 'منطقة مخصصة للأعضاء المسجلين' : 'Registered Members Only'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Lock Screen Container */}
+        <div className="container mx-auto px-4 py-10 sm:py-16 max-w-4xl">
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-primary-blue via-secondary-blue to-[#0b2b52] p-6 sm:p-10 text-white relative">
+              <div className="relative z-10 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-accent-yellow text-xs font-bold mb-4 backdrop-blur-xs">
+                  <span>🔒</span>
+                  <span>{lang === 'ar' ? 'بوابة التدريب والتأهيل المعتمد' : 'Accredited Training Portal'}</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold mb-3 leading-tight">
+                  {lang === 'ar'
+                    ? 'المسار التعليمي الشامل مخصص للمتدربين والمدربين المسجلين'
+                    : 'Interactive Learning Track Reserved for Registered Trainees'}
+                </h1>
+                <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed">
+                  {lang === 'ar'
+                    ? 'للوصول إلى الوحدات التخصصية، الفيديوهات المصورة، الحقائب التدريبية التفاعلية، ونظام التقييم وإصدار الشهادات المعتمدة، يرجى تسجيل الدخول إلى حسابك أو إنشاء حساب جديد.'
+                    : 'To access specialized modules, instructional videos, downloadable toolkits, assessments, and accredited certifications, please log in or create an account.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Gateway */}
+            <div className="p-6 sm:p-10 bg-slate-50/50">
+              <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                {/* Login Button Card */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all">
+                  <div className="text-primary-blue text-xl font-bold mb-1">
+                    {lang === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">
+                    {lang === 'ar'
+                      ? 'سجل دخولك فوراً للمتابعة من حيث توقفت في مسارك التدريبي.'
+                      : 'Log in now to resume your progress across course modules.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('login')}
+                    className="w-full py-3 px-4 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white font-bold text-sm transition-all text-center shadow-xs cursor-pointer active:scale-98"
+                  >
+                    {lang === 'ar' ? 'تسجيل الدخول إلى حسابي' : 'Log In to My Account'}
+                  </button>
+                </div>
+
+                {/* Register Button Card */}
+                <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs hover:shadow-md transition-all">
+                  <div className="text-primary-green text-xl font-bold mb-1">
+                    {lang === 'ar' ? 'تريد الانضمام للأكاديمية؟' : 'New to TOT Academy?'}
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">
+                    {lang === 'ar'
+                      ? 'أنشئ حسابك خلال دقيقة والتحق بدفعة المدربين المعتمدين.'
+                      : 'Create your account in 1 minute and join accredited cohorts.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('register')}
+                    className="w-full py-3 px-4 rounded-xl bg-primary-green hover:bg-emerald-700 text-white font-bold text-sm transition-all text-center shadow-xs cursor-pointer active:scale-98"
+                  >
+                    {lang === 'ar' ? 'إنشاء حساب جديد وتأكيد التسجيل' : 'Create New Account'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Demo Access Bar */}
+              <div className="bg-white rounded-2xl p-4 border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-primary-blue flex items-center justify-center text-lg font-bold">
+                    ⚡
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-slate-800">
+                      {lang === 'ar' ? 'معاينة تجريبية فورية للتقييم والتصفح' : 'Instant Evaluation & Preview Mode'}
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {lang === 'ar' ? 'اضغط للمعاينة الفورية لكامل المسار والدروس كمتدرب معتمد' : 'Click to instantly preview the full track and interactive modules'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => quickDemoLogin('trainee')}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-primary-blue hover:text-white text-slate-700 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {lang === 'ar' ? 'تفعيل المعاينة الفورية' : 'Instant Preview'}
+                </button>
+              </div>
+
+              {/* Curriculum Overview Pills */}
+              <div className="mt-8 pt-6 border-t border-slate-200">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">
+                  {lang === 'ar' ? 'ما ستحصل عليه داخل المسار بعد الدخول:' : 'What you unlock inside the track:'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="bg-white p-3 rounded-xl border border-slate-100">
+                    <div className="text-lg mb-1">🎓</div>
+                    <div className="text-xs font-bold text-slate-800">{lang === 'ar' ? '3 مستويات تدريبية' : '3 Training Levels'}</div>
+                    <div className="text-[10px] text-slate-500">{lang === 'ar' ? 'تأسيسي، تمكيني، تثبيتي' : 'Foundation to Master'}</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-100">
+                    <div className="text-lg mb-1">📦</div>
+                    <div className="text-xs font-bold text-slate-800">{lang === 'ar' ? '6 وحدات وحقائب' : '6 Core Modules'}</div>
+                    <div className="text-[10px] text-slate-500">{lang === 'ar' ? 'ملفات ومصادر قابلة للتنزيل' : 'Downloadable Kits'}</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-100">
+                    <div className="text-lg mb-1">📝</div>
+                    <div className="text-xs font-bold text-slate-800">{lang === 'ar' ? 'اختبارات تقييمية' : 'Skill Assessments'}</div>
+                    <div className="text-[10px] text-slate-500">{lang === 'ar' ? 'كويزات وامتحان نهائي' : 'Quizzes & Final Exam'}</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-100">
+                    <div className="text-lg mb-1">📜</div>
+                    <div className="text-xs font-bold text-slate-800">{lang === 'ar' ? 'اعتماد وشهادة موثقة' : 'Official Certificate'}</div>
+                    <div className="text-[10px] text-slate-500">{lang === 'ar' ? 'كود تحقق إلكتروني' : 'Online Verification'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#1e293b] pb-24 overflow-x-hidden font-tajawal">

@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Information and profile details for registered TOT Academy users",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number with country code"
+        },
+        "country": {
+          "type": "string",
+          "description": "User country or wilaya"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["trainer", "trainee"],
+          "description": "Role in the academy"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL to the user avatar"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Brief biography or credentials"
+        },
+        "badgeNumber": {
+          "type": "string",
+          "description": "Official academy membership or registration code"
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Verification status"
+        },
+        "joinedDate": {
+          "type": "string",
+          "description": "Join date string"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of account creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "EnrolledTrack": {
+      "title": "EnrolledTrack",
+      "description": "Training track or course enrollment for a user",
+      "type": "object",
+      "properties": {
+        "trackId": {
+          "type": "string",
+          "description": "Identifier of the educational track"
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID of the enrolled user"
+        },
+        "title": {
+          "type": "string",
+          "description": "Track title"
+        },
+        "titleAr": {
+          "type": "string",
+          "description": "Track title in Arabic"
+        },
+        "progress": {
+          "type": "number",
+          "description": "Completion percentage (0 to 100)"
+        },
+        "completedLessons": {
+          "type": "number",
+          "description": "Count of finished lessons"
+        },
+        "totalLessons": {
+          "type": "number",
+          "description": "Total lessons in the track"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["registered", "in_progress", "completed"],
+          "description": "Enrollment status"
+        },
+        "nextSessionDate": {
+          "type": "string",
+          "description": "Next scheduled workshop or lecture"
+        },
+        "enrolledAt": {
+          "type": "string",
+          "description": "Enrollment timestamp"
+        }
+      },
+      "required": ["trackId", "userId", "title", "status"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "Accredited certification issued to the user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Certificate document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Recipient user ID"
+        },
+        "code": {
+          "type": "string",
+          "description": "Unique verification code"
+        },
+        "title": {
+          "type": "string",
+          "description": "Certificate title"
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "Issue date"
+        },
+        "grade": {
+          "type": "string",
+          "description": "Honors or grade"
+        },
+        "hours": {
+          "type": "number",
+          "description": "Accredited training hours"
+        }
+      },
+      "required": ["id", "userId", "code", "title"]
+    },
+    "CMSConfig": {
+      "title": "CMSConfig",
+      "description": "Live CMS studio content configuration",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID"
+        },
+        "hero": {
+          "type": "object",
+          "description": "Hero section content"
+        },
+        "modules": {
+          "type": "array",
+          "description": "List of dynamic modules"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of update"
+        }
+      },
+      "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile records stored by auth UID"
+    },
+    "/users/{userId}/enrolledTracks/{trackId}": {
+      "schema": "EnrolledTrack",
+      "description": "User track enrollments and course progress"
+    },
+    "/users/{userId}/certificates/{certId}": {
+      "schema": "Certificate",
+      "description": "Official academy certificates issued to the user"
+    },
+    "/cms/{documentId}": {
+      "schema": "CMSConfig",
+      "description": "Dynamic CMS settings and modules"
+    }
+  }
+}

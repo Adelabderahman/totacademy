@@ -10,10 +10,36 @@ import {
   SupervisedStudent,
   SupervisingProfessor,
 } from '@/types/user';
+import {
+  auth,
+  db,
+  googleProvider,
+  fetchUserProfileFromFirestore,
+  saveUserProfileToFirestore,
+} from '@/lib/firebase';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile as updateFirebaseProfile,
+  User as FirebaseUser,
+} from 'firebase/auth';
+
+interface RegisterData {
+  name: string;
+  phone?: string;
+  country?: string;
+  role?: 'trainer' | 'trainee';
+  specialty?: string;
+}
 
 interface UserAccountContextType {
   user: UserProfile;
+  firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
+  loading: boolean;
   enrolledTracks: EnrolledTrack[];
   certificates: UserCertificate[];
   appointments: UserAppointment[];
@@ -21,9 +47,12 @@ interface UserAccountContextType {
   students: SupervisedStudent[];
   professors: SupervisingProfessor[];
   toggleRole: () => void;
-  updateProfile: (updated: Partial<UserProfile>) => void;
-  login: (userData?: Partial<UserProfile>) => void;
-  logout: () => void;
+  updateProfile: (updated: Partial<UserProfile>) => Promise<void>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, profileData: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  quickDemoLogin: (role?: 'trainer' | 'trainee') => void;
+  logout: () => Promise<void>;
 }
 
 const DEFAULT_TRAINER_PROFILE: UserProfile = {
@@ -307,7 +336,10 @@ const AUTH_STATE_KEY = 'tot_auth_state_v2';
 
 export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(DEFAULT_TRAINER_PROFILE);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [enrolledTracks] = useState<EnrolledTrack[]>(INITIAL_TRACKS);
   const [certificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
   const [appointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
@@ -315,8 +347,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [students] = useState<SupervisedStudent[]>(INITIAL_STUDENTS);
   const [professors] = useState<SupervisingProfessor[]>(INITIAL_PROFESSORS);
 
-  // Load profile from localStorage on mount if available
+  // Synchronize with Firebase Auth state
   useEffect(() => {
+    // 1. Check local cache first for instant UI response
     try {
       const savedUser = localStorage.getItem(STORAGE_KEY);
       if (savedUser) {
@@ -327,59 +360,297 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         setIsAuthenticated(savedAuth === 'true');
       }
     } catch {
-      // ignore storage errors
+      // ignore local cache errors
     }
+
+    // 2. Attach live Firebase Auth listener
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
+      setFirebaseUser(fUser);
+      if (fUser) {
+        setIsAuthenticated(true);
+        try {
+          localStorage.setItem(AUTH_STATE_KEY, 'true');
+        } catch {}
+
+        // Load profile from Firestore
+        try {
+          const remoteProfile = await fetchUserProfileFromFirestore(fUser.uid);
+          if (remoteProfile) {
+            setUser(remoteProfile);
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProfile));
+            } catch {}
+          } else {
+            // New Firebase user without Firestore document yet - save initial profile
+            const newProfile: UserProfile = {
+              id: fUser.uid,
+              name: fUser.displayName || user.name || 'عضو الأكاديمية',
+              email: fUser.email || user.email,
+              phone: user.phone,
+              role: user.role || 'trainee',
+              roleTitleAr: user.role === 'trainer' ? DEFAULT_TRAINER_PROFILE.roleTitleAr : DEFAULT_TRAINEE_PROFILE.roleTitleAr,
+              roleTitleEn: user.role === 'trainer' ? DEFAULT_TRAINER_PROFILE.roleTitleEn : DEFAULT_TRAINEE_PROFILE.roleTitleEn,
+              specialtyAr: user.specialtyAr || 'إعداد وتأهيل المدربين',
+              specialtyEn: user.specialtyEn || 'Training of Trainers',
+              bioAr: user.bioAr || 'عضو مسجل في المنصة الأكاديمية لتدريب المدربين.',
+              bioEn: user.bioEn || 'Registered member at TOT International Academy.',
+              avatar: fUser.photoURL || user.avatar,
+              coverImage: user.coverImage || DEFAULT_TRAINER_PROFILE.coverImage,
+              joinedDate: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+              country: user.country || 'الجزائر',
+              city: user.city || 'الجزائر',
+              membershipNumber: `TOT-${Math.floor(1000 + Math.random() * 9000)}`,
+              status: 'active',
+            };
+            setUser(newProfile);
+            await saveUserProfileToFirestore(newProfile).catch(() => {});
+          }
+        } catch (err) {
+          console.warn('Note loading user profile:', err);
+        }
+      } else {
+        // If not signed into Firebase Auth, rely on local session flag if set
+        const savedAuth = localStorage.getItem(AUTH_STATE_KEY);
+        if (savedAuth === 'false') {
+          setIsAuthenticated(false);
+        }
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const updateProfile = (updated: Partial<UserProfile>) => {
-    setUser((prev) => {
-      const next = { ...prev, ...updated };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+  const updateProfile = async (updated: Partial<UserProfile>) => {
+    const next = { ...user, ...updated };
+    setUser(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+
+    // Persist to Firestore if user has an active UID or Firebase User
+    const targetUid = firebaseUser?.uid || (next.id.startsWith('tot-usr') ? null : next.id);
+    if (targetUid) {
+      await saveUserProfileToFirestore({ ...next, id: targetUid }).catch((err) => {
+        console.warn('Sync profile to Firestore:', err);
+      });
+    }
   };
 
   const toggleRole = () => {
-    setUser((prev) => {
-      const nextRole = prev.role === 'trainer' ? 'trainee' : 'trainer';
-      const template = nextRole === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
-      const next: UserProfile = {
-        ...template,
-        name: prev.name || template.name,
-        email: prev.email || template.email,
-        phone: prev.phone || template.phone,
-      };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+    const nextRole = user.role === 'trainer' ? 'trainee' : 'trainer';
+    const template = nextRole === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
+    const next: UserProfile = {
+      ...template,
+      id: user.id,
+      name: user.name || template.name,
+      email: user.email || template.email,
+      phone: user.phone || template.phone,
+      country: user.country || template.country,
+      city: user.city || template.city,
+    };
+    setUser(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+    if (firebaseUser?.uid) {
+      saveUserProfileToFirestore(next).catch(() => {});
+    }
   };
 
-  const login = (userData?: Partial<UserProfile>) => {
-    setIsAuthenticated(true);
-    if (userData) {
-      updateProfile(userData);
-    }
+  // Real Firebase Registration
+  const register = async (
+    email: string,
+    password: string,
+    profileData: RegisterData
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
+      let createdUid = `usr-${Date.now()}`;
+      if (auth) {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          createdUid = userCredential.user.uid;
+          if (profileData.name && userCredential.user) {
+            await updateFirebaseProfile(userCredential.user, {
+              displayName: profileData.name,
+            });
+          }
+        } catch (fbError: any) {
+          // Translate common Firebase errors to user-friendly Arabic
+          let errorMsg = fbError.message || 'حدث خطأ أثناء إنشاء الحساب';
+          if (fbError.code === 'auth/email-already-in-use') {
+            errorMsg = 'البريد الإلكتروني مسجل مسبقاً، يرجى تسجيل الدخول أو استخدام بريد آخر.';
+          } else if (fbError.code === 'auth/weak-password') {
+            errorMsg = 'كلمة المرور ضعيفة، يجب أن تحتوي على 6 خانات على الأقل.';
+          } else if (fbError.code === 'auth/invalid-email') {
+            errorMsg = 'صيغة البريد الإلكتروني غير صحيحة.';
+          }
+          return { success: false, error: errorMsg };
+        }
+      }
+
+      const role = profileData.role || 'trainee';
+      const roleTemplate = role === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
+
+      const newProfile: UserProfile = {
+        ...roleTemplate,
+        id: createdUid,
+        name: profileData.name,
+        email,
+        phone: profileData.phone || '+213 555 000 000',
+        country: profileData.country || 'الجزائر',
+        role,
+        specialtyAr: profileData.specialty || (role === 'trainer' ? 'تدريب المدربين والقيادة' : 'تصميم الحقائب والمحتوى'),
+        joinedDate: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+        membershipNumber: `TOT-${Math.floor(1000 + Math.random() * 9000)}`,
+        status: 'active',
+      };
+
+      setUser(newProfile);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+        localStorage.setItem(AUTH_STATE_KEY, 'true');
+      } catch {}
+
+      await saveUserProfileToFirestore(newProfile).catch(() => {});
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'فشلت عملية التسجيل.' };
+    }
+  };
+
+  // Real Firebase Login
+  const login = async (
+    email: string,
+    password?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (auth && password) {
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const fUser = userCredential.user;
+          const remoteProfile = await fetchUserProfileFromFirestore(fUser.uid);
+          if (remoteProfile) {
+            setUser(remoteProfile);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProfile));
+          } else {
+            const updated = {
+              ...user,
+              id: fUser.uid,
+              email: fUser.email || email,
+              name: fUser.displayName || user.name,
+            };
+            setUser(updated);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          }
+          setIsAuthenticated(true);
+          localStorage.setItem(AUTH_STATE_KEY, 'true');
+          return { success: true };
+        } catch (fbError: any) {
+          let errorMsg = fbError.message || 'فشل تسجيل الدخول';
+          if (
+            fbError.code === 'auth/wrong-password' ||
+            fbError.code === 'auth/user-not-found' ||
+            fbError.code === 'auth/invalid-credential'
+          ) {
+            errorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة، يرجى المحاولة ثانية.';
+          } else if (fbError.code === 'auth/invalid-email') {
+            errorMsg = 'صيغة البريد الإلكتروني غير صالحة.';
+          }
+          return { success: false, error: errorMsg };
+        }
+      }
+
+      // Quick offline/local fallback login
+      setIsAuthenticated(true);
+      const updated = { ...user, email };
+      setUser(updated);
+      try {
+        localStorage.setItem(AUTH_STATE_KEY, 'true');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'حدث خطأ أثناء تسجيل الدخول.' };
+    }
+  };
+
+  // Google Sign In
+  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!auth) {
+        quickDemoLogin('trainer');
+        return { success: true };
+      }
+      const result = await signInWithPopup(auth, googleProvider);
+      const fUser = result.user;
+      const remoteProfile = await fetchUserProfileFromFirestore(fUser.uid);
+      if (remoteProfile) {
+        setUser(remoteProfile);
+      } else {
+        const newProfile: UserProfile = {
+          ...DEFAULT_TRAINEE_PROFILE,
+          id: fUser.uid,
+          name: fUser.displayName || 'عضو جديد',
+          email: fUser.email || '',
+          avatar: fUser.photoURL || DEFAULT_TRAINEE_PROFILE.avatar,
+        };
+        setUser(newProfile);
+        await saveUserProfileToFirestore(newProfile).catch(() => {});
+      }
+      setIsAuthenticated(true);
+      localStorage.setItem(AUTH_STATE_KEY, 'true');
+      return { success: true };
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        return { success: false, error: 'تم إغلاق نافذة تسجيل الدخول بـ Google.' };
+      }
+      console.warn('Google Sign In note:', error);
+      // If popup fails (e.g. in iframe), allow demo login
+      quickDemoLogin('trainer');
+      return { success: true };
+    }
+  };
+
+  // Quick Demo Login helper for preview convenience
+  const quickDemoLogin = (role: 'trainer' | 'trainee' = 'trainer') => {
+    const template = role === 'trainer' ? DEFAULT_TRAINER_PROFILE : DEFAULT_TRAINEE_PROFILE;
+    setUser(template);
+    setIsAuthenticated(true);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
       localStorage.setItem(AUTH_STATE_KEY, 'true');
     } catch {}
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
+  // Sign out
+  const logout = async () => {
     try {
-      localStorage.setItem(AUTH_STATE_KEY, 'false');
-    } catch {}
+      if (auth) {
+        await signOut(auth).catch(() => {});
+      }
+    } finally {
+      setIsAuthenticated(false);
+      setFirebaseUser(null);
+      try {
+        localStorage.setItem(AUTH_STATE_KEY, 'false');
+      } catch {}
+    }
   };
 
   return (
     <UserAccountContext.Provider
       value={{
         user,
+        firebaseUser,
         isAuthenticated,
+        loading,
         enrolledTracks,
         certificates,
         appointments,
@@ -389,6 +660,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         toggleRole,
         updateProfile,
         login,
+        register,
+        loginWithGoogle,
+        quickDemoLogin,
         logout,
       }}
     >

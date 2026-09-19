@@ -30,6 +30,11 @@ export interface EnrolledTrack {
   progress: number; // 0 - 100
   status: 'confirmed' | 'in_progress' | 'completed';
   isConfirmed?: boolean;
+  confirmedAt?: string;
+  confirmedAtFormatted?: string;
+  expiresAt?: string; // 12 months after confirmation
+  expiresAtFormatted?: string;
+  validityMonths?: number;
   nextSessionAr: string;
   nextSessionEn: string;
   mentorName: string;
@@ -45,7 +50,11 @@ export interface ConfirmedEnrollmentRecord {
   userEmail: string;
   userPhone?: string;
   membershipNumber?: string;
-  confirmedAt: string; // ISO or Arabic date
+  confirmedAt: string; // ISO date string
+  confirmedAtFormatted?: string;
+  expiresAt?: string; // ISO date string (12 months from confirmedAt)
+  expiresAtFormatted?: string;
+  validityMonths?: number; // 12
   status: 'confirmed';
   isConfirmed: true;
   // Deep progress snapshots

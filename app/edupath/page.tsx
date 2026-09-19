@@ -38,9 +38,15 @@ export default function EduPathPage() {
   const { openAuthModal } = useAuthModal();
 
   const currentTrackKey = 'tot-foundation';
-  const isConfirmed = isTrackConfirmed(currentTrackKey);
+  const cleanTrackKey = currentTrackKey.replace(/^trk-/, '');
+  const isConfirmed = isTrackConfirmed(currentTrackKey) || isTrackConfirmed(cleanTrackKey);
   const isEnrolledInCurrent = enrolledTracks.some(
-    (t) => t.trackKey === currentTrackKey || t.id === currentTrackKey
+    (t) =>
+      t.trackKey === currentTrackKey ||
+      t.trackKey === cleanTrackKey ||
+      t.id === currentTrackKey ||
+      t.id === `trk-${cleanTrackKey}` ||
+      t.id.includes(cleanTrackKey)
   );
 
   // Deletion modal states
@@ -504,7 +510,8 @@ export default function EduPathPage() {
           totalLessons: 18,
           progress: 0,
           completedLessons: 0,
-          status: 'in_progress',
+          status: isConfirmed ? 'confirmed' : 'in_progress',
+          isConfirmed: isConfirmed,
           mentorName: 'د. عبد الكريم بلخيري',
         });
       } catch (e) {
@@ -574,7 +581,8 @@ export default function EduPathPage() {
           totalLessons: 18,
           progress: 0,
           completedLessons: 0,
-          status: 'in_progress',
+          status: isConfirmed ? 'confirmed' : 'in_progress',
+          isConfirmed: isConfirmed,
           mentorName: 'د. عبد الكريم بلخيري',
         });
       } catch (e) {

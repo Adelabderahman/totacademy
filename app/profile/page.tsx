@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserAccount } from '@/context/UserAccountContext';
 import { useAuthModal } from '@/context/AuthModalContext';
+import { EnrolledTrack } from '@/types/user';
 import {
   User,
   Award,
@@ -27,6 +28,10 @@ import {
   LogOut,
   ChevronRight,
   AlertCircle,
+  AlertTriangle,
+  Trash2,
+  Lock,
+  Info,
   Phone,
   Mail,
   Download,
@@ -39,6 +44,9 @@ export default function ProfilePage() {
     user,
     isAuthenticated,
     enrolledTracks,
+    confirmedEnrollments,
+    isTrackConfirmed,
+    deleteTrackFromAccount,
     certificates,
     appointments,
     articles,
@@ -53,6 +61,32 @@ export default function ProfilePage() {
   >('tracks');
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [trackToDelete, setTrackToDelete] = useState<EnrolledTrack | null>(null);
+  const [isDeletingTrack, setIsDeletingTrack] = useState<boolean>(false);
+  const [deleteToast, setDeleteToast] = useState<string | null>(null);
+
+  const handleDeleteTrackConfirm = async () => {
+    if (!trackToDelete) return;
+    setIsDeletingTrack(true);
+    try {
+      const res = await deleteTrackFromAccount(trackToDelete.trackKey || trackToDelete.id);
+      if (res.success) {
+        setDeleteToast(
+          language === 'ar'
+            ? `تم إلغاء وحذف مسار "${trackToDelete.titleAr}" بنجاح وتصفير مؤشرات الإنجاز للبدء من جديد.`
+            : `Successfully canceled and deleted "${trackToDelete.titleEn || trackToDelete.titleAr}".`
+        );
+        setTimeout(() => setDeleteToast(null), 5000);
+      } else {
+        alert(res.error || 'تعذر إلغاء المسار');
+      }
+    } catch (e) {
+      console.warn('Error deleting track:', e);
+    } finally {
+      setIsDeletingTrack(false);
+      setTrackToDelete(null);
+    }
+  };
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: user.name,
@@ -401,16 +435,92 @@ export default function ProfilePage() {
         <div className="mt-6">
           {/* ================= TAB 1: TRACKS ================= */}
           {activeTab === 'tracks' && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="flex justify-between items-center mb-2">
+            <div className="space-y-5 animate-fadeIn">
+              {/* Floating Delete Toast Banner */}
+              {deleteToast && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-bold flex items-center justify-between shadow-sm animate-fadeIn">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{deleteToast}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteToast(null)}
+                    className="text-emerald-700 hover:text-emerald-900 text-xs font-bold underline cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إغلاق' : 'Close'}
+                  </button>
+                </div>
+              )}
+
+              {/* Academic Policy & 12-Month Confirmation Rules Banner */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/80 shadow-xs space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-primary-blue/10 border border-primary-blue/20 flex items-center justify-center text-primary-blue shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      {language === 'ar'
+                        ? 'ميثاق وسياسة تأكيد القيد الأكاديمي (صلاحية 12 شهراً)'
+                        : 'Academic Enrollment & Confirmation Policy (12 Months Validity)'}
+                    </h3>
+                    <p className="text-[11px] text-slate-600">
+                      {language === 'ar'
+                        ? 'ضوابط التسجيل، إمكانية الإلغاء، وحماية المسارات المؤكدة بالأكاديمية'
+                        : 'Enrollment guidelines, cancellation rights, and confirmed track protection'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs">
+                  <div className="p-3 rounded-xl bg-white/90 border border-slate-200/80 space-y-1">
+                    <div className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <Trash2 className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{language === 'ar' ? 'المسار غير المؤكد (تجريبي)' : 'Unconfirmed (Trial)'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {language === 'ar'
+                        ? 'يمكنك إلغاء المسار وحذفه في أي وقت عبر أيقونة سلة المهملات، ويتم تصفير تقدمه تماماً للبدء من جديد.'
+                        : 'Can be cancelled and deleted anytime via the trash icon, resetting progress to 0%.'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white/90 border border-slate-200/80 space-y-1">
+                    <div className="font-bold text-emerald-900 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{language === 'ar' ? 'التسجيل المؤكد (محمي)' : 'Confirmed (Protected)'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {language === 'ar'
+                        ? 'يثبت قيدك رسمياً في قاعدة بيانات الأكاديمية لمدة 12 شهراً كاملة، وتُقفل إمكانية الحذف لضمان سجلك.'
+                        : 'Officially registered for 12 full months. Delete option is permanently locked to secure records.'}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white/90 border border-slate-200/80 space-y-1">
+                    <div className="font-bold text-blue-900 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-primary-blue" />
+                      <span>{language === 'ar' ? 'نافذة التخرج (12 شهراً)' : 'Graduation Window'}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {language === 'ar'
+                        ? 'لدى المتدرب سنة كاملة لإتمام المحاور واستخراج الشهادة المعتمدة؛ وفي حال انتهاء الـ 12 شهراً دون إتمام يلغى القيد تلقائياً.'
+                        : 'Students have 12 months to complete and graduate; tracks expire automatically thereafter.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-1">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-                    {language === 'ar' ? 'المسارات التي تم تأكيد التسجيل فيها' : 'Confirmed Enrolled Pathways'}
+                    {language === 'ar' ? 'المسارات التدريبية في حسابك' : 'Your Enrolled Tracks'}
                   </h2>
                   <p className="text-xs text-slate-500">
                     {language === 'ar'
-                      ? 'تابع تقدمك الأكاديمي وجلساتك الحية ومحاور التعلم المعتمدة'
-                      : 'Track your learning progress, upcoming live sessions, and milestones'}
+                      ? 'إدارة المسارات، متابعة نسب الإنجاز، وفحص حالة التأكيد والصلاحية'
+                      : 'Manage your tracks, monitor progress, and review confirmation status'}
                   </p>
                 </div>
                 <Link
@@ -439,7 +549,7 @@ export default function ProfilePage() {
                     </h3>
                     <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                       {language === 'ar'
-                        ? 'حسابك جديد ونظيف! استعرض قائمة التخصصات والمسارات التدريبية المعتمدة، ثم اختر مسارك واضغط على "بدأ التدريب" للانطلاق في رحلتك التعليمية.'
+                        ? 'حسابك جاهز! استعرض قائمة التخصصات والمسارات التدريبية المعتمدة، ثم اختر مسارك واضغط على "بدأ التدريب" للانطلاق في رحلتك التعليمية.'
                         : 'Your account is ready! Explore our accredited specializations and choose a pathway to begin your certified journey.'}
                     </p>
                   </div>
@@ -455,96 +565,286 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {enrolledTracks.map((track) => (
-                    <div
-                      key={track.id}
-                      className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-primary-blue border border-blue-100">
-                            {track.badge}
-                          </span>
-                          <span
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-                              track.status === 'completed'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : track.status === 'in_progress'
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200'
-                            }`}
-                          >
-                            {track.status === 'completed'
-                              ? language === 'ar'
-                                ? 'تم الاعتماد'
-                                : 'Completed'
-                              : track.status === 'in_progress'
-                              ? language === 'ar'
-                                ? 'قيد التدريب'
-                                : 'In Progress'
-                              : language === 'ar'
-                              ? 'تسجيل مؤكد'
-                              : 'Confirmed'}
-                          </span>
-                        </div>
+                  {enrolledTracks.map((track) => {
+                    const cleanKey = track.trackKey?.replace(/^trk-/, '') || track.id.replace(/^trk-/, '');
+                    const isConfirmed =
+                      isTrackConfirmed(track.trackKey) ||
+                      isTrackConfirmed(cleanKey) ||
+                      track.isConfirmed ||
+                      track.status === 'confirmed';
 
-                        <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
-                          {language === 'ar' ? track.titleAr : track.titleEn}
-                        </h3>
+                    const confRecord =
+                      confirmedEnrollments[track.trackKey] ||
+                      confirmedEnrollments[cleanKey] ||
+                      confirmedEnrollments[`trk-${cleanKey}`];
 
-                        <p className="text-xs text-slate-500">
-                          {language === 'ar' ? `المشرف: ${track.mentorName}` : `Mentor: ${track.mentorName}`}
-                        </p>
+                    // Date & Expiry Calculation (12 Months window)
+                    const confirmedDateText =
+                      confRecord?.confirmedAtFormatted ||
+                      track.confirmedAtFormatted ||
+                      (isConfirmed
+                        ? track.confirmedAt
+                          ? new Date(track.confirmedAt).toLocaleDateString('ar-DZ', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })
+                          : track.enrolledAt
+                        : null);
 
-                        {/* Progress Bar */}
-                        <div className="space-y-1.5 pt-1">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-600">
-                              {language === 'ar' ? 'نسبة الإنجاز' : 'Progress'}
+                    const expiryDateObj = confRecord?.expiresAt
+                      ? new Date(confRecord.expiresAt)
+                      : track.expiresAt
+                      ? new Date(track.expiresAt)
+                      : isConfirmed && track.confirmedAt
+                      ? new Date(
+                          new Date(track.confirmedAt).setFullYear(
+                            new Date(track.confirmedAt).getFullYear() + 1
+                          )
+                        )
+                      : null;
+
+                    const expiryDateText =
+                      confRecord?.expiresAtFormatted ||
+                      track.expiresAtFormatted ||
+                      (expiryDateObj
+                        ? expiryDateObj.toLocaleDateString('ar-DZ', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : null);
+
+                    const daysRemaining = expiryDateObj
+                      ? Math.max(
+                          0,
+                          Math.ceil((expiryDateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                        )
+                      : 365;
+
+                    return (
+                      <div
+                        key={track.id}
+                        className={`bg-white rounded-2xl p-5 border transition-all flex flex-col justify-between ${
+                          isConfirmed
+                            ? 'border-emerald-200/90 shadow-sm hover:shadow-md ring-1 ring-emerald-100'
+                            : 'border-slate-200/90 shadow-sm hover:shadow-md'
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          {/* Card Top: Badges and Status */}
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-primary-blue border border-blue-100">
+                              {track.badge}
                             </span>
-                            <span className="text-primary-blue">{track.progress}%</span>
+                            {isConfirmed ? (
+                              <span className="px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1 shadow-xs">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>{language === 'ar' ? 'تسجيل مؤكد' : 'Confirmed'}</span>
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-300 flex items-center gap-1">
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>{language === 'ar' ? 'قيد تجريبي' : 'Trial'}</span>
+                              </span>
+                            )}
                           </div>
-                          <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                track.progress === 100
-                                  ? 'bg-emerald-500'
-                                  : 'bg-gradient-to-r from-primary-blue to-cyan-500'
-                              }`}
-                              style={{ width: `${track.progress}%` }}
-                            />
+
+                          {/* Track Title */}
+                          <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2">
+                            {language === 'ar' ? track.titleAr : track.titleEn}
+                          </h3>
+
+                          {/* Mentor Name */}
+                          <p className="text-xs text-slate-500">
+                            {language === 'ar' ? `المشرف الأكاديمي: ${track.mentorName}` : `Mentor: ${track.mentorName}`}
+                          </p>
+
+                          {/* 12-Month Validity Notice for Confirmed Track */}
+                          {isConfirmed ? (
+                            <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/90 text-xs space-y-1.5">
+                              <div className="flex items-center justify-between font-bold text-emerald-900">
+                                <span className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  <span>{language === 'ar' ? 'صلاحية القيد: 12 شهراً' : 'Validity: 12 Months'}</span>
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold">
+                                  {language === 'ar' ? `المتبقي: ${daysRemaining} يوماً` : `${daysRemaining}d left`}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-emerald-800/90 leading-relaxed">
+                                {language === 'ar'
+                                  ? `القيد مؤكد ومثبت رسمياً لغاية ${expiryDateText || '12 شهراً'}. يلزم إتمام الدراسة ونيل الشهادة خلال هذه المدة أو يلغى المسار تلقائياً.`
+                                  : `Registration confirmed until ${expiryDateText || '12 months'}. Complete requirements to graduate before expiry.`}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs space-y-1">
+                              <div className="flex items-center justify-between font-bold text-amber-900">
+                                <span className="flex items-center gap-1.5">
+                                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                  <span>{language === 'ar' ? 'مسار استكشافي غير مؤكد' : 'Unconfirmed Track'}</span>
+                                </span>
+                                <span className="text-[10px] text-amber-700 font-semibold">
+                                  {language === 'ar' ? 'قابل للإلغاء' : 'Cancellable'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-amber-800 leading-relaxed">
+                                {language === 'ar'
+                                  ? 'يمكنك إلغاء هذا المسار بالضغط على سلة المهملات، أو تأكيد القيد لتثبيته لمدة 12 شهراً وحجز شهادتك.'
+                                  : 'You can delete this track using the trash icon or confirm your enrollment for 12 months.'}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Progress Bar */}
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-slate-600">
+                                {language === 'ar' ? 'نسبة الإنجاز' : 'Progress'}
+                              </span>
+                              <span className={isConfirmed ? 'text-emerald-700 font-bold' : 'text-primary-blue'}>
+                                {track.progress}%
+                              </span>
+                            </div>
+                            <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  track.progress === 100
+                                    ? 'bg-emerald-500'
+                                    : isConfirmed
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                                    : 'bg-gradient-to-r from-primary-blue to-cyan-500'
+                                }`}
+                                style={{ width: `${track.progress}%` }}
+                              />
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {track.completedLessons} / {track.totalLessons}{' '}
+                              {language === 'ar' ? 'محوراً منجزاً' : 'lessons completed'}
+                            </div>
                           </div>
-                          <div className="text-[11px] text-slate-400">
-                            {track.completedLessons} / {track.totalLessons}{' '}
-                            {language === 'ar' ? 'درساً ومحوراً معتمداً' : 'lessons completed'}
+
+                          {/* Next Session Alert */}
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-700 flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-primary-blue shrink-0" />
+                            <span className="line-clamp-1">
+                              {language === 'ar' ? track.nextSessionAr : track.nextSessionEn}
+                            </span>
                           </div>
                         </div>
 
-                        {/* Next Session Alert */}
-                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-700 flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 text-primary-blue shrink-0" />
-                          <span className="line-clamp-1">
-                            {language === 'ar' ? track.nextSessionAr : track.nextSessionEn}
-                          </span>
+                        {/* Card Bottom Actions: Permanent Lock vs Trash Can */}
+                        <div className="pt-4 mt-3 border-t border-slate-100">
+                          {isConfirmed ? (
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                                <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span className="truncate">
+                                  {language === 'ar' ? 'تسجيل مؤكد (محمي من الحذف)' : 'Confirmed (No Delete)'}
+                                </span>
+                              </div>
+                              <Link
+                                href={`/edupath?track=${cleanKey}`}
+                                className="px-3.5 py-1.5 rounded-xl bg-primary-blue hover:bg-secondary-blue text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer"
+                              >
+                                <span>{language === 'ar' ? 'متابعة الدراسة' : 'Continue'}</span>
+                                <ChevronRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
+                              </Link>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setTrackToDelete(track)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                                title={language === 'ar' ? 'إلغاء وحذف المسار قبل التأكيد' : 'Cancel & Delete Track'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>{language === 'ar' ? 'إلغاء المسار' : 'Delete'}</span>
+                              </button>
+                              <Link
+                                href={`/edupath?track=${cleanKey}`}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                              >
+                                <span>{language === 'ar' ? 'تأكيد التسجيل الآن' : 'Confirm Now'}</span>
+                                <ArrowUpRight className="w-3.5 h-3.5" />
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[11px] text-slate-400">
-                          {language === 'ar' ? `تاريخ القيد: ${track.enrolledAt}` : `Enrolled: ${track.enrolledAt}`}
-                        </span>
-                        <Link
-                          href="/edupath"
-                          className="text-xs font-bold text-primary-blue hover:text-secondary-blue flex items-center gap-1"
-                        >
-                          <span>{language === 'ar' ? 'متابعة المحاور' : 'Continue'}</span>
-                          <ChevronRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ================= MODAL: CONFIRM TRACK DELETION ================= */}
+          {trackToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 text-slate-800 space-y-5 animate-scaleUp">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                    <Trash2 className="w-6 h-6 text-rose-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-lg font-extrabold text-slate-900">
+                      {language === 'ar' ? 'تأكيد إلغاء وحذف المسار' : 'Confirm Track Cancellation'}
+                    </h4>
+                    <p className="text-xs text-slate-500 line-clamp-1">
+                      {language === 'ar' ? trackToDelete.titleAr : trackToDelete.titleEn || trackToDelete.titleAr}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-100 text-xs text-rose-900 space-y-2">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{language === 'ar' ? 'تنبيه أكاديمي مهم قبل الإلغاء:' : 'Important Notice:'}</span>
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-rose-800 text-[11px] leading-relaxed">
+                    {language === 'ar' ? (
+                      <>
+                        <li>هذا المسار غير مؤكد رسمياً بعد، لذا يتيح لك النظام إمكانية إلغائه.</li>
+                        <li>عند الإلغاء سيتم حذف المسار من حسابك وتصفير نسب التقدم والمحاور تماماً (0%).</li>
+                        <li>يمكنك التسجيل في هذا المسار مستقبلاً في أي وقت والبدء من جديد.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>This track is unconfirmed, so you are allowed to delete it.</li>
+                        <li>All lessons progress and completed quizzes will be reset to 0%.</li>
+                        <li>You may re-enroll in this track in the future at any time.</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setTrackToDelete(null)}
+                    disabled={isDeletingTrack}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    {language === 'ar' ? 'تراجع وإبقاء المسار' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteTrackConfirm}
+                    disabled={isDeletingTrack}
+                    className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    {isDeletingTrack ? (
+                      <Clock className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    <span>{language === 'ar' ? 'نعم، احذف المسار الآن' : 'Yes, Delete Track'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

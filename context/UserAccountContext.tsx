@@ -498,10 +498,15 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
           // Load confirmed enrollments from Firestore (الملف الثاني)
           const remoteConfirmed = await fetchUserConfirmedEnrollments(fUser.uid);
+          const confirmedMap: Record<string, ConfirmedEnrollmentRecord> = {};
           if (remoteConfirmed && remoteConfirmed.length > 0) {
-            const confirmedMap: Record<string, ConfirmedEnrollmentRecord> = {};
             remoteConfirmed.forEach((c) => {
-              if (c.trackKey) confirmedMap[c.trackKey] = c;
+              if (c.trackKey) {
+                const clean = c.trackKey.replace(/^trk-/, '');
+                confirmedMap[c.trackKey] = c;
+                confirmedMap[clean] = c;
+                confirmedMap[`trk-${clean}`] = c;
+              }
             });
             setConfirmedEnrollments(confirmedMap);
             try {
@@ -509,6 +514,31 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
             } catch {}
           } else {
             setConfirmedEnrollments({});
+          }
+
+          // Reconcile enrolledTracks with confirmedMap so confirmed status and 12-month validity is 100% persisted
+          if (remoteTracks && remoteTracks.length > 0) {
+            const syncedTracks = remoteTracks.map((trk) => {
+              const clean = trk.trackKey?.replace(/^trk-/, '') || trk.id.replace(/^trk-/, '');
+              const confRec = confirmedMap[trk.trackKey] || confirmedMap[clean] || confirmedMap[trk.id] || confirmedMap[`trk-${clean}`];
+              if (confRec) {
+                return {
+                  ...trk,
+                  isConfirmed: true,
+                  status: 'confirmed' as const,
+                  confirmedAt: confRec.confirmedAt || trk.confirmedAt,
+                  confirmedAtFormatted: confRec.confirmedAtFormatted || trk.confirmedAtFormatted,
+                  expiresAt: confRec.expiresAt || trk.expiresAt,
+                  expiresAtFormatted: confRec.expiresAtFormatted || trk.expiresAtFormatted,
+                  validityMonths: confRec.validityMonths || 12,
+                };
+              }
+              return trk;
+            });
+            setEnrolledTracks(syncedTracks);
+            try {
+              localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(syncedTracks));
+            } catch {}
           }
 
           // Load certificates and appointments if any
@@ -757,17 +787,30 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const enrollInTrack = async (
     trackData: Partial<EnrolledTrack> & { trackKey: string; titleAr: string }
   ): Promise<{ success: boolean; error?: string }> => {
-    const trackId = trackData.id || `trk-${trackData.trackKey}`;
+    const cleanKey = trackData.trackKey.replace(/^trk-/, '');
+    const trackId = trackData.id || `trk-${cleanKey}`;
+
+    // Check if this track is ALREADY confirmed in records
+    const isAlreadyConfirmed = isTrackConfirmed(trackData.trackKey) || isTrackConfirmed(cleanKey);
+    const existingConf = confirmedEnrollments[trackData.trackKey] || confirmedEnrollments[cleanKey] || confirmedEnrollments[`trk-${cleanKey}`];
+
     const newTrack: EnrolledTrack = {
       id: trackId,
-      trackKey: trackData.trackKey,
+      trackKey: cleanKey,
       titleAr: trackData.titleAr,
       titleEn: trackData.titleEn || trackData.titleAr,
       categoryAr: trackData.categoryAr || 'المسارات التدريبية المعتمدة',
       categoryEn: trackData.categoryEn || 'Accredited Training Tracks',
-      enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
+      enrolledAt: trackData.enrolledAt || new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
       progress: trackData.progress || 0,
-      status: trackData.status || 'confirmed',
+      // CRITICAL: If confirmed, status is ALWAYS 'confirmed' and isConfirmed is ALWAYS true!
+      status: isAlreadyConfirmed ? 'confirmed' : (trackData.status || 'in_progress'),
+      isConfirmed: isAlreadyConfirmed,
+      confirmedAt: existingConf?.confirmedAt,
+      confirmedAtFormatted: existingConf?.confirmedAtFormatted,
+      expiresAt: existingConf?.expiresAt,
+      expiresAtFormatted: existingConf?.expiresAtFormatted,
+      validityMonths: isAlreadyConfirmed ? 12 : undefined,
       nextSessionAr: trackData.nextSessionAr || 'تم تأكيد القيد بنجاح، يمكنك متابعة المحاور من حيث توقفت.',
       nextSessionEn: trackData.nextSessionEn || 'Registration confirmed. You can start learning now.',
       mentorName: trackData.mentorName || 'طاقم أكاديمية TOT',
@@ -777,11 +820,30 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     setEnrolledTracks((prev) => {
-      const existingIdx = prev.findIndex((t) => t.id === trackId || t.trackKey === newTrack.trackKey);
+      const existingIdx = prev.findIndex(
+        (t) =>
+          t.id === trackId ||
+          t.trackKey === trackData.trackKey ||
+          t.trackKey === cleanKey ||
+          t.id === `trk-${cleanKey}` ||
+          t.id === trackData.id
+      );
       let nextList: EnrolledTrack[];
       if (existingIdx >= 0) {
+        const existing = prev[existingIdx];
+        const confirmedState = existing.isConfirmed || isAlreadyConfirmed;
         nextList = [...prev];
-        nextList[existingIdx] = { ...nextList[existingIdx], ...newTrack };
+        nextList[existingIdx] = {
+          ...existing,
+          ...newTrack,
+          isConfirmed: confirmedState,
+          status: confirmedState ? 'confirmed' : (newTrack.status || existing.status),
+          confirmedAt: existing.confirmedAt || existingConf?.confirmedAt,
+          confirmedAtFormatted: existing.confirmedAtFormatted || existingConf?.confirmedAtFormatted,
+          expiresAt: existing.expiresAt || existingConf?.expiresAt,
+          expiresAtFormatted: existing.expiresAtFormatted || existingConf?.expiresAtFormatted,
+          validityMonths: confirmedState ? 12 : undefined,
+        };
       } else {
         nextList = [newTrack, ...prev];
       }
@@ -816,6 +878,8 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     const targetUid = firebaseUser?.uid || user.id;
     if (!targetUid) return;
 
+    const cleanKey = trackKey.replace(/^trk-/, '');
+
     // Calculate total completed lessons count
     const totalLessonsDone = Object.values(data.completedLessons).reduce(
       (acc, curr) => acc + (curr?.length || 0),
@@ -823,7 +887,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     );
 
     // 1. Save track progress record in Firestore
-    await saveTrackProgressToFirestore(targetUid, trackKey, {
+    await saveTrackProgressToFirestore(targetUid, cleanKey, {
       activeLevel: data.activeLevel || 'foundation',
       activeModuleId: data.activeModuleId || 'module_1',
       completedLessons: data.completedLessons,
@@ -836,19 +900,50 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     // 2. Also update enrolledTracks item for this track
     setEnrolledTracks((prev) => {
-      const idx = prev.findIndex((t) => t.trackKey === trackKey || t.id.includes(trackKey));
+      const idx = prev.findIndex(
+        (t) =>
+          t.trackKey === trackKey ||
+          t.trackKey === cleanKey ||
+          t.id === trackKey ||
+          t.id === `trk-${cleanKey}` ||
+          t.id.includes(cleanKey)
+      );
       if (idx >= 0) {
+        const isConfirmedAlready =
+          prev[idx].isConfirmed ||
+          isTrackConfirmed(trackKey) ||
+          isTrackConfirmed(cleanKey) ||
+          Boolean(confirmedEnrollments[trackKey]) ||
+          Boolean(confirmedEnrollments[cleanKey]);
+
+        const existingConf =
+          confirmedEnrollments[trackKey] ||
+          confirmedEnrollments[cleanKey] ||
+          confirmedEnrollments[`trk-${cleanKey}`];
+
         const updatedTrack: EnrolledTrack = {
           ...prev[idx],
           progress: data.overallProgress !== undefined ? data.overallProgress : prev[idx].progress,
           completedLessons: totalLessonsDone,
-          status: (data.overallProgress || prev[idx].progress) >= 100 ? 'completed' : 'in_progress',
+          // CRITICAL: Confirmed status is never wiped by progress updates!
+          isConfirmed: isConfirmedAlready,
+          status: isConfirmedAlready
+            ? 'confirmed'
+            : ((data.overallProgress || prev[idx].progress) >= 100 ? 'completed' : 'in_progress'),
+          confirmedAt: prev[idx].confirmedAt || existingConf?.confirmedAt,
+          confirmedAtFormatted: prev[idx].confirmedAtFormatted || existingConf?.confirmedAtFormatted,
+          expiresAt: prev[idx].expiresAt || existingConf?.expiresAt,
+          expiresAtFormatted: prev[idx].expiresAtFormatted || existingConf?.expiresAtFormatted,
+          validityMonths: isConfirmedAlready ? 12 : undefined,
         };
         const copy = [...prev];
         copy[idx] = updatedTrack;
 
         // Persist track update to Firestore
         saveEnrolledTrackToFirestore(targetUid, updatedTrack).catch(() => {});
+        try {
+          localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(copy));
+        } catch {}
         return copy;
       }
       return prev;
@@ -864,15 +959,33 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // Check if a track is officially confirmed
   const isTrackConfirmed = (trackKey: string): boolean => {
+    if (!trackKey) return false;
+    const cleanKey = trackKey.replace(/^trk-/, '');
+
     if (confirmedEnrollments[trackKey]?.isConfirmed) return true;
+    if (confirmedEnrollments[cleanKey]?.isConfirmed) return true;
+    if (confirmedEnrollments[`trk-${cleanKey}`]?.isConfirmed) return true;
+
+    for (const [key, rec] of Object.entries(confirmedEnrollments)) {
+      if (rec?.isConfirmed) {
+        const kClean = key.replace(/^trk-/, '');
+        if (kClean === cleanKey || key === trackKey || key === `trk-${cleanKey}`) return true;
+      }
+    }
+
     const found = enrolledTracks.find(
-      (t) => t.trackKey === trackKey || t.id === trackKey || t.id.includes(trackKey)
+      (t) =>
+        t.trackKey === trackKey ||
+        t.trackKey === cleanKey ||
+        t.id === trackKey ||
+        t.id === `trk-${cleanKey}` ||
+        t.trackKey?.replace(/^trk-/, '') === cleanKey
     );
-    return Boolean(found?.isConfirmed || (found?.status === 'confirmed' && confirmedEnrollments[trackKey]));
+    return Boolean(found?.isConfirmed);
   };
 
   // Confirm track registration permanently: saves ConfirmedEnrollmentRecord (الملف الثاني في فايربيز)
-  // This cannot be undone once confirmed.
+  // This cannot be undone once confirmed. Valid for 12 months.
   const confirmTrackEnrollment = async (
     trackKey: string,
     trackTitleAr?: string,
@@ -887,16 +1000,30 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   ): Promise<{ success: boolean; error?: string }> => {
     const targetUid = firebaseUser?.uid || user.id;
     const resolvedTitle = trackTitleAr || 'المسار التأصيلي الشامل لتدريب المدربين (TOTF126)';
+    const cleanKey = trackKey.replace(/^trk-/, '');
+
+    // Calculate dates for 12 months validity window
+    const now = new Date();
+    const expiresDate = new Date(now);
+    expiresDate.setFullYear(expiresDate.getFullYear() + 1); // exactly 12 months
+    const confirmedAtISO = now.toISOString();
+    const expiresAtISO = expiresDate.toISOString();
+    const confirmedAtFormatted = now.toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' });
+    const expiresAtFormatted = expiresDate.toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' });
 
     // Build the permanent immutable record (الملف الثاني)
     const confirmedRecord: ConfirmedEnrollmentRecord = {
-      trackKey,
+      trackKey: cleanKey,
       userId: targetUid,
       userName: user.name,
       userEmail: user.email,
       userPhone: user.phone,
       membershipNumber: user.membershipNumber,
-      confirmedAt: new Date().toISOString(),
+      confirmedAt: confirmedAtISO,
+      confirmedAtFormatted,
+      expiresAt: expiresAtISO,
+      expiresAtFormatted,
+      validityMonths: 12,
       status: 'confirmed',
       isConfirmed: true,
       overallProgressSnapshot: snapshotData?.overallProgress ?? 0,
@@ -906,7 +1033,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       activeModuleIdSnapshot: snapshotData?.activeModuleId || 'module_1',
       trackTitleAr: resolvedTitle,
       reportCode: snapshotData?.reportCode,
-      notes: 'تم تأكيد القيد الرسمي للمسار في سجل الأكاديمية بنجاح.',
+      notes: 'تم تأكيد القيد الرسمي للمسار في سجل الأكاديمية بنجاح لمدة 12 شهراً كاملة.',
     };
 
     // 1. Save Confirmed Enrollment to Firestore (الملف الثاني)
@@ -916,18 +1043,25 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       });
     }
 
-    // 2. Update local confirmedEnrollments state & localStorage
+    // 2. Update local confirmedEnrollments state & localStorage with both keys
     setConfirmedEnrollments((prev) => {
-      const updated = { ...prev, [trackKey]: confirmedRecord };
+      const updated = {
+        ...prev,
+        [cleanKey]: confirmedRecord,
+        [trackKey]: confirmedRecord,
+        [`trk-${cleanKey}`]: confirmedRecord,
+      };
       try {
         localStorage.setItem('tot_user_confirmed_enrollments', JSON.stringify(updated));
       } catch {}
       return updated;
     });
 
-    // 3. Mark the track in enrolledTracks as confirmed (permanent)
+    // 3. Mark the track in enrolledTracks as confirmed (permanent with 12 months validity)
     setEnrolledTracks((prev) => {
-      const idx = prev.findIndex((t) => t.trackKey === trackKey || t.id === trackKey || t.id.includes(trackKey));
+      const idx = prev.findIndex(
+        (t) => t.trackKey === trackKey || t.trackKey === cleanKey || t.id === trackKey || t.id === `trk-${cleanKey}`
+      );
       let nextList: EnrolledTrack[];
       if (idx >= 0) {
         nextList = [...prev];
@@ -935,11 +1069,16 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           ...nextList[idx],
           status: 'confirmed',
           isConfirmed: true,
+          confirmedAt: confirmedAtISO,
+          confirmedAtFormatted,
+          expiresAt: expiresAtISO,
+          expiresAtFormatted,
+          validityMonths: 12,
         };
       } else {
         const newEnrolled: EnrolledTrack = {
-          id: `trk-${trackKey}`,
-          trackKey,
+          id: `trk-${cleanKey}`,
+          trackKey: cleanKey,
           titleAr: resolvedTitle,
           titleEn: 'Foundation Training Track (TOTF126)',
           categoryAr: 'تدريب المدربين (TOT)',
@@ -948,8 +1087,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           progress: snapshotData?.overallProgress ?? 0,
           status: 'confirmed',
           isConfirmed: true,
-          nextSessionAr: 'تم تأكيد قيدك بنجاح، المسار مفعل بالكامل.',
-          nextSessionEn: 'Registration confirmed. Track is fully active.',
+          confirmedAt: confirmedAtISO,
+          confirmedAtFormatted,
+          expiresAt: expiresAtISO,
+          expiresAtFormatted,
+          validityMonths: 12,
+          nextSessionAr: 'تم تأكيد قيدك بنجاح، المسار مفعل بالكامل لمدة 12 شهراً.',
+          nextSessionEn: 'Registration confirmed. Track is valid for 12 months.',
           mentorName: 'د. عبد الكريم بلخيري',
           badge: 'TOT/P-F',
           totalLessons: 18,
@@ -961,8 +1105,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(nextList));
       } catch {}
 
-      if (targetUid && nextList[idx >= 0 ? idx : 0]) {
-        saveEnrolledTrackToFirestore(targetUid, nextList[idx >= 0 ? idx : 0]).catch(() => {});
+      const targetTrack = nextList[idx >= 0 ? idx : 0];
+      if (targetUid && targetTrack) {
+        saveEnrolledTrackToFirestore(targetUid, targetTrack).catch(() => {});
       }
       return nextList;
     });
@@ -972,11 +1117,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // Delete track before confirmation: deletes from account and clears progress (starts from 0% if restarted)
   const deleteTrackFromAccount = async (trackKey: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanKey = trackKey.replace(/^trk-/, '');
+
     // If the track is confirmed, it CANNOT be deleted
-    if (isTrackConfirmed(trackKey)) {
+    if (isTrackConfirmed(trackKey) || isTrackConfirmed(cleanKey)) {
       return {
         success: false,
-        error: 'لا يمكن حذف هذا المسار؛ لقد تم تأكيد التسجيل فيه رسمياً وهو مفعل في سجلاتك.',
+        error: 'لا يمكن حذف هذا المسار؛ لقد تم تأكيد التسجيل فيه رسمياً وهو مفعل لمدة 12 شهراً.',
       };
     }
 
@@ -986,14 +1133,23 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (targetUid) {
       await Promise.allSettled([
         deleteTrackProgressFromFirestore(targetUid, trackKey),
-        deleteEnrolledTrackFromFirestore(targetUid, `trk-${trackKey}`),
+        deleteTrackProgressFromFirestore(targetUid, cleanKey),
+        deleteEnrolledTrackFromFirestore(targetUid, `trk-${cleanKey}`),
         deleteEnrolledTrackFromFirestore(targetUid, trackKey),
+        deleteEnrolledTrackFromFirestore(targetUid, cleanKey),
       ]);
     }
 
     // 2. Remove from enrolledTracks local state and storage
     setEnrolledTracks((prev) => {
-      const filtered = prev.filter((t) => t.trackKey !== trackKey && t.id !== trackKey && !t.id.includes(trackKey));
+      const filtered = prev.filter(
+        (t) =>
+          t.trackKey !== trackKey &&
+          t.trackKey !== cleanKey &&
+          t.id !== trackKey &&
+          t.id !== `trk-${cleanKey}` &&
+          !t.id.includes(cleanKey)
+      );
       try {
         localStorage.setItem('tot_user_enrolled_tracks', JSON.stringify(filtered));
       } catch {}
@@ -1004,10 +1160,11 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     try {
       const userPrefix = targetUid ? `tot_${targetUid}_` : 'tot_usr_';
       localStorage.removeItem(`tot_track_progress_${trackKey}`);
+      localStorage.removeItem(`tot_track_progress_${cleanKey}`);
       localStorage.removeItem('tot_edupath_state_v1');
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith(userPrefix) || key.includes(trackKey))) {
+        if (key && (key.startsWith(userPrefix) || key.includes(cleanKey) || key.includes(trackKey))) {
           localStorage.removeItem(key);
         }
       }

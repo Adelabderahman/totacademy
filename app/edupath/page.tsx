@@ -3103,14 +3103,14 @@ export default function EduPathPage() {
           className="grand-blue-section"
           id="direct-training-group"
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-3 sm:mb-6">
             <div className="grand-header-title">
               <span className="grand-badge badge-blue">{strings.badge_new}</span>
               <span>{strings.direct_training_title}</span>
             </div>
           </div>
 
-          <div className="grand-alert alert-blue mb-6">
+          <div className="grand-alert alert-blue mb-3 sm:mb-6">
             {strings.dt_part1_alert}
           </div>
 
@@ -3197,6 +3197,7 @@ export default function EduPathPage() {
                       ]}
                       placeholder={strings.dt_travel_opt_0}
                       themeColor="blue"
+                      customLabelClass="grand-label"
                       dropdownWidthClass="w-full min-w-[240px]"
                     />
                   </div>
@@ -3214,6 +3215,7 @@ export default function EduPathPage() {
                       ]}
                       placeholder={strings.dt_days_opt_0}
                       themeColor="blue"
+                      customLabelClass="grand-label"
                       dropdownWidthClass="w-full min-w-[240px]"
                     />
                   </div>
@@ -3230,6 +3232,7 @@ export default function EduPathPage() {
                       ]}
                       placeholder={strings.dt_times_opt_0}
                       themeColor="blue"
+                      customLabelClass="grand-label"
                       dropdownWidthClass="w-full min-w-[240px]"
                     />
                   </div>
@@ -3242,7 +3245,7 @@ export default function EduPathPage() {
           </div>
 
           {/* Consultant Bar */}
-          <div className="consultant-bar mt-6">
+          <div className="consultant-bar mt-3 sm:mt-6">
             <div className="consultant-info">
               <img
                 src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop"
@@ -3273,14 +3276,14 @@ export default function EduPathPage() {
           className="grand-orange-section"
           id="certification-group"
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-3 sm:mb-6">
             <div className="grand-header-title">
               <span className="grand-badge badge-orange">{strings.badge_accreditation}</span>
               <span>{strings.cert_title}</span>
             </div>
           </div>
 
-          <div className="grand-alert alert-orange mb-6">
+          <div className="grand-alert alert-orange mb-3 sm:mb-6">
             {strings.cert_alert}
           </div>
 
@@ -3334,6 +3337,7 @@ export default function EduPathPage() {
                     ]}
                     placeholder={strings.cert_gender_opt_0}
                     themeColor="blue"
+                    customLabelClass="grand-label"
                     dropdownWidthClass="w-full min-w-[220px]"
                   />
                 </div>
@@ -3361,6 +3365,7 @@ export default function EduPathPage() {
                     ]}
                     placeholder={strings.cert_type_opt_0}
                     themeColor="blue"
+                    customLabelClass="grand-label"
                     dropdownWidthClass="w-full min-w-[260px]"
                   />
                 </div>
@@ -3378,6 +3383,7 @@ export default function EduPathPage() {
                     ]}
                     placeholder={strings.cert_acc_opt_0}
                     themeColor="blue"
+                    customLabelClass="grand-label"
                     dropdownWidthClass="w-full min-w-[260px]"
                   />
                 </div>
@@ -3395,16 +3401,17 @@ export default function EduPathPage() {
                     ]}
                     placeholder={strings.cert_pay_opt_0}
                     themeColor="blue"
+                    customLabelClass="grand-label"
                     dropdownWidthClass="w-full min-w-[260px]"
                   />
                 </div>
 
-                <div className="grand-col-full mt-2">
+                <div className="grand-col-full mt-1 sm:mt-2">
                   <label className="grand-checkbox">
                     <input type="checkbox" required />
                     <span>{strings.cert_agree_terms}</span>
                   </label>
-                  <label className="grand-checkbox mt-2">
+                  <label className="grand-checkbox mt-1 sm:mt-2">
                     <input type="checkbox" required />
                     <span>{strings.cert_agree_ethics}</span>
                   </label>
@@ -3413,7 +3420,7 @@ export default function EduPathPage() {
 
               <button
                 type="submit"
-                className="grand-btn btn-orange mt-6 py-4 text-base"
+                className="grand-btn btn-orange mt-3 sm:mt-6 py-2.5 sm:py-4 text-sm sm:text-base"
               >
                 {strings.btn_submit_cert}
               </button>

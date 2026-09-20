@@ -26,19 +26,17 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
     }));
 
     const quizzes = getQuizzesForModule(m.id, 'ar');
-    const firstQuiz = quizzes[0];
+    const allQuestions = quizzes.flatMap((q) => q.questions);
+    const axesQuestions: Record<number, any[]> = {};
+    quizzes.forEach((q, idx) => {
+      axesQuestions[idx] = q.questions;
+    });
     const quizItem: QuizItem = {
       id: `qz_${m.id}`,
-      title: { ar: firstQuiz?.title || 'اختبار المقياس', en: 'Module Quiz' },
+      title: { ar: 'اختبارات تقييم المقياس (6 محاور)', en: 'Module Assessment Quizzes' },
       passingScore: 70,
       timeLimitSeconds: 15,
-      questions: (firstQuiz?.questions || []).map((q) => ({
-        q: q.q,
-        options: q.options,
-        ans: q.ans,
-        hint: q.hint,
-        explanation: q.explanation,
-      })),
+      questions: allQuestions,
       axes: [
         'المفاهيم والأسس الجوهرية',
         'المنهجيات والآليات التطبيقية',
@@ -47,6 +45,7 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
         'التحسين المستمر وضمان الجودة',
         'التطبيقات الميدانية والقياس',
       ],
+      axesQuestions,
       reportSlideEnabled: true,
     };
 
@@ -88,19 +87,17 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
     }));
 
     const quizzes = getQuizzesForModule(m.id, 'ar');
-    const firstQuiz = quizzes[0];
+    const allQuestions = quizzes.flatMap((q) => q.questions);
+    const axesQuestions: Record<number, any[]> = {};
+    quizzes.forEach((q, idx) => {
+      axesQuestions[idx] = q.questions;
+    });
     const quizItem: QuizItem = {
       id: `qz_${m.id}`,
-      title: { ar: firstQuiz?.title || 'اختبار المقياس', en: 'Module Quiz' },
+      title: { ar: 'اختبارات تقييم المقياس (6 محاور)', en: 'Module Assessment Quizzes' },
       passingScore: 70,
       timeLimitSeconds: 15,
-      questions: (firstQuiz?.questions || []).map((q) => ({
-        q: q.q,
-        options: q.options,
-        ans: q.ans,
-        hint: q.hint,
-        explanation: q.explanation,
-      })),
+      questions: allQuestions,
       axes: [
         'المفاهيم والأسس التمكينية',
         'المنهجيات المتقدمة',
@@ -109,6 +106,7 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
         'معايير الجودة',
         'القياس الميداني',
       ],
+      axesQuestions,
       reportSlideEnabled: true,
     };
 
@@ -150,19 +148,17 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
     }));
 
     const quizzes = getQuizzesForModule(m.id, 'ar');
-    const firstQuiz = quizzes[0];
+    const allQuestions = quizzes.flatMap((q) => q.questions);
+    const axesQuestions: Record<number, any[]> = {};
+    quizzes.forEach((q, idx) => {
+      axesQuestions[idx] = q.questions;
+    });
     const quizItem: QuizItem = {
       id: `qz_${m.id}`,
-      title: { ar: firstQuiz?.title || 'اختبار المقياس', en: 'Module Quiz' },
+      title: { ar: 'اختبارات تقييم المقياس (6 محاور)', en: 'Module Assessment Quizzes' },
       passingScore: 75,
       timeLimitSeconds: 15,
-      questions: (firstQuiz?.questions || []).map((q) => ({
-        q: q.q,
-        options: q.options,
-        ans: q.ans,
-        hint: q.hint,
-        explanation: q.explanation,
-      })),
+      questions: allQuestions,
       axes: [
         'الحوكمة والقيادة',
         'إدارة التميز المؤسسي',
@@ -171,6 +167,7 @@ export function buildComprehensiveTotTrack(): TrackDefinition {
         'اقتصاديات المعرفة',
         'مشروع الاعتماد النهائي',
       ],
+      axesQuestions,
       reportSlideEnabled: true,
     };
 

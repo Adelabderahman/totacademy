@@ -44,6 +44,7 @@ export interface QuizQuestionItem {
 }
 
 export interface QuizItem {
+  id?: string;
   title: string;
   questions: QuizQuestionItem[];
 }

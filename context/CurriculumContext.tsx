@@ -90,7 +90,8 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             } else {
               const currentTot = parsed[totIndex];
               const fndCount = currentTot.levels?.foundation?.modules?.length || 0;
-              if (fndCount < 8 || !currentTot.levels?.empowerment || !currentTot.levels?.consolidation) {
+              const hasFullQuizzes = !!currentTot.levels?.foundation?.modules?.[0]?.quiz?.axesQuestions;
+              if (fndCount < 8 || !hasFullQuizzes || !currentTot.levels?.empowerment || !currentTot.levels?.consolidation) {
                 parsed[totIndex] = fullTot;
                 localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
               }

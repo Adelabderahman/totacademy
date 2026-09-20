@@ -555,25 +555,82 @@ function EduPathContent() {
   }, [activeModule]);
 
   // Current Active Quizzes for this module and language
-  const activeQuizzesList = useMemo(() => {
+  const activeQuizzesList: QuizItem[] = useMemo(() => {
+    // For Comprehensive TOT Track (TOTF126) and standard foundation/empowerment/consolidation modules:
+    // Always load the authentic full bank of 6 evaluation quizzes!
+    if (
+      isComprehensiveTotTrack ||
+      activeTrack?.id === 'tot-foundation' ||
+      activeTrack?.id === 'trk-tot-foundation' ||
+      activeModule?.id?.startsWith('module_') ||
+      activeModule?.id?.startsWith('emp_') ||
+      activeModule?.id?.startsWith('con_')
+    ) {
+      return getQuizzesForModule(activeModule.id, lang);
+    }
+
+    // For custom specialization tracks: check if custom axis questions exist
     const modQuiz = (activeModule as any)?.quiz;
+    if (modQuiz?.axesQuestions && Object.keys(modQuiz.axesQuestions).length > 0) {
+      const axesList = modQuiz.axes || [
+        'المفاهيم والأسس الجوهرية',
+        'المنهجيات والآليات التطبيقية',
+        'دراسات الحالة ونمذجة المواقف',
+        'الأدوات والاستراتيجيات المتقدمة',
+        'التحسين المستمر وضمان الجودة',
+        'التطبيقات الميدانية والقياس',
+      ];
+      return axesList.map((axisTitle: string, aIdx: number) => {
+        const rawQuestions = modQuiz.axesQuestions[aIdx] || [];
+        const questions = rawQuestions.length > 0
+          ? rawQuestions.map((q: any) => ({
+              q: q.q || q.question || '',
+              options: q.options || [],
+              ans: q.ans !== undefined ? q.ans : (q.correctAnswerIndex ?? 0),
+              hint: q.hint || '',
+              explanation: q.explanation || '',
+            }))
+          : [
+              {
+                q: `${lang === 'ar' ? 'ما المبدأ التطبيقي الجوهري المرتبط بمحور' : 'Core principle for'} ${axisTitle}؟`,
+                options: [
+                  lang === 'ar' ? 'التطبيق المنهجي الميداني وفق معايير الجودة' : 'Standard systematic field application',
+                  lang === 'ar' ? 'التنفيذ العشوائي دون تخطيط مسبق' : 'Random execution without planning',
+                  lang === 'ar' ? 'الاعتماد على النظريات فقط دون ممارسة' : 'Pure theory without practice',
+                  lang === 'ar' ? 'تجاهل التقييم والقياس المستمر' : 'Ignoring continuous measurement',
+                ],
+                ans: 0,
+                hint: lang === 'ar' ? 'ابحث عن الخيار المنهجي العملي.' : 'Look for the methodical option.',
+                explanation: lang === 'ar' ? 'التطبيق المنهجي الميداني يضمن جودة المخرجات التدريبية.' : 'Systematic application ensures quality.',
+              },
+            ];
+
+        return {
+          id: `qz_${activeModule.id}_${aIdx}`,
+          title: `${lang === 'ar' ? 'تقييم' : 'Quiz'} ${aIdx + 1}: ${axisTitle}`,
+          questions,
+        };
+      });
+    }
+
     if (modQuiz?.questions && modQuiz.questions.length > 0) {
       return [
         {
-          id: modQuiz.id || 'qz_custom',
-          title: modQuiz.title?.[lang] || modQuiz.title?.ar || 'اختبار المقياس',
+          id: modQuiz.id || `qz_${activeModule.id}`,
+          title: modQuiz.title?.[lang] || modQuiz.title?.ar || (lang === 'ar' ? 'اختبار المقياس' : 'Module Quiz'),
           questions: modQuiz.questions.map((q: any) => ({
-            question: q.q,
-            options: q.options,
-            correctAnswerIndex: q.ans,
+            q: q.q || q.question || '',
+            options: q.options || [],
+            ans: q.ans !== undefined ? q.ans : (q.correctAnswerIndex ?? 0),
             hint: q.hint || '',
             explanation: q.explanation || '',
           })),
         },
       ];
     }
+
     return getQuizzesForModule(activeModule.id, lang);
-  }, [activeModule, lang]);
+  }, [isComprehensiveTotTrack, activeTrack, activeModule, lang]);
 
   // Handle Track Deletion from Account (Only permitted before confirmation)
   const handleDeleteTrack = async () => {
@@ -3011,7 +3068,7 @@ function EduPathContent() {
                               onClick={advanceNextQuestion}
                             >
                               <span>
-                                {questionIndex < 5
+                                {questionIndex < (quiz.questions.length - 1)
                                   ? (lang === 'ar' ? 'التالي' : 'Next')
                                   : (lang === 'ar' ? 'النتيجة' : 'Result')}
                               </span>
@@ -3022,7 +3079,7 @@ function EduPathContent() {
                           {/* Top progress bar & countdown */}
                           <div className="qz-top-progress">
                             <div className="qz-meta">
-                              <span className="qz-muted">{questionIndex + 1} / 6</span>
+                              <span className="qz-muted">{questionIndex + 1} / {quiz.questions.length}</span>
                               <div className="qz-timer-wrap">
                                 <div className="qz-timer-bar">
                                   <i style={{ width: `${(timeLeft / 15) * 100}%` }} />
@@ -3031,7 +3088,7 @@ function EduPathContent() {
                               </div>
                             </div>
                             <div className="qz-progress">
-                              <i style={{ width: `${((questionIndex + 1) / 6) * 100}%` }} />
+                              <i style={{ width: `${((questionIndex + 1) / quiz.questions.length) * 100}%` }} />
                             </div>
                           </div>
 
@@ -3097,7 +3154,7 @@ function EduPathContent() {
                               onClick={advanceNextQuestion}
                             >
                               <span>
-                                {questionIndex < 5
+                                {questionIndex < (quiz.questions.length - 1)
                                   ? (lang === 'ar' ? 'الانتقال للسؤال التالي ➔' : 'Next Question ➔')
                                   : (lang === 'ar' ? 'عرض النتيجة النهائية للتقييم ➔' : 'View Quiz Result ➔')}
                               </span>
@@ -3111,7 +3168,7 @@ function EduPathContent() {
                           <div className="qz-bottom-cards">
                             <div className="qz-card-mini">
                               <span className="qz-muted">{lang === 'ar' ? 'النتيجة' : 'Score'}</span>
-                              <div className="qz-score-number">{quizScore} <span>/ 6</span></div>
+                              <div className="qz-score-number">{quizScore} <span>/ {quiz.questions.length}</span></div>
                               <span className="qz-info-text">{lang === 'ar' ? 'الدرجة الحالية' : 'Current Score'}</span>
                             </div>
 
@@ -3156,10 +3213,10 @@ function EduPathContent() {
                             {lang === 'ar' ? 'اكتمل التقييم بنجاح!' : 'Quiz Completed!'}
                           </h3>
                           <div className="qz-score-number text-3xl mb-3">
-                            {quizScore} <span className="text-base opacity-60">/ 6</span>
+                            {quizScore} <span className="text-base opacity-60">/ {quiz.questions.length}</span>
                           </div>
                           <p className="text-xs text-white/80 max-w-md mx-auto mb-5 leading-relaxed">
-                            {quizScore >= 4
+                            {quizScore >= Math.max(1, Math.ceil(quiz.questions.length * 0.6))
                               ? (lang === 'ar' ? 'تهانينا! لقد حققت درجة النجاح في هذا الاختبار بنجاح.' : 'Congratulations! You passed this quiz.')
                               : (lang === 'ar' ? 'يمكنك إعادة المحاولة في أي وقت لتحسين النتيجة والمعدل.' : 'You can retry at any time to improve your score.')}
                           </p>
@@ -3205,11 +3262,11 @@ function EduPathContent() {
                           </h3>
                           <p className="text-xs text-white/90 max-w-lg mx-auto mb-4 leading-relaxed">
                             {lang === 'ar'
-                              ? 'يتكون هذا الاختبار من 6 أسئلة اختيار من متعدد، ولديك 15 ثانية لكل سؤال. ركز جيداً قبل البدء!'
-                              : 'This quiz has 6 multiple-choice questions (15 seconds per question). Focus and give your best!'}
+                              ? `يتكون هذا التقييم من ${quiz.questions.length} ${quiz.questions.length > 1 ? 'أسئلة' : 'سؤال'} اختيار من متعدد، ولديك 15 ثانية لكل سؤال. ركز جيداً قبل البدء!`
+                              : `This quiz has ${quiz.questions.length} multiple-choice ${quiz.questions.length > 1 ? 'questions' : 'question'} (15 seconds per question). Focus and give your best!`}
                           </p>
                           <div className="text-xl font-black text-white mb-4">
-                            ⏱️ {lang === 'ar' ? 'المدة الكلية: 90 ثانية' : 'Total Duration: 90s'}
+                            ⏱️ {lang === 'ar' ? `المدة الكلية: ${quiz.questions.length * 15} ثانية` : `Total Duration: ${quiz.questions.length * 15}s`}
                           </div>
                           <button
                             type="button"

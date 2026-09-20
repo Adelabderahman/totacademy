@@ -18,6 +18,9 @@ export interface QuizItem {
   passingScore: number;
   timeLimitSeconds?: number;
   questions: QuizQuestionItem[];
+  axes?: string[]; // 6 axes titles
+  axesQuestions?: Record<number, QuizQuestionItem[]>; // 6 axes × 6 questions each
+  reportSlideEnabled?: boolean; // Final report slide
 }
 
 export interface LessonItem {
@@ -43,6 +46,8 @@ export interface ModuleItem {
   moduleLabel: LocalizedString;
   title: LocalizedString;
   desc: LocalizedString;
+  summary?: LocalizedString; // Back of module card summary
+  interviewQuestion?: LocalizedString; // Oral / Comprehension interview question
   lessons: LessonItem[];
   quiz?: QuizItem;
 }
@@ -90,6 +95,12 @@ export interface TrackDefinition {
   durationHours: number;
   totalLessonsCount?: number;
   status: 'published' | 'draft';
+  // Front of card properties in Specializations page
+  isAvailable?: boolean; // متاح أو غير متاح
+  categoryBadgeText?: LocalizedString; // عبارة تكنولوجيا التي تظهر فوق الصورة في الزاوية
+  mode?: LocalizedString; // نمط التدريس: عن بعد / حضوري / هجين
+  modeKey?: 'remote' | 'onsite' | 'hybrid';
+  summary?: LocalizedString; // المقدمة الصغيرة حول المسار
   // Legacy single mentor support
   mentor: {
     name: LocalizedString;
@@ -118,9 +129,26 @@ export interface TrackDefinition {
     passingScore: number;
     timeMinutes: number;
     questions: QuizQuestionItem[];
+    axes?: string[]; // 8 axes for the 10 slides
+    axesQuestions?: Record<number, QuizQuestionItem[]>; // 8 axes × 5 questions each
+    submitSlideEnabled?: boolean; // Slide 10
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CertificateTemplateItem {
+  id: string;
+  title: LocalizedString;
+  trackKey: string;
+  codePrefix: string;
+  accreditedHours: number;
+  passingGrade: number;
+  issuer: LocalizedString;
+  signatureName: string;
+  signatureRole: string;
+  badge: string;
+  status: 'active' | 'draft';
 }
 
 export interface MagazineArticleItem {

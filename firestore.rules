@@ -74,5 +74,17 @@ service cloud.firestore {
       allow create, update: if isSignedIn() && isValidId(documentId);
       allow delete: if false;
     }
+
+    // Dynamic Curriculum Tracks (Public read, authenticated write)
+    match /tracks/{trackId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn() && isValidId(trackId);
+    }
+
+    // Dynamic Magazine Articles (Public read, authenticated write)
+    match /magazine_articles/{articleId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn() && isValidId(articleId);
+    }
   }
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   coreI18n,
@@ -17,11 +18,22 @@ import {
 import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 import { useUserAccount } from '@/context/UserAccountContext';
 import { useAuthModal } from '@/context/AuthModalContext';
+import { useCurriculum } from '@/context/CurriculumContext';
 
-export default function EduPathPage() {
+function EduPathContent() {
   const { language } = useLanguage();
   const lang = (language as LangKey) || 'ar';
   const strings = coreI18n[lang] || coreI18n.ar;
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const trackQuery = searchParams?.get('track') || searchParams?.get('id') || 'tot-foundation';
+  const { tracks, getTrack } = useCurriculum();
+
+  // Resolve active track dynamically from CurriculumContext
+  const activeTrack = useMemo(() => {
+    return getTrack(trackQuery) || tracks[0] || null;
+  }, [trackQuery, getTrack, tracks]);
 
   const {
     isAuthenticated,
@@ -37,7 +49,7 @@ export default function EduPathPage() {
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
 
-  const currentTrackKey = 'tot-foundation';
+  const currentTrackKey = activeTrack?.id || 'tot-foundation';
   const cleanTrackKey = currentTrackKey.replace(/^trk-/, '');
   const isConfirmed = isTrackConfirmed(currentTrackKey) || isTrackConfirmed(cleanTrackKey);
   const isEnrolledInCurrent = enrolledTracks.some(
@@ -362,8 +374,15 @@ export default function EduPathPage() {
     return calculateTotalProgress(completedLessons, completedQuizzes);
   }, [isEnrolled, completedLessons, completedQuizzes]);
 
-  // Current Active Module Data
-  const currentModulesList = levelModules[activeLevel] || levelModules.foundation;
+  // Current Active Module Data - dynamically pulled from activeTrack if present, else fallback
+  const currentModulesList = useMemo(() => {
+    const customMods = activeTrack?.levels?.[activeLevel]?.modules;
+    if (customMods && customMods.length > 0) {
+      return customMods as unknown as ModuleData[];
+    }
+    return levelModules[activeLevel] || levelModules.foundation;
+  }, [activeTrack, activeLevel]);
+
   const activeModule = useMemo(() => {
     return (
       currentModulesList.find((m) => m.id === activeModuleId) ||
@@ -372,15 +391,35 @@ export default function EduPathPage() {
     );
   }, [currentModulesList, activeModuleId]);
 
-  // Current Active Lessons
+  // Current Active Lessons - dynamically resolved
   const activeLessons = useMemo(() => {
+    const modLessons = (activeModule as any)?.lessons;
+    if (modLessons && modLessons.length > 0) {
+      return modLessons as unknown as LessonData[];
+    }
     return allLessonsDB[activeModule.id] || allLessonsDB.module_1;
-  }, [activeModule.id]);
+  }, [activeModule]);
 
   // Current Active Quizzes for this module and language
   const activeQuizzesList = useMemo(() => {
+    const modQuiz = (activeModule as any)?.quiz;
+    if (modQuiz?.questions && modQuiz.questions.length > 0) {
+      return [
+        {
+          id: modQuiz.id || 'qz_custom',
+          title: modQuiz.title?.[lang] || modQuiz.title?.ar || 'اختبار المقياس',
+          questions: modQuiz.questions.map((q: any) => ({
+            question: q.q,
+            options: q.options,
+            correctAnswerIndex: q.ans,
+            hint: q.hint || '',
+            explanation: q.explanation || '',
+          })),
+        },
+      ];
+    }
     return getQuizzesForModule(activeModule.id, lang);
-  }, [activeModule.id, lang]);
+  }, [activeModule, lang]);
 
   // Handle Track Deletion from Account (Only permitted before confirmation)
   const handleDeleteTrack = async () => {
@@ -1242,7 +1281,7 @@ export default function EduPathPage() {
       reportText += `${lang === 'ar' ? 'النسبة المئوية للمحور:' : 'Axis Score:'} ${axisPct}% | ${lang === 'ar' ? 'الحالة:' : 'Status:'} ${isDone ? (lang === 'ar' ? 'مكتمل' : 'Completed') : (lang === 'ar' ? 'قيد الإنجاز' : 'Pending')}\n`;
       reportText += `${lang === 'ar' ? 'الأسئلة الستة:' : '6 Questions:'}\n`;
 
-      q.questions.forEach((questionItem, qNum) => {
+      q.questions.forEach((questionItem: any, qNum: number) => {
         const qHist = hist?.questions[qNum];
         const hasAns = qHist !== undefined;
         const isCorr = hasAns ? qHist.isCorrect : isDone;
@@ -1877,7 +1916,7 @@ export default function EduPathPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {q.questions.map((questionItem, qNum) => {
+                      {q.questions.map((questionItem: any, qNum: number) => {
                         const qHist = hist?.questions[qNum];
                         const hasAnswered = qHist !== undefined;
                         const isCorrect = hasAnswered ? qHist.isCorrect : isDone;
@@ -2087,12 +2126,52 @@ export default function EduPathPage() {
             </div>
           </div>
 
+          {/* Dynamic Track Selector Bar */}
+          {tracks.length > 1 && (
+            <div className="mb-4 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between gap-3 flex-wrap animate-fadeIn">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <span>🎓</span>
+                  <span>{lang === 'ar' ? 'المسارات التدريبية المعتمدة:' : 'Curriculum Tracks:'}</span>
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {tracks.map((trk) => {
+                    const isActive = trk.id === currentTrackKey;
+                    return (
+                      <button
+                        key={trk.id}
+                        type="button"
+                        onClick={() => router.push(`/edupath?track=${trk.id}`)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-white/50'
+                            : 'bg-white/15 text-white hover:bg-white/25'
+                        }`}
+                      >
+                        <span className="font-mono text-[11px] opacity-90">{trk.badge}</span>
+                        <span className="truncate max-w-[140px] sm:max-w-none">{trk.title[lang] || trk.title.ar}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Link
+                href="/studio"
+                className="px-3 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/30 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+              >
+                <span>🎨</span>
+                <span>{lang === 'ar' ? 'استوديو إضافة وتعديل المسارات' : 'Tracks Studio'}</span>
+              </Link>
+            </div>
+          )}
+
           {/* Course Header Banner */}
           <div className="course-header">
             <div className="course-header-text">
-              <div className="course-badge">{strings.course_category}</div>
-              <h1 className="course-title">{strings.course_title}</h1>
-              <p className="course-desc">{strings.course_desc}</p>
+              <div className="course-badge">{activeTrack?.category?.[lang] || activeTrack?.badge || strings.course_category}</div>
+              <h1 className="course-title">{activeTrack?.title?.[lang] || activeTrack?.title?.ar || strings.course_title}</h1>
+              <p className="course-desc">{activeTrack?.desc?.[lang] || activeTrack?.desc?.ar || strings.course_desc}</p>
               <div className="hero-actions">
                 <a href="https://wa.me/213555989370" target="_blank" rel="noreferrer" className="btn-primary">
                   {strings.btn_contact}
@@ -2105,7 +2184,11 @@ export default function EduPathPage() {
 
             <div className="course-video-wrapper">
               <iframe
-                src="https://www.youtube.com/embed/PHya0gprvH8?rel=0&modestbranding=1"
+                src={
+                  activeLessons?.[0]?.video_id
+                    ? `https://www.youtube.com/embed/${activeLessons[0].video_id}?rel=0&modestbranding=1`
+                    : 'https://www.youtube.com/embed/PHya0gprvH8?rel=0&modestbranding=1'
+                }
                 title="Course Introduction"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -2776,7 +2859,7 @@ export default function EduPathPage() {
                             </p>
 
                             <div className="qz-options">
-                              {quiz.questions[questionIndex]?.options.map((opt, oIdx) => {
+                              {quiz.questions[questionIndex]?.options.map((opt: string, oIdx: number) => {
                                 const correctIdx = quiz.questions[questionIndex]?.ans;
                                 let btnClass = '';
                                 if (isAnswered) {
@@ -4302,5 +4385,22 @@ export default function EduPathPage() {
         {renderFullDetailedReport()}
       </div>
     </div>
+  );
+}
+
+export default function EduPathPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-tajawal">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs font-bold text-slate-300">جاري تحميل المسار التدريبي...</span>
+          </div>
+        </div>
+      }
+    >
+      <EduPathContent />
+    </React.Suspense>
   );
 }

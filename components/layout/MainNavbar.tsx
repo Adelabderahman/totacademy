@@ -26,6 +26,7 @@ export const MainNavbar: React.FC = () => {
     { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements') },
     { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs') },
     { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine') },
+    { href: '/studio', label: t('استوديو المحتوى', 'Studio CMS', 'Studio CMS') },
   ];
 
   return (

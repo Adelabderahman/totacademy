@@ -296,6 +296,14 @@
     "/cms/{documentId}": {
       "schema": "CMSConfig",
       "description": "Dynamic CMS settings and modules"
+    },
+    "/tracks/{trackId}": {
+      "schema": "object",
+      "description": "Dynamic accredited training track curriculum, modules, lessons, and quizzes"
+    },
+    "/magazine_articles/{articleId}": {
+      "schema": "object",
+      "description": "Trainer magazine editorial articles and publications"
     }
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   MAG_GROUPS,
@@ -269,6 +270,13 @@ export default function TrainerMagazinePage() {
             <Layers size={16} />
             <span>{t.issues_title}</span>
           </button>
+          <Link
+            href="/studio"
+            className="px-4 py-2.5 rounded-full bg-slate-900/10 hover:bg-slate-900/20 text-slate-800 text-xs font-bold border border-slate-300 transition flex items-center gap-1.5"
+          >
+            <span>🎨</span>
+            <span>{lang === 'ar' ? 'استوديو التحرير والمقالات' : 'Editorial Studio'}</span>
+          </Link>
         </div>
       </section>
 

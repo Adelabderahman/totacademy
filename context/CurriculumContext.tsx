@@ -79,7 +79,24 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const cached = localStorage.getItem(TRACKS_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const fullTot = buildComprehensiveTotTrack();
+            const totIndex = parsed.findIndex(
+              (t: TrackDefinition) => t.id === 'tot-foundation' || t.id === 'trk-tot-foundation'
+            );
+            if (totIndex === -1) {
+              parsed.unshift(fullTot);
+              localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
+            } else {
+              const currentTot = parsed[totIndex];
+              const fndCount = currentTot.levels?.foundation?.modules?.length || 0;
+              if (fndCount < 8 || !currentTot.levels?.empowerment || !currentTot.levels?.consolidation) {
+                parsed[totIndex] = fullTot;
+                localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
+              }
+            }
+            return parsed;
+          }
         }
       } catch (e) {
         console.warn('Error reading cached tracks:', e);

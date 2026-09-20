@@ -75,6 +75,7 @@ function EduPathContent() {
       activeTrack &&
       activeTrack.id !== 'tot-foundation' &&
       !activeTrack.title.ar.includes('التأصيلي الشامل') &&
+      !activeTrack.title.ar.includes('التأصيل الشامل') &&
       !activeTrack.title.ar.includes('TOTF126')
     ) {
       return false;
@@ -515,11 +516,25 @@ function EduPathContent() {
         },
       })) as ModuleData[];
     }
+
+    const canonicalMods = levelModules[activeLevel] || levelModules.foundation;
+    if (
+      isComprehensiveTotTrack ||
+      activeTrack?.id === 'tot-foundation' ||
+      activeTrack?.id === 'trk-tot-foundation'
+    ) {
+      const customMods = activeTrack?.levels?.[activeLevel]?.modules;
+      if (customMods && customMods.length >= canonicalMods.length) {
+        return customMods as unknown as ModuleData[];
+      }
+      return canonicalMods;
+    }
+
     const customMods = activeTrack?.levels?.[activeLevel]?.modules;
     if (customMods && customMods.length > 0) {
       return customMods as unknown as ModuleData[];
     }
-    return levelModules[activeLevel] || levelModules.foundation;
+    return canonicalMods;
   }, [isComprehensiveTotTrack, specTrackMatch, activeTrack, activeLevel, lang]);
 
   const activeModule = useMemo(() => {

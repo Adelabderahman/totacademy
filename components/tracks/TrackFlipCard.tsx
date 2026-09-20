@@ -42,6 +42,7 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
     track.id === 'tot-foundation' ||
     track.id === 'trk-tot-foundation' ||
     track.title.ar.includes('التأصيلي الشامل') ||
+    track.title.ar.includes('التأصيل الشامل') ||
     track.title.ar.includes('TOTF126') ||
     (spec.key === 'tot' && (track.id === 'tot-foundation' || !track.id));
 

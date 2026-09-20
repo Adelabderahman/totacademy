@@ -1,3 +1,5 @@
+export type LangKey = 'ar' | 'en' | 'fr';
+
 export interface LocalizedString {
   ar: string;
   en: string;
@@ -37,6 +39,8 @@ export interface LessonItem {
   contentMarkdown?: string;
   resources?: { name: string; url: string; type: string }[];
 }
+
+export type LessonData = LessonItem;
 
 export interface ModuleItem {
   id: string;

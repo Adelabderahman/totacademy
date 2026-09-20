@@ -38,15 +38,16 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
   const durationUnit = language === 'ar' ? 'سا' : language === 'fr' ? 'h' : 'hrs';
   const durationLabel = `${track.duration} ${durationUnit}`;
 
-  const isTotTrack =
+  const isComprehensiveTotTrack =
+    track.id === 'tot-foundation' ||
     track.id === 'trk-tot-foundation' ||
-    track.title.ar.includes('تدريب المدربين') ||
-    track.title.en.toLowerCase().includes('tot') ||
-    spec.key === 'tot';
+    track.title.ar.includes('التأصيلي الشامل') ||
+    track.title.ar.includes('TOTF126') ||
+    (spec.key === 'tot' && (track.id === 'tot-foundation' || !track.id));
 
-  // Bind metrics directly to the actual 3 levels from levelModules in lib/edupath-data.ts
+  // Bind metrics directly to the actual 3 levels from levelModules in lib/edupath-data.ts for TOT track
   let currentLevelMetrics: string[] = [];
-  if (isTotTrack) {
+  if (isComprehensiveTotTrack) {
     const moduleLevelKey =
       activeLevel === 'foundation'
         ? 'foundation'
@@ -65,7 +66,7 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
       [];
   }
 
-  const targetTrackId = track.id || `trk-${encodeURIComponent(track.title.ar.substring(0, 15))}`;
+  const targetTrackId = isComprehensiveTotTrack ? 'tot-foundation' : (track.id || `trk-${encodeURIComponent(track.title.ar.substring(0, 15))}`);
   const trackEduPathUrl = `/edupath?track=${encodeURIComponent(targetTrackId)}`;
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -84,7 +85,7 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
     e.stopPropagation();
 
     if (isAuthenticated) {
-      // User is logged in: enroll in this track and navigate directly to edupath
+      // User is logged in: enroll in this track in the background and navigate directly to edupath
       try {
         await enrollInTrack({
           id: targetTrackId,
@@ -96,40 +97,18 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
           enrolledAt: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
           progress: 0,
           status: 'in_progress',
-          nextSessionAr: 'الوحدة 1: المدخل التأسيسي وبناء الإطار العام',
-          nextSessionEn: 'Module 1: Foundation Overview',
+          nextSessionAr: isComprehensiveTotTrack ? 'الوحدة 1: المدخل التأسيسي وبناء الإطار العام' : 'قريباً: اعتماد المسار وتدشين البرنامج',
+          nextSessionEn: isComprehensiveTotTrack ? 'Module 1: Foundation Overview' : 'Track Accreditation Coming Soon',
           mentorName: track.trainers?.[0]?.name ? getTrainerName(track.trainers[0].name, language) : 'فريق المدربين بالأكاديمية',
-          badge: spec.name.ar.slice(0, 8),
-          totalLessons: 12,
+          badge: isComprehensiveTotTrack ? 'TOT/P-F' : (track.id?.toUpperCase() || spec.name.ar.slice(0, 8)),
+          totalLessons: isComprehensiveTotTrack ? 96 : 12,
           completedLessons: 0,
         });
       } catch (err) {
         console.warn('Track enrollment warning:', err);
       }
-      router.push(trackEduPathUrl);
-    } else {
-      // User is NOT logged in: show registration requirement notice and open auth modal
-      const noticeMsg =
-        language === 'ar'
-          ? `يرجى تسجيل الدخول أو إنشاء حساب جديد للبدء في مسار "${title}"، وبمجرد التسجيل ستدخل مباشرة لصفحة المسار التعليمي.`
-          : `Please sign in or create an account to start the "${title}" track. Once registered, you will enter the learning path directly.`;
-
-      openAuthModal(
-        'register',
-        trackEduPathUrl,
-        noticeMsg,
-        {
-          id: targetTrackId,
-          trackKey: targetTrackId,
-          titleAr: track.title.ar,
-          titleEn: track.title.en,
-          categoryAr: spec.name.ar,
-          categoryEn: spec.name.en,
-          mentorName: track.trainers?.[0]?.name ? getTrainerName(track.trainers[0].name, language) : undefined,
-          badge: spec.name.ar.slice(0, 8),
-        }
-      );
     }
+    router.push(trackEduPathUrl);
   };
 
   return (
@@ -144,8 +123,10 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
             <img src={track.image} alt={title} loading="lazy" />
             <div className="fc-overlay" />
             <div className="fc-banner-top">
-              <span className={`fc-status ${track.statusKey === 'completed' ? 'completed' : ''}`}>
-                {statusText}
+              <span className={`fc-status ${isComprehensiveTotTrack ? 'completed' : '!bg-amber-400 !text-slate-950 font-black'}`}>
+                {isComprehensiveTotTrack
+                  ? statusText
+                  : (language === 'ar' ? '⏳ عن قريب الاعتماد' : '⏳ Accreditation Pending')}
               </span>
               <span className="fc-spec-badge">
                 {spec.icon} {specName}
@@ -256,10 +237,14 @@ export default function TrackFlipCard({ track, spec }: TrackFlipCardProps) {
           <div className="fc-back-footer">
             <button
               type="button"
-              className="fc-cta fc-back-cta cursor-pointer transition-transform active:scale-95"
+              className={`fc-cta fc-back-cta cursor-pointer transition-transform active:scale-95 ${
+                !isComprehensiveTotTrack ? '!bg-amber-400 !text-slate-950 font-bold' : ''
+              }`}
               onClick={handleStartTraining}
             >
-              {t.fc_back_cta}
+              {isComprehensiveTotTrack
+                ? t.fc_back_cta
+                : (language === 'ar' ? 'استعراض المسار (عن قريب الاعتماد)' : 'View Track (Accreditation Pending)')}
             </button>
           </div>
         </div>

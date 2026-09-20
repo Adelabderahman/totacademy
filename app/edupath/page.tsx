@@ -19,6 +19,7 @@ import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
 import { useUserAccount } from '@/context/UserAccountContext';
 import { useAuthModal } from '@/context/AuthModalContext';
 import { useCurriculum } from '@/context/CurriculumContext';
+import { SPECIALIZATIONS, getTrainerName } from '@/data/tracksData';
 
 function EduPathContent() {
   const { language } = useLanguage();
@@ -30,10 +31,119 @@ function EduPathContent() {
   const trackQuery = searchParams?.get('track') || searchParams?.get('id') || 'tot-foundation';
   const { tracks, getTrack } = useCurriculum();
 
+  // Match specialization track if selected from /specializations
+  const specTrackMatch = useMemo(() => {
+    if (!trackQuery) return null;
+    const clean = trackQuery.replace(/^trk-/, '').toLowerCase();
+    for (const spec of SPECIALIZATIONS) {
+      for (const trk of spec.tracks) {
+        if (
+          trk.id?.toLowerCase() === clean ||
+          trk.id?.toLowerCase() === trackQuery.toLowerCase() ||
+          trk.title.ar.includes(trackQuery)
+        ) {
+          return { track: trk, spec };
+        }
+      }
+    }
+    return null;
+  }, [trackQuery]);
+
   // Resolve active track dynamically from CurriculumContext
   const activeTrack = useMemo(() => {
     return getTrack(trackQuery) || tracks[0] || null;
   }, [trackQuery, getTrack, tracks]);
+
+  // Is this the fully implemented Comprehensive Foundational TOT Track (TOTF126)?
+  const isComprehensiveTotTrack = useMemo(() => {
+    const clean = (trackQuery || '').replace(/^trk-/, '').toLowerCase();
+    if (!clean || clean === 'tot-foundation' || clean === 'tot' || clean === 'totf126') {
+      return true;
+    }
+    if (specTrackMatch && specTrackMatch.track.id !== 'tot-foundation') {
+      return false;
+    }
+    if (
+      clean.startsWith('tech-') ||
+      clean.startsWith('marketing-') ||
+      clean.startsWith('media-') ||
+      clean.startsWith('creativity-')
+    ) {
+      return false;
+    }
+    if (
+      activeTrack &&
+      activeTrack.id !== 'tot-foundation' &&
+      !activeTrack.title.ar.includes('التأصيلي الشامل') &&
+      !activeTrack.title.ar.includes('TOTF126')
+    ) {
+      return false;
+    }
+    return true;
+  }, [trackQuery, specTrackMatch, activeTrack]);
+
+  const displayTitle = useMemo(() => {
+    if (!isComprehensiveTotTrack && specTrackMatch) {
+      return specTrackMatch.track.title[lang] || specTrackMatch.track.title.ar;
+    }
+    return activeTrack?.title?.[lang] || activeTrack?.title?.ar || strings.course_title;
+  }, [isComprehensiveTotTrack, specTrackMatch, activeTrack, lang, strings]);
+
+  const displayCategory = useMemo(() => {
+    if (!isComprehensiveTotTrack && specTrackMatch) {
+      return specTrackMatch.spec.name[lang] || specTrackMatch.spec.name.ar;
+    }
+    return activeTrack?.category?.[lang] || activeTrack?.badge || strings.course_category;
+  }, [isComprehensiveTotTrack, specTrackMatch, activeTrack, lang, strings]);
+
+  const displayDesc = useMemo(() => {
+    if (!isComprehensiveTotTrack && specTrackMatch) {
+      return specTrackMatch.track.summary[lang] || specTrackMatch.track.summary.ar;
+    }
+    return activeTrack?.desc?.[lang] || activeTrack?.desc?.ar || strings.course_desc;
+  }, [isComprehensiveTotTrack, specTrackMatch, activeTrack, lang, strings]);
+
+  // Reusable accreditation notice banner for pending non-foundational tracks
+  const renderAccreditationBanner = (sectionTitle?: string, sectionDesc?: string) => (
+    <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border-2 border-amber-400/50 text-white shadow-xl relative overflow-hidden backdrop-blur-md animate-fadeIn">
+      <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10">
+        <div className="w-14 h-14 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-3xl shrink-0 shadow-inner text-amber-300">
+          ⏳
+        </div>
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow-xs">
+              {lang === 'ar' ? 'عن قريب اعتماد المسار' : 'Accreditation Pending / Coming Soon'}
+            </span>
+            <span className="text-xs text-amber-300 font-bold">
+              {lang === 'ar' ? '• الهيئة العلمية للأكاديمية' : '• Academic Review Board'}
+            </span>
+          </div>
+          <h4 className="text-base sm:text-lg font-bold text-white pt-1">
+            {sectionTitle || (lang === 'ar' ? 'عن قريب اعتماد المسار' : 'Track Accreditation Pending')}
+          </h4>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+            {sectionDesc ||
+              (lang === 'ar'
+                ? 'يجري حالياً التحكيم والاعتماد الأكاديمي النهائي لهذا المسار من قبل الهيئة العلمية للأكاديمية وسيتم تدشين كافة المستويات، المقاييس، الحقائب التدريبية والاختبارات قريباً.'
+                : 'Official academic review and accreditation for this track are currently underway. Full modules, quizzes, and exams will be launched very soon.')}
+          </p>
+        </div>
+        <div className="shrink-0 w-full sm:w-auto pt-2 sm:pt-0">
+          <a
+            href="https://wa.me/213555989370?text=استفسار_عن_موعد_اعتماد_المسار"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow transition active:scale-95 w-full sm:w-auto"
+          >
+            <span>📲</span>
+            <span>{lang === 'ar' ? 'إشعارني فور الاعتماد' : 'Notify Me'}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
 
   const {
     isAuthenticated,
@@ -374,14 +484,43 @@ function EduPathContent() {
     return calculateTotalProgress(completedLessons, completedQuizzes);
   }, [isEnrolled, completedLessons, completedQuizzes]);
 
-  // Current Active Module Data - dynamically pulled from activeTrack if present, else fallback
+  // Current Active Module Data - dynamically pulled from activeTrack or specialization track
   const currentModulesList = useMemo(() => {
+    if (!isComprehensiveTotTrack && specTrackMatch) {
+      const specLevelKey = activeLevel === 'foundation' ? 'foundation' : activeLevel === 'empowerment' ? 'enable' : 'reinforce';
+      const metrics =
+        (specTrackMatch.track.levels?.[specLevelKey] &&
+          (specTrackMatch.track.levels[specLevelKey][lang] || specTrackMatch.track.levels[specLevelKey].ar)) ||
+        [];
+      const icons = ['💡', '📐', '🎯', '⚙️', '📊', '🚀', '🔍', '🏆'];
+      return metrics.map((metricTitle: string, idx: number) => ({
+        id: `spec_mod_${idx + 1}`,
+        num: `0${idx + 1}`,
+        icon: icons[idx % icons.length],
+        gradient: 'linear-gradient(135deg, #1e293b, #0f172a)',
+        moduleLabel: {
+          ar: `المقياس 0${idx + 1}`,
+          en: `Metric 0${idx + 1}`,
+          fr: `Métrique 0${idx + 1}`,
+        },
+        title: {
+          ar: metricTitle,
+          en: metricTitle,
+          fr: metricTitle,
+        },
+        desc: {
+          ar: `مقياس "${metricTitle}" ضمن المستوى المحدد لهذا التخصص، وهو قيد الاعتماد الأكاديمي النهائي وسيدشن قريباً.`,
+          en: `Metric "${metricTitle}" is part of this specialization curriculum, currently undergoing academic accreditation.`,
+          fr: `Métrique "${metricTitle}" en cours d'accréditation académique.`,
+        },
+      })) as ModuleData[];
+    }
     const customMods = activeTrack?.levels?.[activeLevel]?.modules;
     if (customMods && customMods.length > 0) {
       return customMods as unknown as ModuleData[];
     }
     return levelModules[activeLevel] || levelModules.foundation;
-  }, [activeTrack, activeLevel]);
+  }, [isComprehensiveTotTrack, specTrackMatch, activeTrack, activeLevel, lang]);
 
   const activeModule = useMemo(() => {
     return (
@@ -2126,52 +2265,20 @@ function EduPathContent() {
             </div>
           </div>
 
-          {/* Dynamic Track Selector Bar */}
-          {tracks.length > 1 && (
-            <div className="mb-4 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between gap-3 flex-wrap animate-fadeIn">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>🎓</span>
-                  <span>{lang === 'ar' ? 'المسارات التدريبية المعتمدة:' : 'Curriculum Tracks:'}</span>
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {tracks.map((trk) => {
-                    const isActive = trk.id === currentTrackKey;
-                    return (
-                      <button
-                        key={trk.id}
-                        type="button"
-                        onClick={() => router.push(`/edupath?track=${trk.id}`)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                          isActive
-                            ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-white/50'
-                            : 'bg-white/15 text-white hover:bg-white/25'
-                        }`}
-                      >
-                        <span className="font-mono text-[11px] opacity-90">{trk.badge}</span>
-                        <span className="truncate max-w-[140px] sm:max-w-none">{trk.title[lang] || trk.title.ar}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Link
-                href="/studio"
-                className="px-3 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/30 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
-              >
-                <span>🎨</span>
-                <span>{lang === 'ar' ? 'استوديو إضافة وتعديل المسارات' : 'Tracks Studio'}</span>
-              </Link>
-            </div>
-          )}
-
           {/* Course Header Banner */}
           <div className="course-header">
             <div className="course-header-text">
-              <div className="course-badge">{activeTrack?.category?.[lang] || activeTrack?.badge || strings.course_category}</div>
-              <h1 className="course-title">{activeTrack?.title?.[lang] || activeTrack?.title?.ar || strings.course_title}</h1>
-              <p className="course-desc">{activeTrack?.desc?.[lang] || activeTrack?.desc?.ar || strings.course_desc}</p>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <div className="course-badge">{displayCategory}</div>
+                {!isComprehensiveTotTrack && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black shadow-md animate-pulse">
+                    <span>⏳</span>
+                    <span>{lang === 'ar' ? 'عن قريب اعتماد المسار' : 'Accreditation Pending'}</span>
+                  </span>
+                )}
+              </div>
+              <h1 className="course-title">{displayTitle}</h1>
+              <p className="course-desc">{displayDesc}</p>
               <div className="hero-actions">
                 <a href="https://wa.me/213555989370" target="_blank" rel="noreferrer" className="btn-primary">
                   {strings.btn_contact}
@@ -2256,7 +2363,41 @@ function EduPathContent() {
         )}
 
         {/* ================= Interactive Enrollment & Progress Status Bar ================= */}
-        {isConfirmed ? (
+        {!isComprehensiveTotTrack ? (
+          <div className="mb-6 p-5 sm:p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-400 text-slate-900 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-2xl font-black shrink-0 shadow-sm">
+                ⏳
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    {lang === 'ar' ? 'عن قريب اعتماد المسار التدريبي' : 'Track Accreditation Pending'}
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-xs font-black shadow-xs">
+                    {lang === 'ar' ? 'قيد التدقيق الأكاديمي' : 'Under Academic Review'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
+                  {lang === 'ar'
+                    ? 'هذا المسار التخصصي يخضع حالياً لعمليات الاعتماد والمطابقة الأكاديمية بالتعاون مع الهيئة العلمية للأكاديمية. يمكنك استعراض بنية المستويات والمقاييس المستهدفة أدناه، وستفتح المنصة كافة الدروس والتقييمات والشهادات فور التدشين الرسمي.'
+                    : 'This specialization track is undergoing official academic accreditation. Metric outlines can be browsed below; training modules and exams will unlock upon official release.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+              <a
+                href="https://wa.me/213555989370?text=استفسار_عن_موعد_اعتماد_المسار"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition flex items-center justify-center gap-2"
+              >
+                <span>📲</span>
+                <span>{lang === 'ar' ? 'التواصل مع المشرف الأكاديمي' : 'Contact Supervisor'}</span>
+              </a>
+            </div>
+          </div>
+        ) : isConfirmed ? (
           <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-emerald-50/95 border-2 border-emerald-400 text-emerald-950 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-start sm:items-center gap-3">
               <span className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs shadow flex items-center gap-1.5 shrink-0">
@@ -2386,6 +2527,13 @@ function EduPathContent() {
         {/* ================= 4. Modules Grid (Flip Cards) ================= */}
         <div className="mb-12" id="modules-group">
           <h2 className="modules-section-title">{strings.modules_title}</h2>
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار ومقاييس المستويات الثلاثة' : 'Levels & Metrics Accreditation Pending',
+              lang === 'ar'
+                ? 'المقاييس المبرمجة لمستويات هذا المسار (تأسيس، تمكين، تمتين) موضحة أدناه وهي في مرحلة التدقيق والمصادقة الأكاديمية النهائية.'
+                : 'The curriculum metrics for the 3 levels (Foundation, Empowerment, Consolidation) are outlined below and currently undergoing accreditation.'
+            )}
           <div className="modules-grid" id="course-modules-grid">
             {currentModulesList.map((m) => {
               const isFlipped = !!flippedModules[m.id];
@@ -2437,13 +2585,17 @@ function EduPathContent() {
                       <p className="module-desc">{m.desc[lang]}</p>
                       <button
                         type="button"
-                        className="btn-start-module"
+                        className={`btn-start-module ${!isComprehensiveTotTrack ? '!bg-amber-400 !text-slate-950 font-bold' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSelectModule(m.id);
                         }}
                       >
-                        <span>{strings.btn_start_study}</span>
+                        <span>
+                          {!isComprehensiveTotTrack
+                            ? (lang === 'ar' ? '⏳ عن قريب الاعتماد' : '⏳ Pending Accreditation')
+                            : strings.btn_start_study}
+                        </span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={lang === 'ar' ? 'scale-x-[-1]' : ''}>
                           <path d="M5 12h14" />
                           <path d="M12 5l7 7-7 7" />
@@ -2465,6 +2617,14 @@ function EduPathContent() {
             </h2>
             <p className="text-white/80 text-sm max-w-2xl mx-auto">{activeModule.desc[lang]}</p>
           </div>
+
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - الحقائب التدريبية والدروس' : 'Lessons & Training Kits Accreditation Pending',
+              lang === 'ar'
+                ? `الحقائب التدريبية، الدروس المصورة، والملفات التفاعلية لمقياس "${activeModule.title[lang]}" تخضع للمراجعة والاعتماد الأكاديمي وستفتح فور اعتماد المسار.`
+                : `Interactive training modules and video lessons for "${activeModule.title[lang]}" are undergoing final accreditation and will open upon track release.`
+            )}
 
           {/* Global Progress Track */}
           <div id="edu-global-progress">
@@ -2593,6 +2753,14 @@ function EduPathContent() {
             <span>🎯</span>
             <span>{strings.quiz_section_title}</span>
           </h2>
+
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - بنك الاختبارات والتقييمات' : 'Quizzes & Evaluations Accreditation Pending',
+              lang === 'ar'
+                ? 'بنك الاختبارات والمقاييس التقييمية الخاصة بهذا المسار يجري اعتماده الأكاديمي حالياً وسيتم إتاحته للمتدربين فور اعتماد المسار رسمياً.'
+                : 'The quizzes and assessment questions for this track are currently under peer review and academic accreditation.'
+            )}
 
           <div className="quiz-layout" id="quiz-master-layout">
             {/* Sidebar Tabs */}
@@ -3334,6 +3502,14 @@ function EduPathContent() {
             <span>{strings.interrogation_section_title}</span>
           </h2>
 
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - لجان التحكيم واستجواب المقاييس' : 'Interrogation & Oral Evaluation Accreditation Pending',
+              lang === 'ar'
+                ? 'استمارات استجواب المقاييس وجلسات التقييم الشفهي مع المشرفين المعتمدين ستفتح بعد التدشين الرسمي للمسار.'
+                : 'Oral interview rubrics and module interrogations with academic supervisors will open upon official track release.'
+            )}
+
           <div className="fe-layout">
             <div className="fe-sidebar">
               <h3 className="text-sm font-bold text-accent-yellow mb-2">
@@ -3409,7 +3585,15 @@ function EduPathContent() {
             <span>{strings.fe_title}</span>
           </h2>
 
-          {!isConfirmed && (
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - الامتحان العام الشامل والتقييم النهائي' : 'Comprehensive Final Exam Accreditation Pending',
+              lang === 'ar'
+                ? 'الامتحان العام الشامل لنيل شهادة هذا المسار التخصصي يخضع حالياً لضبط وتدقيق بنوك الأسئلة وموازين الدرجات وسيتم إطلاقه رسمياً قريباً.'
+                : 'The comprehensive final exam for this specialization track is undergoing academic moderation and will launch soon.'
+            )}
+
+          {isComprehensiveTotTrack && !isConfirmed && (
             <div className="mb-4 p-4 rounded-2xl bg-amber-500/20 border border-amber-400/50 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">⚠️</span>
@@ -3840,6 +4024,14 @@ function EduPathContent() {
             </div>
           </div>
 
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - ورشات التدريب المباشرة والمحاضرات' : 'Direct Training & Workshops Accreditation Pending',
+              lang === 'ar'
+                ? 'جداول مواعيد الورشات الحضورية وجلسات المناقشة التفاعلية مع الخبراء لهذا المسار ستعلن وتفتح للمشتركين فور اعتماد المسار.'
+                : 'Workshop schedules and live expert sessions will open upon track accreditation.'
+            )}
+
           <div className="grand-alert alert-blue mb-3 sm:mb-6">
             {strings.dt_part1_alert}
           </div>
@@ -4013,7 +4205,15 @@ function EduPathContent() {
             </div>
           </div>
 
-          {!isConfirmed && (
+          {!isComprehensiveTotTrack &&
+            renderAccreditationBanner(
+              lang === 'ar' ? 'عن قريب اعتماد المسار - الشهادة الرسمية والاعتماد الدولي' : 'Accredited Certification Pending',
+              lang === 'ar'
+                ? 'الشهادات المعتمدة من الأكاديمية ونماذج الاعتماد الدولي الخاصة بهذا المسار التخصصي ستكون متاحة للإصدار والتحقق الرقمي فور صدور قرار الاعتماد الرسمي.'
+                : 'Accredited certificates and international credentials for this specialization will be issued immediately upon track accreditation.'
+            )}
+
+          {isComprehensiveTotTrack && !isConfirmed && (
             <div className="mb-4 p-4 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">⚠️</span>

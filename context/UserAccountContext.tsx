@@ -396,6 +396,16 @@ const UserAccountContext = createContext<UserAccountContextType | undefined>(und
 const STORAGE_KEY = 'tot_user_profile_v2';
 const AUTH_STATE_KEY = 'tot_auth_state_v2';
 
+const setAuthCookie = (email?: string | null) => {
+  if (typeof document !== 'undefined') {
+    if (email) {
+      document.cookie = `tot_user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
+    } else {
+      document.cookie = 'tot_user_email=; path=/; max-age=0; SameSite=Lax';
+    }
+  }
+};
+
 export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER_PROFILE);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -416,7 +426,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     try {
       const savedUser = localStorage.getItem(STORAGE_KEY);
       if (savedUser) {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+        if (parsed.email) setAuthCookie(parsed.email);
       }
       const savedAuth = localStorage.getItem(AUTH_STATE_KEY);
       if (savedAuth !== null) {
@@ -455,6 +467,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           const remoteProfile = await fetchUserProfileFromFirestore(fUser.uid);
           if (remoteProfile) {
             setUser(remoteProfile);
+            if (remoteProfile.email) setAuthCookie(remoteProfile.email);
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProfile));
             } catch {}
@@ -481,6 +494,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
               status: 'active',
             };
             setUser(newProfile);
+            if (newProfile.email) setAuthCookie(newProfile.email);
             await saveUserProfileToFirestore(newProfile).catch(() => {});
           }
 
@@ -660,6 +674,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       setUser(newProfile);
       setIsAuthenticated(true);
+      setAuthCookie(email);
       setEnrolledTracks([]);
       setCertificates([]);
       setAppointments([]);
@@ -737,6 +752,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       setIsAuthenticated(true);
       const updated = { ...user, email };
       setUser(updated);
+      setAuthCookie(email);
       try {
         localStorage.setItem(AUTH_STATE_KEY, 'true');
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -1200,6 +1216,7 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       setConfirmedEnrollments({});
       setCertificates([]);
       setAppointments([]);
+      setAuthCookie(null);
       try {
         localStorage.setItem(AUTH_STATE_KEY, 'false');
         localStorage.removeItem(STORAGE_KEY);

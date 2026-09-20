@@ -1,15 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
+import { useCurriculum } from '@/context/CurriculumContext';
 
 export const MainNavbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { user, isAuthenticated } = useUserAccount();
+  const { isUserAdmin } = useCurriculum();
+
+  const isAdmin = useMemo(() => {
+    return isAuthenticated && isUserAdmin(user?.email);
+  }, [isAuthenticated, isUserAdmin, user?.email]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,15 +27,27 @@ export const MainNavbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
-    { href: '/', label: t('الرئيسية', 'Home', 'Accueil') },
-    { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications') },
-    { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations') },
-    { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements') },
-    { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs') },
-    { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine') },
-    { href: '/studio', label: t('استوديو المحتوى', 'Studio CMS', 'Studio CMS') },
-  ];
+  const navItems = useMemo(() => {
+    const items = [
+      { href: '/', label: t('الرئيسية', 'Home', 'Accueil') },
+      { href: '/certificates', label: t('الشهادات والاعتمادات', 'Certificates', 'Certifications') },
+      { href: '/specializations', label: t('التخصصات والمسارات', 'Specializations', 'Spécialisations') },
+      { href: '/events', label: t('الفعاليات والمواعيد', 'Events', 'Événements') },
+      { href: '/trainers', label: t('نخبة المدربين', 'Trainers', 'Formateurs') },
+      { href: '/trainer-magazine', label: t('مجلة المدرب', 'Magazine', 'Magazine') },
+    ];
+
+    // Studio / Dashboard link ONLY appears for authorized admins
+    if (isAdmin) {
+      items.push({
+        href: '/studio',
+        label: t('لوحة التحكم', 'Dashboard', 'Tableau de bord'),
+        isAdmin: true,
+      } as any);
+    }
+
+    return items;
+  }, [t, isAdmin]);
 
   return (
     <header className="hidden lg:block sticky top-[48px] w-full z-40 py-2 transition-all duration-300">
@@ -57,19 +77,27 @@ export const MainNavbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <ul className="hidden lg:flex items-center gap-6 list-none m-0 p-0">
+          <ul className="hidden lg:flex items-center gap-5 list-none m-0 p-0">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const isItemAdmin = (item as any).isAdmin;
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`text-sm font-semibold transition-all py-1 px-1.5 relative ${
-                      isActive
+                    className={`text-sm font-semibold transition-all py-1 px-2 rounded-lg flex items-center gap-1.5 relative ${
+                      isItemAdmin
+                        ? isActive
+                          ? 'bg-amber-500 text-white font-bold shadow-xs'
+                          : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300/80'
+                        : isActive
                         ? 'text-primary-blue font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-blue after:rounded-full'
                         : 'text-text-dark hover:text-primary-blue'
                     }`}
                   >
+                    {isItemAdmin && (
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    )}
                     {item.label}
                   </Link>
                 </li>
@@ -100,18 +128,28 @@ export const MainNavbar: React.FC = () => {
           <div className="lg:hidden mt-4 pt-4 border-t border-border-color flex flex-col gap-2 animate-fadeIn">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const isItemAdmin = (item as any).isAdmin;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    isActive
+                  className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-between ${
+                    isItemAdmin
+                      ? isActive
+                        ? 'bg-amber-500 text-white font-extrabold'
+                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                      : isActive
                       ? 'bg-blue-50 text-primary-blue font-extrabold'
                       : 'text-text-dark hover:bg-slate-50'
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {isItemAdmin && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold">
+                      Admin
+                    </span>
+                  )}
                 </Link>
               );
             })}

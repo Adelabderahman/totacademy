@@ -71,20 +71,32 @@ service cloud.firestore {
     // CMS Studio settings
     match /cms/{documentId} {
       allow get, list: if true;
-      allow create, update: if isSignedIn() && isValidId(documentId);
+      allow create, update: if isValidId(documentId);
       allow delete: if false;
     }
 
-    // Dynamic Curriculum Tracks (Public read, authenticated write)
+    // Dynamic Curriculum Tracks (Public read, valid ID write)
     match /tracks/{trackId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && isValidId(trackId);
+      allow create, update, delete: if isValidId(trackId);
     }
 
-    // Dynamic Magazine Articles (Public read, authenticated write)
+    // Dynamic Magazine Articles (Public read, valid ID write)
     match /magazine_articles/{articleId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && isValidId(articleId);
+      allow create, update, delete: if isValidId(articleId);
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(eventId);
+    }
+
+    // Trainers Collection
+    match /trainers/{trainerId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(trainerId);
     }
   }
 }

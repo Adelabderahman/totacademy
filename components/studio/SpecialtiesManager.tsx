@@ -11,7 +11,7 @@ interface SpecialtiesManagerProps {
 }
 
 export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowToast }) => {
-  const { tracks, saveTrack, deleteTrack } = useCurriculum();
+  const { tracks, saveTrack, deleteTrack, seedComprehensiveTrackToDatabase } = useCurriculum();
 
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +21,30 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
   const [editingCardTrack, setEditingCardTrack] = useState<TrackDefinition | null>(null);
   const [editingContentTrack, setEditingContentTrack] = useState<TrackDefinition | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync / Seed Comprehensive Foundational Track to database (Firestore)
+  const handleSyncComprehensiveTrack = async () => {
+    if (
+      !confirm(
+        'هل تريد تثبيت ومزامنة كامل محتويات "المسار التأصيلي الشامل لتدريب المدربين TOTF126" (3 مستويات، 24 مقياساً تدريبياً، 288 درساً، والاختبار الشامل) في قاعدة البيانات السحابية (Firestore)؟'
+      )
+    ) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res = await seedComprehensiveTrackToDatabase();
+      if (res.success) {
+        onShowToast('✅ تم بنجاح تهيئة وتثبيت المسار التأصيلي الشامل (24 مقياساً و 288 درساً) في قاعدة البيانات (Firestore)!');
+      } else {
+        alert(res.error || 'حدث خطأ أثناء تهيئة المسار');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'فشل الاتصال بقاعدة البيانات');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // New track creator
   const handleCreateTrack = () => {
@@ -166,12 +190,26 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
           </p>
         </div>
 
-        <button
-          onClick={handleCreateTrack}
-          className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-900/30 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
-        >
-          <span>+ إضافة مسار تدريبي جديد</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleSyncComprehensiveTrack}
+            disabled={isSaving}
+            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 disabled:opacity-50"
+            title="تثبيت ومزامنة كامل محتويات المسار التأصيلي الشامل (24 مقياساً، 288 درساً، والاختبار الشامل) في Firestore"
+          >
+            <span>⚡</span>
+            <span>مزامنة المسار التأصيلي الشامل (Firestore)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCreateTrack}
+            className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-900/30 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
+          >
+            <span>+ إضافة مسار تدريبي جديد</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}

@@ -112,6 +112,12 @@ export interface TrackDefinition {
   trainers?: TrackTrainerItem[];
   // Registration confirmation banner settings
   confirmationBanner?: TrackConfirmationBanner;
+  // Back of card metrics
+  backMetrics?: {
+    foundation?: string[];
+    empowerment?: string[];
+    consolidation?: string[];
+  };
   // Accreditation & Certificate details
   certificateDetails?: {
     title?: LocalizedString;

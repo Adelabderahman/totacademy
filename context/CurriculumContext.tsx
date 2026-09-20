@@ -11,6 +11,7 @@ import {
   TrackTrainerItem,
 } from '@/types/curriculum';
 import { initialTracksData, initialMagazineArticles } from '@/data/seed-tracks';
+import { buildComprehensiveTotTrack } from '@/lib/seed-comprehensive-track';
 import {
   defaultHomeSettings,
   defaultSiteSettings,
@@ -57,6 +58,7 @@ interface CurriculumContextType {
   isUserAdmin: (email?: string | null) => boolean;
   resetToDefaults: () => Promise<void>;
   resetToSeedData: () => Promise<{ success: boolean; error?: string }>;
+  seedComprehensiveTrackToDatabase: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined);
@@ -258,7 +260,18 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             snapshot.forEach((docSnap) => {
               remoteTracks.push({ ...(docSnap.data() as TrackDefinition), id: docSnap.id });
             });
-            setTracks(remoteTracks);
+
+            // If tot-foundation in remote database is missing or is an incomplete legacy stub, upgrade it to the full comprehensive track
+            const totTrack = remoteTracks.find((t) => t.id === 'tot-foundation');
+            const isStub = !totTrack || !totTrack.levels?.empowerment || (totTrack.levels?.foundation?.modules?.length || 0) < 8;
+            if (isStub) {
+              const fullTot = buildComprehensiveTotTrack();
+              setDoc(doc(firestore, 'tracks', fullTot.id), fullTot).catch(console.warn);
+              const merged = [fullTot, ...remoteTracks.filter((t) => t.id !== fullTot.id)];
+              setTracks(merged);
+            } else {
+              setTracks(remoteTracks);
+            }
           } else {
             initialTracksData.forEach((t) => {
               setDoc(doc(firestore, 'tracks', t.id), t).catch(console.warn);
@@ -707,6 +720,29 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
+  const seedComprehensiveTrackToDatabase = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const fullTrack = buildComprehensiveTotTrack();
+      setTracks((prev) => {
+        const otherTracks = prev.filter((t) => t.id !== fullTrack.id);
+        return [fullTrack, ...otherTracks];
+      });
+      if (typeof window !== 'undefined') {
+        try {
+          const cachedTracks = [fullTrack, ...tracks.filter((t) => t.id !== fullTrack.id)];
+          localStorage.setItem(TRACKS_KEY, JSON.stringify(cachedTracks));
+        } catch {}
+      }
+      if (db && isFirebaseConfigured) {
+        await setDoc(doc(db, 'tracks', fullTrack.id), fullTrack, { merge: false });
+      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('Failed to seed comprehensive track to database:', err);
+      return { success: false, error: err?.message || 'فشل حفظ المسار التأصيلي في قاعدة البيانات' };
+    }
+  }, [tracks]);
+
   const publishedTracks = tracks.filter((t) => t.status === 'published');
 
   return (
@@ -742,6 +778,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           await resetToDefaults();
           return { success: true };
         },
+        seedComprehensiveTrackToDatabase,
       }}
     >
       {children}

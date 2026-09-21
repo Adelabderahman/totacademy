@@ -11,6 +11,7 @@ import {
   TrackTrainerItem,
 } from '@/types/curriculum';
 import { initialTracksData, initialMagazineArticles } from '@/data/seed-tracks';
+import { generateAllMagazineSeedArticles } from '@/lib/magazine-seed';
 import { buildComprehensiveTotTrack } from '@/lib/seed-comprehensive-track';
 import {
   defaultHomeSettings,
@@ -47,6 +48,7 @@ interface CurriculumContextType {
   getArticle: (idOrSlug: string) => MagazineArticleItem | undefined;
   saveArticle: (article: MagazineArticleItem) => Promise<{ success: boolean; error?: string }>;
   deleteArticle: (articleId: string) => Promise<{ success: boolean; error?: string }>;
+  syncAllArticlesToFirestore: () => Promise<{ success: boolean; count: number; error?: string }>;
   saveHomeSettings: (settings: HomePageSettings) => Promise<{ success: boolean; error?: string }>;
   saveSiteSettings: (settings: SiteGeneralSettings) => Promise<{ success: boolean; error?: string }>;
   saveEvent: (event: AcademyEventItem) => Promise<{ success: boolean; error?: string }>;
@@ -123,18 +125,26 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // 2. Articles state
   const [magazineArticles, setMagazineArticles] = useState<MagazineArticleItem[]>(() => {
+    const allSeed = generateAllMagazineSeedArticles();
     if (typeof window !== 'undefined') {
       try {
         const cached = localStorage.getItem(ARTICLES_KEY);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 5) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Merge cached edits with seed articles
+            const mergedMap = new Map<string, MagazineArticleItem>();
+            allSeed.forEach((a) => mergedMap.set(a.id, a));
+            parsed.forEach((a) => mergedMap.set(a.id, a));
+            return Array.from(mergedMap.values());
+          }
         }
       } catch (e) {
         console.warn('Error reading cached articles:', e);
       }
     }
-    return initialMagazineArticles;
+    return allSeed;
   });
 
   // 3. Home Page settings state
@@ -323,7 +333,21 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           articlesSnap.forEach((docSnap) => {
             remoteArticles.push({ ...(docSnap.data() as MagazineArticleItem), id: docSnap.id });
           });
+          // Complement with seed articles across 18 sections if any are missing
+          const allSeed = generateAllMagazineSeedArticles();
+          allSeed.forEach((seedArt) => {
+            if (!remoteArticles.some((r) => r.id === seedArt.id || r.slug === seedArt.slug)) {
+              remoteArticles.push(seedArt);
+            }
+          });
           setMagazineArticles(remoteArticles);
+        } else if (isMounted) {
+          const allSeed = generateAllMagazineSeedArticles();
+          setMagazineArticles(allSeed);
+          // Auto-seed to Firestore
+          allSeed.forEach((art) => {
+            setDoc(doc(firestore, 'magazine_articles', art.id), art).catch(console.warn);
+          });
         }
 
         // 3. Fetch Home settings
@@ -517,6 +541,35 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     },
     []
+  );
+
+  const syncAllArticlesToFirestore = useCallback(
+    async (): Promise<{ success: boolean; count: number; error?: string }> => {
+      try {
+        if (!db || !isFirebaseConfigured) {
+          return { success: false, count: 0, error: 'الاتصال بـ Firebase غير مفعل أو قيد التهيئة' };
+        }
+        const allSeed = generateAllMagazineSeedArticles();
+        const map = new Map<string, MagazineArticleItem>();
+        allSeed.forEach((a) => map.set(a.id, a));
+        magazineArticles.forEach((a) => map.set(a.id, a));
+        const combined = Array.from(map.values());
+
+        // Batch save to Firestore
+        let savedCount = 0;
+        for (const art of combined) {
+          await setDoc(doc(db, 'magazine_articles', art.id), art, { merge: true });
+          savedCount++;
+        }
+
+        setMagazineArticles(combined);
+        return { success: true, count: savedCount };
+      } catch (err: any) {
+        console.error('Error syncing all articles to Firestore:', err);
+        return { success: false, count: 0, error: err.message || 'فشل مزامنة المقالات مع قاعدة البيانات' };
+      }
+    },
+    [magazineArticles]
   );
 
   // Home Settings Handler
@@ -795,6 +848,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         getArticle,
         saveArticle,
         deleteArticle,
+        syncAllArticlesToFirestore,
         saveHomeSettings,
         saveSiteSettings,
         saveEvent,

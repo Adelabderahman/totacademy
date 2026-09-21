@@ -164,6 +164,9 @@ export interface CertificateTemplateItem {
 export interface MagazineArticleItem {
   id: string;
   slug: string;
+  sectionSlug?: string;
+  sectionNumber?: number;
+  sectionGroup?: 'strategy' | 'practice' | 'innovation' | 'community' | string;
   issueNumber: number;
   title: LocalizedString;
   excerpt: LocalizedString;
@@ -179,6 +182,9 @@ export interface MagazineArticleItem {
   readingTimeMinutes: number;
   featured?: boolean;
   status: 'published' | 'draft';
+  contentType?: 'article' | 'video';
+  videoUrl?: string;
+  tags?: string[];
 }
 
 export interface HomePageSettings {

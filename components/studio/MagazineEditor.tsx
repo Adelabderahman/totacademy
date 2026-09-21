@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MagazineArticleItem } from '@/types/curriculum';
 import { useCurriculum } from '@/context/CurriculumContext';
 import {
@@ -33,6 +33,17 @@ import {
   ExternalLink,
   Star,
   AlertCircle,
+  Image as ImageIcon,
+  Table as TableIcon,
+  Lightbulb,
+  Link2,
+  Bold,
+  Italic,
+  Underline,
+  ListOrdered,
+  Quote,
+  Check,
+  Film,
 } from 'lucide-react';
 
 const COVER_IMAGE_PRESETS = [
@@ -44,6 +55,15 @@ const COVER_IMAGE_PRESETS = [
   { label: 'قيادة وتمكين', url: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80' },
   { label: 'تفاعل ومجتمع', url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80' },
   { label: 'منصة وجمهور', url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80' },
+];
+
+const ARTICLE_MEDIA_PRESETS = [
+  { label: 'ورشة تدريب تفاعلية', url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1000&q=80', caption: 'تفاعل المتدربين في ورشة العمل البيداغوجية' },
+  { label: 'ذكاء اصطناعي وتكنولوجيا', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80', caption: 'تطبيقات الذكاء الاصطناعي في هندسة التدريب' },
+  { label: 'استراتيجية ورؤية', url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1000&q=80', caption: 'بناء استراتيجيات التدريب المؤسسي' },
+  { label: 'إنفوجرافيك وبيانات', url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1000&q=80', caption: 'تحليل مؤشرات قياس أثر التدريب' },
+  { label: 'منصة ومحاضرة', url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1000&q=80', caption: 'منصة التدريب وعرض المهارات المتقدمة' },
+  { label: 'عصف ذهني ونقاش', url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1000&q=80', caption: 'جلسة عصف ذهني لحل المشكلات التدريبية' },
 ];
 
 const AUTHOR_PRESETS = [
@@ -90,8 +110,43 @@ export const MagazineEditor: React.FC = () => {
   const [editorTab, setEditorTab] = useState<'content' | 'metadata' | 'preview'>('content');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  // Custom Section Dropdown & Media Tool States
+  const sectionDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
+  const [sectionDropdownSearch, setSectionDropdownSearch] = useState('');
+  const [activeMediaTool, setActiveMediaTool] = useState<'none' | 'image' | 'video'>('none');
+  const [mediaImageUrl, setMediaImageUrl] = useState('');
+  const [mediaImageCaption, setMediaImageCaption] = useState('');
+  const [mediaVideoUrl, setMediaVideoUrl] = useState('');
+  const [mediaVideoTitle, setMediaVideoTitle] = useState('');
+
   // Reader Preview Modal State
   const [previewArticle, setPreviewArticle] = useState<MagazineArticleItem | null>(null);
+
+  // Current active section for the editor
+  const currentSection = useMemo(() => {
+    if (!selectedArticle) return MAGAZINE_SECTIONS_LIST[0];
+    return (
+      MAGAZINE_SECTIONS_LIST.find(
+        (s) => s.slug === (selectedArticle.sectionSlug || 'training-radar')
+      ) || MAGAZINE_SECTIONS_LIST[0]
+    );
+  }, [selectedArticle]);
+
+  // Close custom dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sectionDropdownRef.current && !sectionDropdownRef.current.contains(event.target as Node)) {
+        setIsSectionDropdownOpen(false);
+      }
+    };
+    if (isSectionDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSectionDropdownOpen]);
 
   // Map of article counts per section slug
   const sectionCounts = useMemo(() => {
@@ -1013,247 +1068,598 @@ export const MagazineEditor: React.FC = () => {
       {/* 5. Full-Featured Article Editor Modal / Drawer */}
       {/* ========================================================================= */}
       {isEditing && selectedArticle && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-right animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
-                  <Edit3 className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[94vh] sm:max-h-[92vh] flex flex-col overflow-hidden text-right animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header: العنوان وحده في الأعلى وتحته زري الإلغاء والحفظ */}
+            <div className="p-4 sm:p-5 bg-slate-900 text-white border-b border-slate-800 space-y-3 shrink-0">
+              {/* 1. العنوان وحده في الأعلى */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                    <Edit3 className="w-3 h-3" />
+                    {selectedArticle.id?.startsWith('art-') ? 'كتابة مقال جديد' : 'تعديل المقال'}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    مجلة المدرب العربي • القسم #{selectedArticle.sectionNumber || currentSection.n}: {currentSection.name.ar}
+                  </span>
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black">
-                    {selectedArticle.title.ar ? selectedArticle.title.ar : 'مقال جديد'}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    محرر مقالات مجلة المدرب العربي • القسم: #{selectedArticle.sectionNumber || 1}{' '}
-                    {selectedArticle.category || 'عام'}
-                  </p>
+                <h3 className="text-base sm:text-xl font-black text-white leading-snug break-words">
+                  {selectedArticle.title.ar ? selectedArticle.title.ar : 'كتابة مقال جديد (بدون عنوان)'}
+                </h3>
+              </div>
+
+                {/* 2. تحته زرين: إلغاء وحفظ ونشر المقال */}
+                <div className="grid grid-cols-2 gap-2.5 pt-2.5 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="w-full py-2.5 px-3 sm:px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all border border-slate-700 cursor-pointer"
+                  >
+                    <X className="w-4 h-4 text-slate-400" />
+                    <span>إلغاء</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-full py-2.5 px-3 sm:px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-1.5 disabled:opacity-50 transition-all cursor-pointer"
+                  >
+                    {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    <span className="truncate">{isSaving ? 'جاري الحفظ...' : 'حفظ ونشر المقال'}</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
-                >
-                  إلغاء
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg shadow-emerald-900/30 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                  <span>{isSaving ? 'جاري الحفظ في Firestore...' : 'حفظ ونشر المقال'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Status Message if any */}
-            {statusMessage && (
-              <div className="p-3 bg-blue-50 border-b border-blue-200 text-blue-900 text-xs font-bold text-center">
-                {statusMessage}
-              </div>
-            )}
-
-            {/* Editor Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-4 border-b border-slate-100 bg-slate-50/70">
-              <button
-                onClick={() => setEditorTab('content')}
-                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  editorTab === 'content'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>المحتوى والنص التحريري</span>
-              </button>
-
-              <button
-                onClick={() => setEditorTab('metadata')}
-                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  editorTab === 'metadata'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Tag className="w-4 h-4" />
-                <span>القسم، الكاتب، وبيانات النشر</span>
-              </button>
-
-              <button
-                onClick={() => setEditorTab('preview')}
-                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-                  editorTab === 'preview'
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Eye className="w-4 h-4" />
-                <span>معاينة حية للمقال</span>
-              </button>
-            </div>
-
-            {/* Modal Body Scroll Area */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs sm:text-sm">
-              {/* TAB 1: CONTENT & TEXT */}
-              {editorTab === 'content' && (
-                <div className="space-y-5">
-                  {/* Section Assignment Bar */}
-                  <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                      <span className="text-[11px] font-extrabold text-indigo-900 block mb-0.5">
-                        تعيين القسم في المجلة (من بين الأقسام الـ 18) *
-                      </span>
-                      <p className="text-[11px] text-indigo-700">
-                        حدد القسم المناسب لكي يظهر المقال ضمن محتواه المخصص في المجلة.
-                      </p>
-                    </div>
-
-                    <select
-                      value={selectedArticle.sectionSlug || 'training-radar'}
-                      onChange={(e) => {
-                        const nextSlug = e.target.value;
-                        const meta = MAGAZINE_SECTIONS_LIST.find((s) => s.slug === nextSlug);
-                        setSelectedArticle({
-                          ...selectedArticle,
-                          sectionSlug: nextSlug,
-                          sectionNumber: meta ? meta.n : 1,
-                          sectionGroup: meta ? meta.group : 'strategy',
-                          category: meta ? meta.name.ar : selectedArticle.category,
-                        });
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-white border border-indigo-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    >
-                      {MAGAZINE_SECTIONS_LIST.map((sec) => (
-                        <option key={sec.slug} value={sec.slug}>
-                          #{sec.n} - {sec.name.ar} ({sec.groupTitle.ar})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Title Arabic */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                      عنوان المقال (باللغة العربية) *
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedArticle.title.ar}
-                      onChange={(e) =>
-                        setSelectedArticle({
-                          ...selectedArticle,
-                          title: { ...selectedArticle.title, ar: e.target.value },
-                        })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-extrabold text-slate-900 text-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600 outline-none"
-                      placeholder="اكتب عنواناً جذاباً ومعبراً..."
-                    />
-                  </div>
-
-                  {/* Excerpt / Summary */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                      المقدمة والخلاصة التحريرية (Excerpt)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={selectedArticle.excerpt.ar}
-                      onChange={(e) =>
-                        setSelectedArticle({
-                          ...selectedArticle,
-                          excerpt: { ...selectedArticle.excerpt, ar: e.target.value },
-                        })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs leading-relaxed focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600 outline-none"
-                      placeholder="ملخص يوضح الفكرة الرئيسية ونقاط التعلم المستهدفة..."
-                    />
-                  </div>
-
-                  {/* Markdown Editor with Quick Formatting Toolbar */}
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="text-xs font-bold text-slate-800">
-                        نص المقال الكامل (تنسيق Markdown)
-                      </label>
-
-                      {/* Quick formatting buttons */}
-                      <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('## ', '\n')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="عنوان رئيسي"
-                        >
-                          H2
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('### ', '\n')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="عنوان فرعي"
-                        >
-                          H3
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('**', '**')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="عريض"
-                        >
-                          B
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('*', '*')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] italic font-bold"
-                          title="مائل"
-                        >
-                          I
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('\n1. ', '\n2. \n3. ')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="قائمة رقمية"
-                        >
-                          1. 2.
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('\n> «', '»')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="اقتباس مميز"
-                        >
-                          اقتباس
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => insertMarkdown('\n---\n')}
-                          className="px-2 py-1 rounded bg-white hover:bg-slate-200 text-[11px] font-bold"
-                          title="فاصل أفقي"
-                        >
-                          فاصل
-                        </button>
-                      </div>
-                    </div>
-
-                    <textarea
-                      id="article-content-textarea"
-                      rows={12}
-                      value={selectedArticle.content}
-                      onChange={(e) =>
-                        setSelectedArticle({ ...selectedArticle, content: e.target.value })
-                      }
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 font-mono text-xs leading-relaxed focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600 outline-none"
-                      placeholder="اكتب محتوى المقال الكامل هنا باستخدام تنسيق ماركداون..."
-                    />
-                  </div>
+              {/* Status Message if any */}
+              {statusMessage && (
+                <div className="p-3 bg-blue-50 border-b border-blue-200 text-blue-900 text-xs font-bold text-center shrink-0">
+                  {statusMessage}
                 </div>
               )}
+
+              {/* Editor Tabs: صفين - الصف الأول: المحتوى والقسم | الصف الثاني: معاينة حية */}
+              <div className="p-2.5 sm:px-6 sm:py-3 bg-slate-100/90 border-b border-slate-200/90 space-y-2 shrink-0">
+                {/* الصف الأول: المحتوى والقسم في صف واحد */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('content')}
+                    className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all border cursor-pointer ${
+                      editorTab === 'content'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4 shrink-0" />
+                    <span className="truncate">المحتوى والنص التحريري</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('metadata')}
+                    className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all border cursor-pointer ${
+                      editorTab === 'metadata'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <Tag className="w-4 h-4 shrink-0" />
+                    <span className="truncate">القسم، الكاتب، وبيانات النشر</span>
+                  </button>
+                </div>
+
+                {/* الصف الثاني: معاينة حية في الصف الثاني وبحجم متناسق */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('preview')}
+                    className={`w-full py-2 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all border cursor-pointer ${
+                      editorTab === 'preview'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                    }`}
+                  >
+                    <Eye className={`w-4 h-4 shrink-0 ${editorTab === 'preview' ? 'text-white' : 'text-emerald-600'}`} />
+                    <span>معاينة حية للمقال</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body Scroll Area */}
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5 text-xs sm:text-sm">
+                {/* TAB 1: CONTENT & TEXT */}
+                {editorTab === 'content' && (
+                  <div className="space-y-5">
+                    {/* تحديد القسم (قائمة منسدلة منسقة مثل نماذج الدخول والتسجيل) */}
+                    <div className="relative" ref={sectionDropdownRef}>
+                      <label className="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
+                        تحديد قسم المجلة التابع له المقال (من بين الأقسام الـ 18)
+                        <span className="text-red-500 ms-1">*</span>
+                      </label>
+
+                      {/* Dropdown Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsSectionDropdownOpen(!isSectionDropdownOpen)}
+                        className={`w-full px-3.5 py-2.5 sm:py-3 rounded-xl border text-start flex items-center justify-between transition-all duration-200 cursor-pointer shadow-2xs ${
+                          isSectionDropdownOpen
+                            ? 'border-indigo-600 ring-2 ring-indigo-500/20 bg-white'
+                            : 'border-slate-200 bg-slate-50/80 hover:bg-white text-slate-800 hover:border-slate-300'
+                        }`}
+                        aria-haspopup="listbox"
+                        aria-expanded={isSectionDropdownOpen}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 pe-2">
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0 shadow-xs"
+                            style={{ backgroundColor: currentSection.accentColor || '#3b82f6' }}
+                          />
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-slate-200 text-slate-800 shrink-0 font-mono">
+                            #{currentSection.n}
+                          </span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                            {currentSection.name.ar}
+                          </span>
+                          <span className="hidden sm:inline-block ms-auto text-[10px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold shrink-0">
+                            {currentSection.groupTitle.ar}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
+                            isSectionDropdownOpen ? 'rotate-180 text-indigo-600' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {/* Floating Dropdown Menu (Grouped with Search) */}
+                      {isSectionDropdownOpen && (
+                        <div className="absolute z-50 mt-1.5 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 max-h-80 overflow-y-auto animate-in fade-in zoom-in-95 duration-150 text-right">
+                          {/* Search Bar inside dropdown */}
+                          <div className="relative mb-2 px-1">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={sectionDropdownSearch}
+                              onChange={(e) => setSectionDropdownSearch(e.target.value)}
+                              placeholder="ابحث عن قسم في المجلة..."
+                              className="w-full pr-8 pl-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:bg-white text-slate-800"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+
+                          {/* Groups List */}
+                          <div className="space-y-3">
+                            {MAGAZINE_GROUPS_LIST.filter((g) => g.key !== 'all').map((grp) => {
+                              const groupSections = MAGAZINE_SECTIONS_LIST.filter(
+                                (s) =>
+                                  s.group === grp.key &&
+                                  (!sectionDropdownSearch.trim() ||
+                                    s.name.ar.includes(sectionDropdownSearch) ||
+                                    s.name.en.toLowerCase().includes(sectionDropdownSearch.toLowerCase()))
+                              );
+                              if (groupSections.length === 0) return null;
+
+                              return (
+                                <div key={grp.key} className="space-y-1">
+                                  <div className="px-2.5 py-1 text-[10px] font-black text-slate-500 uppercase tracking-wider bg-slate-100/70 rounded-lg flex items-center justify-between">
+                                    <span>{grp.title.ar}</span>
+                                    <span className="text-[9px] font-normal text-slate-400">
+                                      {groupSections.length} أقسام
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-0.5">
+                                    {groupSections.map((sec) => {
+                                      const isSelected = (selectedArticle.sectionSlug || 'training-radar') === sec.slug;
+                                      return (
+                                        <button
+                                          key={sec.slug}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedArticle({
+                                              ...selectedArticle,
+                                              sectionSlug: sec.slug,
+                                              sectionNumber: sec.n,
+                                              sectionGroup: sec.group,
+                                              category: sec.name.ar,
+                                            });
+                                            setIsSectionDropdownOpen(false);
+                                            setSectionDropdownSearch('');
+                                          }}
+                                          className={`w-full px-3 py-2 rounded-xl text-start flex items-center justify-between transition-colors text-xs font-semibold cursor-pointer ${
+                                            isSelected
+                                              ? 'bg-indigo-50 text-indigo-950 font-bold border border-indigo-200'
+                                              : 'hover:bg-slate-50 text-slate-700'
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <span
+                                              className="w-2.5 h-2.5 rounded-full shrink-0"
+                                              style={{ backgroundColor: sec.accentColor }}
+                                            />
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">
+                                              #{sec.n}
+                                            </span>
+                                            <span className="truncate">{sec.name.ar}</span>
+                                          </div>
+                                          {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Title Arabic */}
+                    <div>
+                      <label className="block text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
+                        عنوان المقال (باللغة العربية) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedArticle.title.ar}
+                        onChange={(e) =>
+                          setSelectedArticle({
+                            ...selectedArticle,
+                            title: { ...selectedArticle.title, ar: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 sm:py-3 rounded-xl border border-slate-300 font-extrabold text-slate-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600 outline-none bg-white transition-all shadow-2xs placeholder:text-slate-400"
+                        placeholder="اكتب عنواناً جذاباً ومعبراً عن المحتوى..."
+                      />
+                    </div>
+
+                    {/* Excerpt / Summary (خلفية بيضاء نقية وخط واضح عالي التباين) */}
+                    <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs sm:text-sm font-bold text-slate-900">
+                          المقدمة والخلاصة التحريرية (Excerpt)
+                        </label>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {(selectedArticle.excerpt.ar || '').length} حرف
+                        </span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={selectedArticle.excerpt.ar}
+                        onChange={(e) =>
+                          setSelectedArticle({
+                            ...selectedArticle,
+                            excerpt: { ...selectedArticle.excerpt, ar: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 bg-white text-slate-950 font-medium text-xs sm:text-sm leading-relaxed placeholder:text-slate-400 outline-none transition-all shadow-xs"
+                        placeholder="ملخص تحريري يوضح الفكرة الجوهرية ونقاط التعلم المستهدفة من المقال..."
+                      />
+                    </div>
+
+                    {/* Full Article Content Editor (محرر كامل ومتقدم مع تحكم كامل بالوسائط) */}
+                    <div className="p-4 rounded-2xl bg-slate-50/90 border border-slate-200 space-y-3">
+                      {/* Header & Word Count */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-900">
+                            نص المقال الكامل (محرر متكامل للوسائط والتحرير)
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                            Markdown كامل
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-[11px] text-slate-600 font-bold">
+                          <span>
+                            {selectedArticle.content.trim()
+                              ? selectedArticle.content.trim().split(/\s+/).length
+                              : 0}{' '}
+                            كلمة
+                          </span>
+                          <span>•</span>
+                          <span>{selectedArticle.content.length} حرف</span>
+                        </div>
+                      </div>
+
+                      {/* Comprehensive Media & Formatting Toolbar */}
+                      <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                        {/* Headings */}
+                        <div className="flex items-center gap-1 pe-1.5 border-e border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('## ', '\n')}
+                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-xs font-black text-slate-700 transition-colors"
+                            title="عنوان رئيسي (H2)"
+                          >
+                            H2
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('### ', '\n')}
+                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-xs font-black text-slate-700 transition-colors"
+                            title="عنوان فرعي (H3)"
+                          >
+                            H3
+                          </button>
+                        </div>
+
+                        {/* Text Styles */}
+                        <div className="flex items-center gap-1 pe-1.5 border-e border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('**', '**')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="خط عريض"
+                          >
+                            <Bold className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('*', '*')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="خط مائل"
+                          >
+                            <Italic className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('<u>', '</u>')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="تسطير"
+                          >
+                            <Underline className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Lists & Quotes */}
+                        <div className="flex items-center gap-1 pe-1.5 border-e border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('\n- ', '')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="قائمة نقطية"
+                          >
+                            <List className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('\n1. ', '')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="قائمة رقمية"
+                          >
+                            <ListOrdered className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('\n> «', '»')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 transition-colors"
+                            title="اقتباس تحريري"
+                          >
+                            <Quote className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Callouts & Highlights */}
+                        <div className="flex items-center gap-1 pe-1.5 border-e border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('\n> 💡 **إضاءة تدريبية:** ', '\n')}
+                            className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                            title="إضاءة تدريبية"
+                          >
+                            <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="hidden sm:inline">إضاءة</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              insertMarkdown(
+                                '\n| المحور التدريبي | الهدف الإجرائي | أداة القياس |\n| :--- | :--- | :--- |\n| التطبيق الميداني | إتقان نقل المهارة | شبكة الملاحظة |\n'
+                              )
+                            }
+                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                            title="إدراج جدول مقارنة"
+                          >
+                            <TableIcon className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">جدول</span>
+                          </button>
+                        </div>
+
+                        {/* Media Controls (التحكم في إضافة الصور والفيديو والوسائط) */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setActiveMediaTool(activeMediaTool === 'image' ? 'none' : 'image')}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                              activeMediaTool === 'image'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            }`}
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>إدراج صورة</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setActiveMediaTool(activeMediaTool === 'video' ? 'none' : 'video')}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                              activeMediaTool === 'video'
+                                ? 'bg-rose-600 text-white shadow-xs'
+                                : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                            }`}
+                          >
+                            <Film className="w-3.5 h-3.5" />
+                            <span>إدراج فيديو</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('[عنوان الرابط المرجعي](', 'https://...)')}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                            title="إدراج رابط مرجعي"
+                          >
+                            <Link2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => insertMarkdown('\n\n---\n\n')}
+                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-600"
+                            title="فاصل أفقي"
+                          >
+                            فاصل
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Collapsible Image Insertion Panel */}
+                      {activeMediaTool === 'image' && (
+                        <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2.5 animate-in fade-in duration-150">
+                          <div className="flex items-center justify-between text-xs font-bold text-blue-900">
+                            <span className="flex items-center gap-1.5">
+                              <ImageIcon className="w-4 h-4 text-blue-600" />
+                              أداة إدراج الصور في المقال
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaTool('none')}
+                              className="text-blue-500 hover:text-blue-800 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={mediaImageUrl}
+                              onChange={(e) => setMediaImageUrl(e.target.value)}
+                              placeholder="رابط الصورة المباشر (https://...)"
+                              className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-mono text-slate-800 outline-none focus:border-blue-500"
+                            />
+                            <input
+                              type="text"
+                              value={mediaImageCaption}
+                              onChange={(e) => setMediaImageCaption(e.target.value)}
+                              placeholder="وصف أو شرح الصورة التوضيحي..."
+                              className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs text-slate-800 outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          {/* Preset Quick Images */}
+                          <div>
+                            <span className="text-[10px] font-bold text-blue-800 block mb-1">
+                              أو اختر صورة تدريبية احترافية جاهزة بنقرة واحدة:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {ARTICLE_MEDIA_PRESETS.map((p, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setMediaImageUrl(p.url);
+                                    setMediaImageCaption(p.caption);
+                                  }}
+                                  className="px-2 py-1 rounded-md bg-white hover:bg-blue-100 border border-blue-200 text-[10px] font-bold text-blue-800 transition-colors cursor-pointer"
+                                >
+                                  {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!mediaImageUrl.trim()) return;
+                                const caption = mediaImageCaption.trim() || 'صورة توضيحية للمقال';
+                                const imgMarkdown = `\n\n![${caption}](${mediaImageUrl.trim()})\n*${caption}*\n\n`;
+                                insertMarkdown(imgMarkdown);
+                                setMediaImageUrl('');
+                                setMediaImageCaption('');
+                                setActiveMediaTool('none');
+                              }}
+                              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+                            >
+                              إدراج الصورة في المقال
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Collapsible Video Insertion Panel */}
+                      {activeMediaTool === 'video' && (
+                        <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2.5 animate-in fade-in duration-150">
+                          <div className="flex items-center justify-between text-xs font-bold text-rose-900">
+                            <span className="flex items-center gap-1.5">
+                              <Film className="w-4 h-4 text-rose-600" />
+                              أداة إدراج فيديو تدريبي (YouTube / MP4)
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaTool('none')}
+                              className="text-rose-500 hover:text-rose-800 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={mediaVideoUrl}
+                              onChange={(e) => setMediaVideoUrl(e.target.value)}
+                              placeholder="رابط الفيديو (مثال: https://www.youtube.com/watch?v=...)"
+                              className="px-3 py-1.5 bg-white border border-rose-200 rounded-lg text-xs font-mono text-slate-800 outline-none focus:border-rose-500"
+                            />
+                            <input
+                              type="text"
+                              value={mediaVideoTitle}
+                              onChange={(e) => setMediaVideoTitle(e.target.value)}
+                              placeholder="عنوان الفيديو أو الموضوع التدريبي..."
+                              className="px-3 py-1.5 bg-white border border-rose-200 rounded-lg text-xs text-slate-800 outline-none focus:border-rose-500"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!mediaVideoUrl.trim()) return;
+                                const title = mediaVideoTitle.trim() || 'فيديو تدريبي تطبيقي';
+                                const vidMarkdown = `\n\n> 🎬 **فيديو تدريبي: ${title}**\n> 🔗 [اضغط هنا لمشاهدة المقطع التدريبي الكامل](${mediaVideoUrl.trim()})\n\n`;
+                                insertMarkdown(vidMarkdown);
+                                setMediaVideoUrl('');
+                                setMediaVideoTitle('');
+                                setActiveMediaTool('none');
+                              }}
+                              className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+                            >
+                              إدراج الفيديو في المقال
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Main Textarea: ألوان عالية الوضوح والتباين وخلفية بيضاء نقية وخط عربي أصيل */}
+                      <textarea
+                        id="article-content-textarea"
+                        rows={14}
+                        value={selectedArticle.content}
+                        onChange={(e) =>
+                          setSelectedArticle({ ...selectedArticle, content: e.target.value })
+                        }
+                        className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 bg-white text-slate-950 font-sans text-sm sm:text-base leading-relaxed tracking-normal outline-none transition-all shadow-xs placeholder:text-slate-400 font-medium"
+                        placeholder="اكتب هنا متن المقال الكامل باستخدام أشرطة الأدوات أعلاه، يمكنك إدراج العناوين والفقرات والجداول والصور ومقاطع الفيديو..."
+                      />
+                    </div>
+                  </div>
+                )}
 
               {/* TAB 2: METADATA & AUTHOR & MEDIA */}
               {editorTab === 'metadata' && (
@@ -1291,7 +1697,7 @@ export const MagazineEditor: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">اسم الكاتب</label>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">اسم الكاتب</label>
                         <input
                           type="text"
                           value={selectedArticle.author.name.ar}
@@ -1304,11 +1710,11 @@ export const MagazineEditor: React.FC = () => {
                               },
                             })
                           }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">الصفة أو اللقب العلمي</label>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">الصفة أو اللقب العلمي</label>
                         <input
                           type="text"
                           value={selectedArticle.author.role.ar}
@@ -1321,11 +1727,11 @@ export const MagazineEditor: React.FC = () => {
                               },
                             })
                           }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">رابط صورة الكاتب</label>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">رابط صورة الكاتب</label>
                         <input
                           type="text"
                           value={selectedArticle.author.avatar}
@@ -1335,16 +1741,16 @@ export const MagazineEditor: React.FC = () => {
                               author: { ...selectedArticle.author, avatar: e.target.value },
                             })
                           }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-mono focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Cover Image & Presets */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="bg-slate-50/90 p-4 rounded-2xl border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">صورة غلاف المقال (Cover Image)</span>
+                      <span className="text-xs font-bold text-slate-900">صورة غلاف المقال (Cover Image)</span>
                     </div>
 
                     {/* Quick Image Presets */}
@@ -1354,7 +1760,7 @@ export const MagazineEditor: React.FC = () => {
                           key={idx}
                           type="button"
                           onClick={() => setSelectedArticle({ ...selectedArticle, coverImage: cp.url })}
-                          className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 text-[11px] font-bold text-slate-700"
+                          className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 text-[11px] font-bold text-slate-800 shadow-2xs transition-colors cursor-pointer"
                         >
                           {cp.label}
                         </button>
@@ -1368,14 +1774,14 @@ export const MagazineEditor: React.FC = () => {
                         onChange={(e) =>
                           setSelectedArticle({ ...selectedArticle, coverImage: e.target.value })
                         }
-                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono"
+                        className="flex-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-mono focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         placeholder="https://images.unsplash.com/..."
                       />
                       {selectedArticle.coverImage && (
                         <img
                           src={selectedArticle.coverImage}
                           alt="معاينة الغلاف"
-                          className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                          className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0 shadow-2xs"
                         />
                       )}
                     </div>
@@ -1384,7 +1790,7 @@ export const MagazineEditor: React.FC = () => {
                   {/* Publication Settings Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">وقت القراءة (بالدقائق)</label>
+                      <label className="block text-[11px] font-bold text-slate-800 mb-1">وقت القراءة (بالدقائق)</label>
                       <input
                         type="number"
                         min="1"
@@ -1396,12 +1802,12 @@ export const MagazineEditor: React.FC = () => {
                             readingTimeMinutes: parseInt(e.target.value) || 5,
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">رقم العدد (Issue)</label>
+                      <label className="block text-[11px] font-bold text-slate-800 mb-1">رقم العدد (Issue)</label>
                       <input
                         type="number"
                         min="1"
@@ -1413,12 +1819,12 @@ export const MagazineEditor: React.FC = () => {
                             issueNumber: parseInt(e.target.value) || 5,
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 font-bold text-xs focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">حالة النشر</label>
+                      <label className="block text-[11px] font-bold text-slate-800 mb-1">حالة النشر</label>
                       <select
                         value={selectedArticle.status}
                         onChange={(e) =>
@@ -1427,7 +1833,7 @@ export const MagazineEditor: React.FC = () => {
                             status: e.target.value as 'published' | 'draft',
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-bold focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer"
                       >
                         <option value="published">منشور للجمهور</option>
                         <option value="draft">مسودة قيد المراجعة</option>
@@ -1435,7 +1841,7 @@ export const MagazineEditor: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">نوع المحتوى</label>
+                      <label className="block text-[11px] font-bold text-slate-800 mb-1">نوع المحتوى</label>
                       <select
                         value={selectedArticle.contentType || 'article'}
                         onChange={(e) =>
@@ -1444,7 +1850,7 @@ export const MagazineEditor: React.FC = () => {
                             contentType: e.target.value as 'article' | 'video',
                           })
                         }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-bold focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer"
                       >
                         <option value="article">مقال مقروء</option>
                         <option value="video">فيديو تدريبي مسجل</option>
@@ -1470,14 +1876,14 @@ export const MagazineEditor: React.FC = () => {
 
                     {selectedArticle.contentType === 'video' && (
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">رابط الفيديو (YouTube URL)</label>
+                        <label className="block text-[11px] font-bold text-slate-800 mb-1">رابط الفيديو (YouTube URL)</label>
                         <input
                           type="text"
                           value={selectedArticle.videoUrl || ''}
                           onChange={(e) =>
                             setSelectedArticle({ ...selectedArticle, videoUrl: e.target.value })
                           }
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-mono focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                           placeholder="https://www.youtube.com/watch?v=..."
                         />
                       </div>

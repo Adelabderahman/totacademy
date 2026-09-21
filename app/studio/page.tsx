@@ -76,11 +76,11 @@ export default function StudioPage() {
   ];
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 font-sans select-none">
+    <div className="min-h-[calc(100vh-140px)] flex flex-col bg-slate-950 text-slate-100 font-sans select-none">
       {/* ========================================================================= */}
-      {/* Studio Header (Fixed at top, no outer scrolling) */}
+      {/* Studio Header (Sticky at top) */}
       {/* ========================================================================= */}
-      <header className="shrink-0 bg-slate-900 border-b border-slate-800 z-30 shadow-md">
+      <header className="sticky top-0 shrink-0 bg-slate-900 border-b border-slate-800 z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/studio" className="flex items-center gap-2.5 group">
@@ -166,9 +166,9 @@ export default function StudioPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* Main Content Viewport (Internal scroll, responsive, no outer window scroll) */}
+      {/* Studio Content Viewport */}
       {/* ========================================================================= */}
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
         {/* 1. الرئيسية (Home) */}
         {activeSection === 'home' && <HomePageEditor />}
 
@@ -192,7 +192,7 @@ export default function StudioPage() {
 
         {/* 8. النسخ الاحتياطي (Backup) */}
         {activeSection === 'backup' && <BackupEditor />}
-      </main>
+      </div>
     </div>
   );
 }

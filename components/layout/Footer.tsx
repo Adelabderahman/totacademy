@@ -2,12 +2,31 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { coreI18n } from '@/data/homeData';
 
 export const Footer: React.FC = () => {
+  const pathname = usePathname();
   const { language } = useLanguage();
   const t = coreI18n[language] || coreI18n['ar'];
+
+  // في الاستوديو ولوحة التحكم بجميع الأقسام: يختفي الفوتر كاملاً ويظهر فقط شريط الحقوق على الحاسوب والهاتف
+  const isStudio =
+    pathname?.startsWith('/studio') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/dashboard');
+
+  if (isStudio) {
+    return (
+      <footer className="w-full bg-slate-950 text-slate-400 py-3.5 px-4 border-t border-slate-800/80 text-center pb-20 lg:pb-3.5 transition-all">
+        <div className="w-[96%] max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-xs text-slate-400">
+          <p className="font-medium text-slate-300">{t.footer_copy1}</p>
+          <p className="text-[11px] text-slate-500">{t.footer_copy2}</p>
+        </div>
+      </footer>
+    );
+  }
 
   const navLinks = [
     { href: '/', label: language === 'ar' ? 'الرئيسية' : language === 'fr' ? 'Accueil' : 'Home' },

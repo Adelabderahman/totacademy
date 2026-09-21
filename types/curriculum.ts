@@ -138,7 +138,7 @@ export interface TrackDefinition {
     title: LocalizedString;
     passingScore: number;
     timeMinutes: number;
-    questions: QuizQuestionItem[];
+    questions?: QuizQuestionItem[];
     axes?: string[]; // 8 axes for the 10 slides
     axesQuestions?: Record<number, QuizQuestionItem[]>; // 8 axes × 5 questions each
     submitSlideEnabled?: boolean; // Slide 10

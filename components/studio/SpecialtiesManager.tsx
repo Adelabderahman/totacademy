@@ -11,7 +11,7 @@ interface SpecialtiesManagerProps {
 }
 
 export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowToast }) => {
-  const { tracks, saveTrack, deleteTrack, seedComprehensiveTrackToDatabase } = useCurriculum();
+  const { tracks, saveTrack, deleteTrack, seedComprehensiveTrackToDatabase, seedAllTracksToDatabase } = useCurriculum();
 
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +21,30 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
   const [editingCardTrack, setEditingCardTrack] = useState<TrackDefinition | null>(null);
   const [editingContentTrack, setEditingContentTrack] = useState<TrackDefinition | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync / Seed All 7 Tracks to database (Firestore)
+  const handleSyncAllTracks = async () => {
+    if (
+      !confirm(
+        'هل تريد تثبيت ومزامنة كافة المسارات السبعة (7 مسارات متكاملة بمقاييسها ودروسها واختباراتها) في قاعدة البيانات السحابية (Firebase Firestore)؟'
+      )
+    ) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res = await seedAllTracksToDatabase();
+      if (res.success) {
+        onShowToast(`✅ تم بنجاح مزامنة وحفظ جميع المسارات السبعة (${res.count} مسارات) في قاعدة البيانات (Firestore)!`);
+      } else {
+        alert(res.error || 'حدث خطأ أثناء مزامنة المسارات');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'فشل الاتصال بقاعدة البيانات');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Sync / Seed Comprehensive Foundational Track to database (Firestore)
   const handleSyncComprehensiveTrack = async () => {
@@ -190,46 +214,46 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={handleSyncComprehensiveTrack}
+            onClick={handleSyncAllTracks}
             disabled={isSaving}
-            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 disabled:opacity-50"
-            title="تثبيت ومزامنة كامل محتويات المسار التأصيلي الشامل (24 مقياساً، 288 درساً، والاختبار الشامل) في Firestore"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer active:scale-95 disabled:opacity-50 shadow-md shadow-amber-500/20"
+            title="تثبيت ومزامنة كافة المسارات السبعة (7 مسارات بمقاييسها واختباراتها) في Firebase Firestore"
           >
             <span>⚡</span>
-            <span>مزامنة المسار التأصيلي الشامل (Firestore)</span>
+            <span>مزامنة كافة المسارات (7 مسارات في Firestore)</span>
           </button>
 
           <button
             type="button"
             onClick={handleCreateTrack}
-            className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-900/30 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer active:scale-95"
           >
-            <span>+ إضافة مسار تدريبي جديد</span>
+            <span>+ إضافة مسار جديد</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/30 border border-slate-800 p-4 rounded-2xl">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-bold">
-          <span className="text-slate-400 whitespace-nowrap">التصنيف:</span>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/30 border border-slate-800 p-3 rounded-2xl">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-bold">
+          <span className="text-slate-400 whitespace-nowrap text-[11px]">التصنيف:</span>
           {[
-            { key: 'all', label: 'كل التخصصات' },
+            { key: 'all', label: 'الكل' },
             { key: 'tot', label: 'تدريب المدربين' },
             { key: 'tech', label: 'تكنولوجيا التعليم' },
-            { key: 'marketing', label: 'التسويق الرقمي' },
-            { key: 'media', label: 'الإعلام الرقمي' },
-            { key: 'creativity', label: 'التفكير الإبداعي' },
+            { key: 'marketing', label: 'التسويق' },
+            { key: 'media', label: 'الإعلام' },
+            { key: 'creativity', label: 'الإبداع' },
           ].map((cat) => (
             <button
               key={cat.key}
               onClick={() => setSelectedCategory(cat.key)}
-              className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap ${
                 selectedCategory === cat.key
-                  ? 'bg-amber-500 text-slate-950 shadow'
+                  ? 'bg-amber-500 text-slate-950 shadow font-bold'
                   : 'bg-slate-800/80 text-slate-300 hover:text-white'
               }`}
             >
@@ -238,13 +262,13 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
           ))}
         </div>
 
-        <div className="relative min-w-[240px]">
+        <div className="relative min-w-[220px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="ابحث باسم المسار أو التصنيف..."
-            className="w-full px-3.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
+            className="w-full px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-amber-500"
           />
           {searchQuery && (
             <button
@@ -257,8 +281,8 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
         </div>
       </div>
 
-      {/* Tracks Grid: Cards with the 4 Mandatory Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Tracks Grid: Compact Small Cards with the 4 Action Buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {filteredTracks.map((trackItem) => {
           const isAvailable = trackItem.isAvailable !== false && trackItem.status !== 'draft';
           const badgeText = trackItem.categoryBadgeText?.ar || trackItem.category.ar || 'تخصص معتمد';
@@ -279,28 +303,26 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
           return (
             <div
               key={trackItem.id}
-              className="bg-slate-800/50 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden shadow-xl flex flex-col transition-all group"
+              className="bg-slate-800/60 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden shadow-md flex flex-col transition-all group"
             >
-              {/* Card Banner with Corner Badge & Status */}
-              <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
+              {/* Card Banner with Corner Badge & Status (Compact Height) */}
+              <div className="relative h-28 sm:h-32 w-full bg-slate-900 overflow-hidden">
                 <img
                   src={trackItem.coverImage || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80'}
                   alt={trackItem.title.ar}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
 
                 {/* Top Corner Badges */}
-                <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
-                  {/* Category text in corner */}
-                  <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-900/90 text-amber-400 border border-amber-500/30 backdrop-blur-md">
+                <div className="absolute top-2 inset-x-2 flex items-center justify-between pointer-events-none">
+                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-900/90 text-amber-400 border border-amber-500/30 backdrop-blur-md truncate max-w-[140px]">
                     🏷️ {badgeText}
                   </span>
 
-                  {/* Availability status */}
                   <span
-                    className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold backdrop-blur-md border ${
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-extrabold backdrop-blur-md border ${
                       isAvailable
                         ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/40'
                         : 'bg-rose-950/80 text-rose-400 border-rose-500/40'
@@ -311,82 +333,80 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
                 </div>
 
                 {/* Bottom title on banner */}
-                <div className="absolute bottom-3 inset-x-4">
-                  <h4 className="font-extrabold text-white text-sm sm:text-base leading-snug drop-shadow-md line-clamp-1">
+                <div className="absolute bottom-2 inset-x-2.5">
+                  <h4 className="font-extrabold text-white text-xs sm:text-sm leading-snug drop-shadow-md line-clamp-1">
                     {trackItem.title.ar}
                   </h4>
                 </div>
               </div>
 
-              {/* Card Body */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4 text-xs">
+              {/* Card Body - Compact */}
+              <div className="p-3 flex-1 flex flex-col justify-between space-y-2.5 text-xs">
                 {/* Short Summary */}
-                <p className="text-slate-400 line-clamp-2 leading-relaxed text-xs">
+                <p className="text-slate-400 line-clamp-1 text-[11px] leading-relaxed">
                   {summaryText}
                 </p>
 
-                {/* Meta details */}
-                <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-center font-semibold">
+                {/* Meta details - Compact Grid */}
+                <div className="grid grid-cols-3 gap-1 p-1.5 rounded-lg bg-slate-900/80 border border-slate-800/80 text-center text-[10px]">
                   <div>
-                    <span className="block text-[10px] text-slate-500">المدة</span>
+                    <span className="block text-slate-500 text-[9px]">المدة</span>
                     <span className="text-amber-400 font-mono font-bold">{trackItem.durationHours} سا</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-slate-500">النمط</span>
+                    <span className="block text-slate-500 text-[9px]">النمط</span>
                     <span className="text-slate-200">{trackItem.mode?.ar || 'عن بعد'}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] text-slate-500">المقاييس</span>
+                    <span className="block text-slate-500 text-[9px]">المقاييس</span>
                     <span className="text-blue-400 font-mono font-bold">{totalModules} مقياس</span>
                   </div>
                 </div>
 
                 {/* Trainers info */}
-                <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-2.5">
-                  <div className="flex items-center gap-2">
-                    <span>👨‍🏫 المدرب:</span>
-                    <span className="font-bold text-white truncate max-w-[130px]">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/60 pt-1.5">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span>👨‍🏫</span>
+                    <span className="font-bold text-white truncate max-w-[120px]">
                       {leadTrainerName}
                     </span>
                   </div>
                   {trainersCount > 1 && (
-                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
-                      +{trainersCount - 1} مدربين
+                    <span className="px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[9px]">
+                      +{trainersCount - 1}
                     </span>
                   )}
                 </div>
 
-                {/* ========================================================================= */}
-                {/* THE 4 MANDATORY ACTION BUTTONS */}
-                {/* ========================================================================= */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                {/* The 4 Action Buttons - Compact */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-800">
                   {/* 1. تعديل البطاقة */}
                   <button
                     type="button"
                     onClick={() => setEditingCardTrack(trackItem)}
-                    className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    className="px-2 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] flex items-center justify-center gap-1 transition-all shadow-xs active:scale-95"
                     title="تعديل تفاصيل البطاقة في الواجهة والخلفية والمقاييس"
                   >
                     <span>🎴</span>
-                    <span>تعديل البطاقة</span>
+                    <span>البطاقة</span>
                   </button>
 
                   {/* 2. تعديل المحتوى */}
                   <button
                     type="button"
                     onClick={() => setEditingContentTrack(trackItem)}
-                    className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    className="px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all shadow-xs active:scale-95"
                     title="تعديل تأكيد التسجيل، المقاييس، الدروس، واختبارات المحاور والامتحان"
                   >
                     <span>📑</span>
-                    <span>تعديل المحتوى</span>
+                    <span>المحتوى</span>
                   </button>
 
                   {/* 3. حذف */}
                   <button
                     type="button"
                     onClick={() => handleDelete(trackItem)}
-                    className="px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-900/50 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                    className="px-2 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-rose-300 border border-rose-900/50 font-semibold text-[11px] flex items-center justify-center gap-1 transition-all active:scale-95"
                     title="حذف المسار"
                   >
                     <span>🗑️</span>
@@ -398,7 +418,7 @@ export const SpecialtiesManager: React.FC<SpecialtiesManagerProps> = ({ onShowTo
                     href={edupathUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all text-center active:scale-95"
+                    className="px-2 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-[11px] flex items-center justify-center gap-1 transition-all text-center active:scale-95"
                     title="معاينة المسار في صفحة المسار التعليمي"
                   >
                     <span>👁️</span>

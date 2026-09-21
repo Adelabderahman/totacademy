@@ -1453,7 +1453,7 @@ export const TrackEditor: React.FC<TrackEditorProps> = ({
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center">
               <span className="text-2xl">📝</span>
               <h5 className="font-bold text-slate-800 text-sm mt-2">
-                بنك أسئلة الامتحان النهائي ({form.finalExam?.questions.length || 0} أسئلة)
+                بنك أسئلة الامتحان النهائي ({form.finalExam?.questions?.length || 0} أسئلة)
               </h5>
               <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                 يتم توليد واختيار الأسئلة من استجوابات المقاييس ومحاور التقييم الشاملة.

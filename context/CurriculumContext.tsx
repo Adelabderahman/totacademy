@@ -24,9 +24,9 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   deleteDoc,
-  onSnapshot,
 } from 'firebase/firestore';
 import { MASTER_ADMIN_EMAIL, checkIsAdmin } from '@/lib/adminAccess';
 
@@ -59,6 +59,7 @@ interface CurriculumContextType {
   resetToDefaults: () => Promise<void>;
   resetToSeedData: () => Promise<{ success: boolean; error?: string }>;
   seedComprehensiveTrackToDatabase: () => Promise<{ success: boolean; error?: string }>;
+  seedAllTracksToDatabase: () => Promise<{ success: boolean; count: number; error?: string }>;
 }
 
 const CurriculumContext = createContext<CurriculumContextType | undefined>(undefined);
@@ -80,21 +81,35 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const fullTot = buildComprehensiveTotTrack();
-            const totIndex = parsed.findIndex(
-              (t: TrackDefinition) => t.id === 'tot-foundation' || t.id === 'trk-tot-foundation'
-            );
-            if (totIndex === -1) {
-              parsed.unshift(fullTot);
-              localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
-            } else {
-              const currentTot = parsed[totIndex];
-              const fndCount = currentTot.levels?.foundation?.modules?.length || 0;
-              const hasFullQuizzes = !!currentTot.levels?.foundation?.modules?.[0]?.quiz?.axesQuestions;
-              if (fndCount < 8 || !hasFullQuizzes || !currentTot.levels?.empowerment || !currentTot.levels?.consolidation) {
-                parsed[totIndex] = fullTot;
-                localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
+            let modified = false;
+            // Ensure all 7 tracks are present and complete in cache
+            initialTracksData.forEach((defaultTrack) => {
+              const existingIdx = parsed.findIndex(
+                (t: TrackDefinition) => t.id === defaultTrack.id || t.slug === defaultTrack.slug
+              );
+              if (existingIdx === -1) {
+                parsed.push(defaultTrack);
+                modified = true;
+              } else {
+                const existing = parsed[existingIdx];
+                const existingMods =
+                  (existing.levels?.foundation?.modules?.length || 0) +
+                  (existing.levels?.empowerment?.modules?.length || 0) +
+                  (existing.levels?.consolidation?.modules?.length || 0);
+                const defaultMods =
+                  (defaultTrack.levels?.foundation?.modules?.length || 0) +
+                  (defaultTrack.levels?.empowerment?.modules?.length || 0) +
+                  (defaultTrack.levels?.consolidation?.modules?.length || 0);
+                if (existingMods < defaultMods) {
+                  parsed[existingIdx] = defaultTrack;
+                  modified = true;
+                }
               }
+            });
+            if (modified) {
+              try {
+                localStorage.setItem(TRACKS_KEY, JSON.stringify(parsed));
+              } catch {}
             }
             return parsed;
           }
@@ -255,7 +270,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [adminEmails]);
 
-  // Firestore Real-time synchronization
+  // Firestore Synchronization with fast atomic queries
   useEffect(() => {
     let isMounted = true;
 
@@ -266,127 +281,105 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const firestore = db;
 
-    try {
-      // 1. Tracks listener
-      const tracksCol = collection(firestore, 'tracks');
-      const unsubscribeTracks = onSnapshot(
-        tracksCol,
-        (snapshot) => {
-          if (!isMounted) return;
-          if (!snapshot.empty) {
-            const remoteTracks: TrackDefinition[] = [];
-            snapshot.forEach((docSnap) => {
-              remoteTracks.push({ ...(docSnap.data() as TrackDefinition), id: docSnap.id });
-            });
+    async function syncFromFirestore() {
+      try {
+        // 1. Fetch tracks
+        const tracksSnap = await getDocs(collection(firestore, 'tracks'));
+        if (isMounted && !tracksSnap.empty) {
+          const remoteTracks: TrackDefinition[] = [];
+          tracksSnap.forEach((docSnap) => {
+            remoteTracks.push({ ...(docSnap.data() as TrackDefinition), id: docSnap.id });
+          });
 
-            // If tot-foundation in remote database is missing or is an incomplete legacy stub, upgrade it to the full comprehensive track
-            const totTrack = remoteTracks.find((t) => t.id === 'tot-foundation');
-            const isStub = !totTrack || !totTrack.levels?.empowerment || (totTrack.levels?.foundation?.modules?.length || 0) < 8;
-            if (isStub) {
-              const fullTot = buildComprehensiveTotTrack();
-              setDoc(doc(firestore, 'tracks', fullTot.id), fullTot).catch(console.warn);
-              const merged = [fullTot, ...remoteTracks.filter((t) => t.id !== fullTot.id)];
-              setTracks(merged);
+          // Ensure all 7 seed tracks exist
+          initialTracksData.forEach((initTrack) => {
+            const remoteIdx = remoteTracks.findIndex(
+              (t) => t.id === initTrack.id || t.slug === initTrack.slug
+            );
+            if (remoteIdx === -1) {
+              remoteTracks.push(initTrack);
             } else {
-              setTracks(remoteTracks);
+              const existing = remoteTracks[remoteIdx];
+              const existingMods =
+                (existing.levels?.foundation?.modules?.length || 0) +
+                (existing.levels?.empowerment?.modules?.length || 0) +
+                (existing.levels?.consolidation?.modules?.length || 0);
+              const initMods =
+                (initTrack.levels?.foundation?.modules?.length || 0) +
+                (initTrack.levels?.empowerment?.modules?.length || 0) +
+                (initTrack.levels?.consolidation?.modules?.length || 0);
+              if (existingMods < initMods) {
+                remoteTracks[remoteIdx] = initTrack;
+              }
             }
-          } else {
-            initialTracksData.forEach((t) => {
-              setDoc(doc(firestore, 'tracks', t.id), t).catch(console.warn);
-            });
-          }
-          setIsLoading(false);
-        },
-        (err) => {
-          console.warn('Firestore tracks listener note:', err.message);
-          setIsLoading(false);
+          });
+          setTracks(remoteTracks);
         }
-      );
 
-      // 2. Articles listener
-      const articlesCol = collection(firestore, 'magazine_articles');
-      const unsubscribeArticles = onSnapshot(
-        articlesCol,
-        (snapshot) => {
-          if (!isMounted) return;
-          if (!snapshot.empty) {
-            const remoteArticles: MagazineArticleItem[] = [];
-            snapshot.forEach((docSnap) => {
-              remoteArticles.push({ ...(docSnap.data() as MagazineArticleItem), id: docSnap.id });
-            });
-            setMagazineArticles(remoteArticles);
-          } else {
-            initialMagazineArticles.forEach((a) => {
-              setDoc(doc(firestore, 'magazine_articles', a.id), a).catch(console.warn);
-            });
-          }
-        },
-        (err) => {
-          console.warn('Firestore articles listener note:', err.message);
+        // 2. Fetch magazine articles
+        const articlesSnap = await getDocs(collection(firestore, 'magazine_articles'));
+        if (isMounted && !articlesSnap.empty) {
+          const remoteArticles: MagazineArticleItem[] = [];
+          articlesSnap.forEach((docSnap) => {
+            remoteArticles.push({ ...(docSnap.data() as MagazineArticleItem), id: docSnap.id });
+          });
+          setMagazineArticles(remoteArticles);
         }
-      );
 
-      // 3. Home settings listener
-      const homeDocRef = doc(firestore, 'cms', 'home_settings');
-      const unsubscribeHome = onSnapshot(
-        homeDocRef,
-        (docSnap) => {
-          if (!isMounted) return;
-          if (docSnap.exists()) {
-            setHomeSettings(docSnap.data() as HomePageSettings);
-          } else {
-            setDoc(homeDocRef, defaultHomeSettings).catch(console.warn);
+        // 3. Fetch Home settings
+        const homeSnap = await getDoc(doc(firestore, 'cms', 'home_settings'));
+        if (isMounted && homeSnap.exists()) {
+          setHomeSettings(homeSnap.data() as HomePageSettings);
+        }
+
+        // 4. Fetch Site settings
+        const siteSnap = await getDoc(doc(firestore, 'cms', 'site_settings'));
+        if (isMounted && siteSnap.exists()) {
+          const data = siteSnap.data() as SiteGeneralSettings;
+          setSiteSettings(data);
+          if (Array.isArray(data.adminEmails) && data.adminEmails.length > 0) {
+            setAdminEmails(data.adminEmails);
           }
-        },
-        (err) => console.warn('Home settings listener note:', err.message)
-      );
+        }
 
-      // 4. Site settings & admin listener
-      const siteDocRef = doc(firestore, 'cms', 'site_settings');
-      const unsubscribeSite = onSnapshot(
-        siteDocRef,
-        (docSnap) => {
-          if (!isMounted) return;
-          if (docSnap.exists()) {
-            const data = docSnap.data() as SiteGeneralSettings;
-            setSiteSettings(data);
-            if (Array.isArray(data.adminEmails) && data.adminEmails.length > 0) {
-              setAdminEmails(data.adminEmails);
-            }
-          } else {
-            setDoc(siteDocRef, defaultSiteSettings).catch(console.warn);
-          }
-        },
-        (err) => console.warn('Site settings listener note:', err.message)
-      );
-
-      // 5. Events collection listener
-      const eventsCol = collection(firestore, 'events');
-      const unsubscribeEvents = onSnapshot(
-        eventsCol,
-        (snapshot) => {
-          if (!isMounted) return;
-          if (!snapshot.empty) {
-            const remoteEvents: AcademyEventItem[] = [];
-            snapshot.forEach((d) => remoteEvents.push({ ...(d.data() as AcademyEventItem), id: d.id }));
-            setEventsList(remoteEvents);
-          }
-        },
-        (err) => console.warn('Events listener note:', err.message)
-      );
-
-      return () => {
-        isMounted = false;
-        unsubscribeTracks();
-        unsubscribeArticles();
-        unsubscribeHome();
-        unsubscribeSite();
-        unsubscribeEvents();
-      };
-    } catch (e) {
-      console.warn('CurriculumContext Firestore init exception:', e);
-      setIsLoading(false);
+        // 5. Fetch Events
+        const eventsSnap = await getDocs(collection(firestore, 'events'));
+        if (isMounted && !eventsSnap.empty) {
+          const remoteEvents: AcademyEventItem[] = [];
+          eventsSnap.forEach((d) => remoteEvents.push({ ...(d.data() as AcademyEventItem), id: d.id }));
+          setEventsList(remoteEvents);
+        }
+      } catch (e: any) {
+        console.warn('Firestore initial sync note:', e?.message || e);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     }
+
+    syncFromFirestore();
+
+    // Cross-tab synchronization via localStorage events
+    const handleStorage = (e: StorageEvent) => {
+      if (!isMounted) return;
+      if (e.key === TRACKS_KEY && e.newValue) {
+        try { setTracks(JSON.parse(e.newValue)); } catch {}
+      } else if (e.key === ARTICLES_KEY && e.newValue) {
+        try { setMagazineArticles(JSON.parse(e.newValue)); } catch {}
+      } else if (e.key === HOME_KEY && e.newValue) {
+        try { setHomeSettings(JSON.parse(e.newValue)); } catch {}
+      } else if (e.key === SITE_KEY && e.newValue) {
+        try { setSiteSettings(JSON.parse(e.newValue)); } catch {}
+      } else if (e.key === EVENTS_KEY && e.newValue) {
+        try { setEventsList(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   // Platform trainers list ready for dropdown selection
@@ -761,6 +754,26 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [tracks]);
 
+  const seedAllTracksToDatabase = useCallback(async (): Promise<{ success: boolean; count: number; error?: string }> => {
+    try {
+      setTracks(initialTracksData);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(TRACKS_KEY, JSON.stringify(initialTracksData));
+        } catch {}
+      }
+      if (db && isFirebaseConfigured) {
+        for (const trk of initialTracksData) {
+          await setDoc(doc(db, 'tracks', trk.id), trk, { merge: false });
+        }
+      }
+      return { success: true, count: initialTracksData.length };
+    } catch (err: any) {
+      console.error('Failed to seed all tracks to database:', err);
+      return { success: false, count: 0, error: err?.message || 'فشل مزامنة كافة المسارات مع قاعدة البيانات' };
+    }
+  }, []);
+
   const publishedTracks = tracks.filter((t) => t.status === 'published');
 
   return (
@@ -797,6 +810,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           return { success: true };
         },
         seedComprehensiveTrackToDatabase,
+        seedAllTracksToDatabase,
       }}
     >
       {children}

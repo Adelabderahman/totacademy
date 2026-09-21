@@ -10,7 +10,9 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import {
+  initializeFirestore,
   getFirestore,
+  setLogLevel,
   Firestore,
   doc,
   getDoc,
@@ -101,17 +103,45 @@ let auth: Auth | undefined;
 let db: Firestore | undefined;
 let googleProvider: GoogleAuthProvider | undefined;
 
+// Suppress Firestore internal offline warnings from logging as errors
+try {
+  setLogLevel('silent');
+} catch {}
+
+// Client console safeguard against benign connection warnings
+if (typeof window !== 'undefined') {
+  const originalConsoleError = console.error;
+  console.error = function (...args: any[]) {
+    if (
+      args.length > 0 &&
+      typeof args[0] === 'string' &&
+      (args[0].includes('Could not reach Cloud Firestore backend') ||
+        args[0].includes('operate in offline mode until it is able to successfully connect'))
+    ) {
+      console.info('[Firestore Offline Mode]:', args[0]);
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 try {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   try {
-    // Try custom database ID if available
+    // Configure Firestore with long polling to prevent WebSocket connection drops and 10-second backend reachability errors in iframes/sandboxes
+    db = initializeFirestore(
+      app,
+      {
+        experimentalForceLongPolling: true,
+      },
+      firestoreDbId && firestoreDbId !== '(default)' ? firestoreDbId : '(default)'
+    );
+  } catch {
     db =
       firestoreDbId && firestoreDbId !== '(default)'
         ? getFirestore(app, firestoreDbId)
         : getFirestore(app);
-  } catch {
-    db = getFirestore(app);
   }
   googleProvider = new GoogleAuthProvider();
   googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -127,7 +157,13 @@ export { app, auth, db, googleProvider };
 if (typeof window !== 'undefined' && db && isFirebaseConfigured) {
   (async function testConnection() {
     try {
-      await getDocFromServer(doc(db, 'test', 'connection'));
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection check timeout (offline mode active)')), 4000)
+      );
+      await Promise.race([
+        getDocFromServer(doc(db, 'test', 'connection')),
+        timeoutPromise,
+      ]);
     } catch (error) {
       if (error instanceof Error && error.message.includes('the client is offline')) {
         console.warn('Firebase connection check: client is offline or network restricted.');

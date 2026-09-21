@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 
@@ -9,6 +9,9 @@ export function useFirestoreSync<T>(
   documentId: string,
   initialData: T
 ) {
+  const initialDataRef = useRef(initialData);
+  initialDataRef.current = initialData;
+
   const [data, setData] = useState<T>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -54,7 +57,7 @@ export function useFirestoreSync<T>(
             }
           } else {
             // Seed the document on first run
-            setDoc(docRef, initialData as any, { merge: true }).catch((err) => {
+            setDoc(docRef, initialDataRef.current as any, { merge: true }).catch((err) => {
               console.warn('Initial seeding note:', err.message);
             });
           }
@@ -78,7 +81,7 @@ export function useFirestoreSync<T>(
         setIsLoading(false);
       }
     }
-  }, [collectionName, documentId, initialData]);
+  }, [collectionName, documentId]);
 
   // Mutation function to commit live edits back to Firestore
   const mutate = useCallback(

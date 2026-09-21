@@ -3368,7 +3368,7 @@ function EduPathContent() {
                     </div>
 
                     {/* Overall Summary Stats (الاختبارات ككل) */}
-                    <div className="report-stats-grid">
+                    <div className="report-stats-grid grid grid-cols-4 lg:grid-cols-5 gap-2 w-full">
                       <div className="report-stat-card">
                         <div className="stat-label">{lang === 'ar' ? 'الاختبارات المنجزة' : 'Completed Quizzes'}</div>
                         <div className="stat-value text-slate-800">
@@ -3421,7 +3421,7 @@ function EduPathContent() {
                       </div>
 
                       {/* Card 4: إجمالي الأخطاء (مفردة في صف واحد على الحاسوب، مخفية في الهاتف للحفاظ على الهاتف 4 عناصر كما هو) */}
-                      <div className="report-stat-card hidden lg:block">
+                      <div className="report-stat-card hidden lg:flex flex-col justify-center">
                         <div className="stat-label">{lang === 'ar' ? 'إجمالي الأخطاء' : 'Total Mistakes'}</div>
                         <div className="stat-value text-rose-700">
                           {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0)}
@@ -3462,8 +3462,147 @@ function EduPathContent() {
                       </div>
                     </div>
 
-                    {/* ملخص المحاور الستة في مربعات صغيرة للشاشة */}
-                    <div className="report-table-wrap">
+                    {/* Desktop Dedicated Assessment Axes: 3 Columns (تقييم 01-03, تقييم 04-06, النسب المئوية) */}
+                    <div className="report-table-wrap-desktop hidden lg:block my-2.5">
+                      <div className="report-table-title text-[11px] font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <span>📊</span>
+                          <span>{lang === 'ar' ? 'تفصيل محاور التقييم الستة والنسب المئوية:' : 'Assessment Axes & Percentages Breakdown:'}</span>
+                        </span>
+                        <span className="text-[9.5px] text-slate-500 font-normal">
+                          {lang === 'ar' ? 'سجل الأداء المعتمد' : 'Official Record'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2.5 items-stretch">
+                        {/* العمود الأول: تقييم 01، تقييم 02، تقييم 03 */}
+                        <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-2.5 flex flex-col justify-between shadow-2xs">
+                          <div className="text-[11px] font-bold text-slate-700 pb-1.5 mb-1.5 border-b border-slate-200 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              <span>{lang === 'ar' ? 'العمود الأول: تقييم 01 - 03' : 'Column 1: Quizzes 01 - 03'}</span>
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-normal">3 {lang === 'ar' ? 'محاور' : 'axes'}</span>
+                          </div>
+                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                            {[0, 1, 2].map((idx) => {
+                              const q = activeQuizzesList[idx] || { title: `محور ${idx + 1}` };
+                              const hist = quizHistory[idx];
+                              const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                              const correctCount = hist ? hist.correct : (isDone ? 6 : 0);
+
+                              return (
+                                <div key={idx} className="p-1.5 px-2 rounded-lg bg-white border border-slate-200/70 flex items-center justify-between gap-2 shadow-2xs min-h-[34px]">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <span className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[10px] flex items-center justify-center shrink-0 border border-emerald-200/60 font-mono">
+                                      0{idx + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-[10.5px] font-bold text-slate-800 truncate" title={q.title}>
+                                        {lang === 'ar' ? `تقييم 0${idx + 1}` : `Quiz 0${idx + 1}`}
+                                        <span className="font-normal text-slate-500 text-[10px] mx-1">: {q.title}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0 text-[9px]">
+                                    <span className="text-slate-500 font-mono">{correctCount}/6</span>
+                                    <span className={`w-2 h-2 rounded-full ${isDone ? 'bg-emerald-500' : 'bg-amber-400'}`} title={isDone ? 'مكتمل' : 'قيد المتابعة'} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* العمود الثاني: تقييم 04، تقييم 05، تقييم 06 */}
+                        <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-2.5 flex flex-col justify-between shadow-2xs">
+                          <div className="text-[11px] font-bold text-slate-700 pb-1.5 mb-1.5 border-b border-slate-200 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                              <span>{lang === 'ar' ? 'العمود الثاني: تقييم 04 - 06' : 'Column 2: Quizzes 04 - 06'}</span>
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-normal">3 {lang === 'ar' ? 'محاور' : 'axes'}</span>
+                          </div>
+                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                            {[3, 4, 5].map((idx) => {
+                              const q = activeQuizzesList[idx] || { title: `محور ${idx + 1}` };
+                              const hist = quizHistory[idx];
+                              const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                              const correctCount = hist ? hist.correct : (isDone ? 6 : 0);
+
+                              return (
+                                <div key={idx} className="p-1.5 px-2 rounded-lg bg-white border border-slate-200/70 flex items-center justify-between gap-2 shadow-2xs min-h-[34px]">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <span className="w-5 h-5 rounded-md bg-blue-50 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0 border border-blue-200/60 font-mono">
+                                      0{idx + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-[10.5px] font-bold text-slate-800 truncate" title={q.title}>
+                                        {lang === 'ar' ? `تقييم 0${idx + 1}` : `Quiz 0${idx + 1}`}
+                                        <span className="font-normal text-slate-500 text-[10px] mx-1">: {q.title}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0 text-[9px]">
+                                    <span className="text-slate-500 font-mono">{correctCount}/6</span>
+                                    <span className={`w-2 h-2 rounded-full ${isDone ? 'bg-emerald-500' : 'bg-amber-400'}`} title={isDone ? 'مكتمل' : 'قيد المتابعة'} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* العمود الثالث: النسب المئوية */}
+                        <div className="bg-amber-50/50 border border-amber-200/80 rounded-xl p-2.5 flex flex-col justify-between shadow-2xs">
+                          <div className="text-[11px] font-bold text-slate-700 pb-1.5 mb-1.5 border-b border-amber-200/80 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                              <span>{lang === 'ar' ? 'العمود الثالث: النسب المئوية' : 'Column 3: Percentages'}</span>
+                            </span>
+                            <span className="text-[9.5px] text-amber-800 font-bold font-mono">
+                              %
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                            {[
+                              { a: 0, b: 3 },
+                              { a: 1, b: 4 },
+                              { a: 2, b: 5 }
+                            ].map((pair, rowIdx) => {
+                              const histA = quizHistory[pair.a];
+                              const isDoneA = (completedQuizzes[activeModule.id] || []).includes(`qz_${pair.a}`);
+                              const pctA = histA ? Math.round((histA.correct / 6) * 100) : (isDoneA ? 100 : 0);
+
+                              const histB = quizHistory[pair.b];
+                              const isDoneB = (completedQuizzes[activeModule.id] || []).includes(`qz_${pair.b}`);
+                              const pctB = histB ? Math.round((histB.correct / 6) * 100) : (isDoneB ? 100 : 0);
+
+                              return (
+                                <div key={rowIdx} className="grid grid-cols-2 gap-1.5 min-h-[34px] items-center">
+                                  <div className="p-1 px-2 rounded-lg bg-white border border-amber-200/80 flex items-center justify-between text-[10px] h-full shadow-2xs">
+                                    <span className="font-bold text-slate-700 font-mono">0{pair.a + 1}</span>
+                                    <span className={`font-mono font-extrabold ${pctA >= 80 ? 'text-emerald-600' : pctA >= 60 ? 'text-amber-600' : 'text-slate-500'}`}>
+                                      {pctA}%
+                                    </span>
+                                  </div>
+                                  <div className="p-1 px-2 rounded-lg bg-white border border-amber-200/80 flex items-center justify-between text-[10px] h-full shadow-2xs">
+                                    <span className="font-bold text-slate-700 font-mono">0{pair.b + 1}</span>
+                                    <span className={`font-mono font-extrabold ${pctB >= 80 ? 'text-emerald-600' : pctB >= 60 ? 'text-amber-600' : 'text-slate-500'}`}>
+                                      {pctB}%
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mobile View: 6 Axes Summary (100% untouched for phone) */}
+                    <div className="report-table-wrap lg:hidden">
                       <div className="report-table-title">
                         📊 {lang === 'ar' ? 'ملخص محاور التقييم الستة:' : 'Assessment Axes Summary (1-6):'}
                       </div>

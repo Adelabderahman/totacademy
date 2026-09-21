@@ -2833,10 +2833,23 @@ function EduPathContent() {
 
         {/* ================= 6. Quizzes Section ================= */}
         <section className="quiz-section" id="quiz-group">
-          <h2 className="text-lg md:text-xl font-bold text-accent-yellow mb-2 flex items-center gap-2">
-            <span>🎯</span>
-            <span>{strings.quiz_section_title}</span>
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+            <h2 className="text-lg md:text-xl font-bold text-accent-yellow flex items-center gap-2">
+              <span>🎯</span>
+              <span>{strings.quiz_section_title}</span>
+            </h2>
+            <div className="hidden lg:flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <span className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-sky-300">
+                {lang === 'ar' ? '6 اختبارات تأصيلية' : '6 Core Quizzes'}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-amber-300">
+                {lang === 'ar' ? '90 ثانية لكل تقييم' : '90s Per Quiz'}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                {lang === 'ar' ? 'تقرير فوري معتمد' : 'Instant Accredited Report'}
+              </span>
+            </div>
+          </div>
 
           {isZeroContentTrack &&
             renderAccreditationBanner(
@@ -2849,6 +2862,17 @@ function EduPathContent() {
           <div className="quiz-layout" id="quiz-master-layout">
             {/* Sidebar Tabs */}
             <div className="quiz-sidebar">
+              <div className="hidden lg:block p-3.5 mb-2 rounded-xl bg-white/5 border border-white/10 text-start">
+                <div className="text-[11px] font-bold text-accent-yellow uppercase tracking-wider mb-1">
+                  {lang === 'ar' ? '🎯 فهرس التقييمات' : 'Assessments Index'}
+                </div>
+                <div className="text-xs text-white/80 font-medium">
+                  {lang === 'ar'
+                    ? `${(completedQuizzes[activeModule.id] || []).length} من 6 مكتملة`
+                    : `${(completedQuizzes[activeModule.id] || []).length} of 6 Completed`}
+                </div>
+              </div>
+
               <button
                 type="button"
                 className={`qz-tab-btn ${activeQuizTab === 0 ? 'active' : ''}`}
@@ -2856,21 +2880,31 @@ function EduPathContent() {
                   switchQuizTab(0);
                 }}
               >
-                📋 {lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}
+                <span>📋</span>
+                <span className="flex-1 truncate">{lang === 'ar' ? 'مقدمة التقييمات' : 'Assessments Overview'}</span>
               </button>
 
-              {activeQuizzesList.map((q, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className={`qz-tab-btn ${activeQuizTab === idx + 1 ? 'active' : ''}`}
-                  onClick={() => {
-                    scrollToQuizSlide(idx + 1);
-                  }}
-                >
-                  📝 {lang === 'ar' ? `تقييم ${idx + 1}` : `Quiz ${idx + 1}`}
-                </button>
-              ))}
+              {activeQuizzesList.map((q, idx) => {
+                const isDone = (completedQuizzes[activeModule.id] || []).includes(`qz_${idx}`);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`qz-tab-btn ${activeQuizTab === idx + 1 ? 'active' : ''}`}
+                    onClick={() => {
+                      scrollToQuizSlide(idx + 1);
+                    }}
+                  >
+                    <span>📝</span>
+                    <span className="flex-1 truncate">{lang === 'ar' ? `تقييم 0${idx + 1}: ${q.title}` : `Quiz ${idx + 1}`}</span>
+                    {isDone && (
+                      <span className="hidden lg:inline-flex text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-mono">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
 
               <button
                 type="button"
@@ -2879,7 +2913,8 @@ function EduPathContent() {
                   scrollToQuizSlide(7);
                 }}
               >
-                📊 {lang === 'ar' ? 'المحصلة والتقرير' : 'Score & Report'}
+                <span>📊</span>
+                <span className="flex-1 truncate">{lang === 'ar' ? 'المحصلة والتقرير' : 'Score & Report'}</span>
               </button>
             </div>
 
@@ -3664,10 +3699,23 @@ function EduPathContent() {
 
         {/* ================= 8. Final Pathway Exam Section ================= */}
         <section className="final-exam-section" id="final-exam-group">
-          <h2 className="text-xl md:text-2xl font-extrabold text-accent-yellow mb-3 flex items-center gap-2">
-            <span>🎓</span>
-            <span>{strings.fe_title}</span>
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
+            <h2 className="text-xl md:text-2xl font-extrabold text-accent-yellow flex items-center gap-2">
+              <span>🎓</span>
+              <span>{strings.fe_title}</span>
+            </h2>
+            <div className="hidden lg:flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <span className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-sky-300">
+                {lang === 'ar' ? '10 محطات امتحانية' : '10 Exam Stations'}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                {lang === 'ar' ? '8 محاور تخصصية' : '8 Specialized Modules'}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                {lang === 'ar' ? 'اعتماد التخرج النهائي' : 'Final Graduation'}
+              </span>
+            </div>
+          </div>
 
           {isZeroContentTrack &&
             renderAccreditationBanner(
@@ -3700,18 +3748,29 @@ function EduPathContent() {
           <div className="fe-layout">
             {/* Desktop Tabs */}
             <div className="fe-sidebar">
+              <div className="hidden lg:block p-3.5 mb-2 rounded-xl bg-white/5 border border-white/10 text-start">
+                <div className="text-[11px] font-bold text-accent-yellow uppercase tracking-wider mb-1">
+                  {lang === 'ar' ? '🎓 بوابات الامتحان' : 'Exam Gates'}
+                </div>
+                <div className="text-xs text-white/80 font-medium">
+                  {lang === 'ar' ? '10 محطات للتحكيم والاعتماد' : '10 Stations for Accreditation'}
+                </div>
+              </div>
+
               <button
                 className={`fe-tab-btn ${examTab === 0 ? 'active' : ''}`}
                 onClick={() => setExamTab(0)}
               >
-                📋 {strings.fe_intro_header}
+                <span>📋</span>
+                <span className="flex-1 truncate">{strings.fe_intro_header}</span>
               </button>
 
               <button
                 className={`fe-tab-btn ${examTab === 1 ? 'active' : ''}`}
                 onClick={() => setExamTab(1)}
               >
-                👤 {strings.fe_tab_personal}
+                <span>👤</span>
+                <span className="flex-1 truncate">{strings.fe_tab_personal}</span>
               </button>
 
               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
@@ -3720,7 +3779,8 @@ function EduPathContent() {
                   className={`fe-tab-btn ${examTab === num + 1 ? 'active' : ''}`}
                   onClick={() => setExamTab(num + 1)}
                 >
-                  📝 {strings[`fe_tab_m${num}`] || `المحور 0${num}`}
+                  <span>📝</span>
+                  <span className="flex-1 truncate">{strings[`fe_tab_m${num}`] || `المحور 0${num}`}</span>
                 </button>
               ))}
 
@@ -3728,7 +3788,8 @@ function EduPathContent() {
                 className={`fe-tab-btn ${examTab === 10 ? 'active' : ''}`}
                 onClick={() => setExamTab(10)}
               >
-                ✅ {strings.fe_end_title}
+                <span>✅</span>
+                <span className="flex-1 truncate">{strings.fe_end_title}</span>
               </button>
             </div>
 

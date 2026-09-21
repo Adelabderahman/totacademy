@@ -258,5 +258,24 @@ export interface TrainerDirectoryItem {
   bio: LocalizedString;
   email?: string;
   phone?: string;
+  specialization?: LocalizedString;
+  experienceYears?: number | string;
+  socialLinks?: {
+    linkedin?: string;
+    twitter?: string;
+    website?: string;
+    youtube?: string;
+  };
+  certificates?: {
+    ar: string[];
+    en?: string[];
+    fr?: string[];
+  };
+  skills?: {
+    ar: string[];
+    en?: string[];
+    fr?: string[];
+  };
+  status?: 'active' | 'honorary' | 'guest';
 }
 

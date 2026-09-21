@@ -7,7 +7,7 @@ import { coreI18n } from '@/data/homeData';
 
 export default function HeroSection() {
   const { language } = useLanguage();
-  const { homeSettings } = useCurriculum();
+  const { homeSettings, tracks, eventsList } = useCurriculum();
   const t = coreI18n[language] || coreI18n['ar'];
 
   const heroBadge =
@@ -119,32 +119,67 @@ export default function HeroSection() {
               </a>
             </div>
 
-            {/* Platform Live Stats Strip */}
+            {/* Platform Live Stats Strip - Exactly 2 rows of 3 items on all screen sizes including mobile */}
             {stats && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-6 pt-6 border-t border-white/15 text-white">
-                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
-                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 md:gap-3 mt-6 pt-6 border-t border-white/15 text-white">
+                {/* 1. المدربين */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-amber-300 font-mono tracking-tight">
                     {stats.trainersCount || '+1,200'}
                   </span>
-                  <span className="text-[11px] text-white/80 font-medium">مدرب معتمد</span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    مدرب معتمد
+                  </span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
-                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+
+                {/* 2. ساعات التدريب */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-amber-300 font-mono tracking-tight">
                     {stats.hoursCount || '+45,000'}
                   </span>
-                  <span className="text-[11px] text-white/80 font-medium">ساعة تدريب</span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    ساعة تدريب
+                  </span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
-                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+
+                {/* 3. الدول */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-amber-300 font-mono tracking-tight">
                     {stats.countriesCount || '18'}
                   </span>
-                  <span className="text-[11px] text-white/80 font-medium">دولة معتمدة</span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    دولة معتمدة
+                  </span>
                 </div>
-                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
-                  <span className="block text-lg sm:text-2xl font-black text-emerald-300 font-mono">
+
+                {/* 4. نسبة الرضا */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-emerald-300 font-mono tracking-tight">
                     {stats.satisfactionRate || '98.7%'}
                   </span>
-                  <span className="text-[11px] text-white/80 font-medium">نسبة الرضا</span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    نسبة الرضا
+                  </span>
+                </div>
+
+                {/* 5. التخصصات التدريبية */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-amber-300 font-mono tracking-tight">
+                    {stats.specialtiesCount || (tracks.length > 0 ? `+${tracks.length}` : '+12')}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    تخصص معتمد
+                  </span>
+                </div>
+
+                {/* 6. الفعاليات وورش العمل */}
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2 sm:p-2.5 md:p-3 border border-white/10 text-center hover:bg-white/15 transition-colors">
+                  <span className="block text-base sm:text-xl md:text-2xl font-black text-amber-300 font-mono tracking-tight">
+                    {stats.eventsCount || (eventsList.length > 0 ? `+${eventsList.length}` : '+35')}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] md:text-xs text-white/85 font-medium block mt-0.5 truncate">
+                    فعالية وورشة
+                  </span>
                 </div>
               </div>
             )}

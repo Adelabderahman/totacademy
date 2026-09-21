@@ -203,6 +203,8 @@ export interface HomePageSettings {
     hoursCount: string;
     countriesCount: string;
     satisfactionRate: string;
+    specialtiesCount?: string;
+    eventsCount?: string;
   };
   announcement?: {
     enabled: boolean;

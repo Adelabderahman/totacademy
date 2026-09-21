@@ -121,6 +121,8 @@ export const HomePageEditor: React.FC = () => {
   // Smart Auto-calc stats
   const handleAutoCalcStats = () => {
     const realTrainersCount = trainersList.length > 0 ? `+${trainersList.length}` : '+1,200';
+    const realSpecialtiesCount = tracks.length > 0 ? `+${tracks.length}` : '+12';
+    const realEventsCount = eventsList.length > 0 ? `+${eventsList.length}` : '+35';
     const realCountries = '18';
     const defaultHours = '+45,000';
     const defaultSatisfaction = '98.7%';
@@ -132,12 +134,14 @@ export const HomePageEditor: React.FC = () => {
         hoursCount: defaultHours,
         countriesCount: realCountries,
         satisfactionRate: defaultSatisfaction,
+        specialtiesCount: realSpecialtiesCount,
+        eventsCount: realEventsCount,
       },
     }));
 
     setStatusMessage({
       type: 'success',
-      text: `⚡ تم تحديث أرقام الإحصائيات ذكياً بناءً على بيانات الدليل الحالية (${trainersList.length} مدرب). لا تنس الضغط على حفظ.`,
+      text: `⚡ تم تحديث أرقام الإحصائيات ذكياً بناءً على بيانات الاستوديو الفعلية (${trainersList.length} مدرب، ${tracks.length} مسار تخصصي، ${eventsList.length} فعالية). لا تنس الضغط على حفظ.`,
     });
   };
 
@@ -691,7 +695,7 @@ export const HomePageEditor: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Stat 1: Trainers */}
             <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-3">
               <div className="flex items-center justify-between">
@@ -783,27 +787,81 @@ export const HomePageEditor: React.FC = () => {
                 مؤشر تقييمات الخريجين المعتمدين
               </span>
             </div>
+
+            {/* Stat 5: Specialties (التخصصات) */}
+            <div className="p-5 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-indigo-800">5. التخصصات والمسارات</span>
+                <span className="text-base">🎯</span>
+              </div>
+              <input
+                type="text"
+                value={form.stats.specialtiesCount ?? '+12'}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    stats: { ...form.stats, specialtiesCount: e.target.value },
+                  })
+                }
+                placeholder="+12"
+                className="w-full px-4 py-2.5 rounded-xl border border-indigo-200 bg-white text-base font-black text-center text-indigo-950 shadow-inner"
+              />
+              <span className="text-[11px] text-slate-500 block text-center">
+                المسارات التدريبية في الاستوديو: <b className="text-slate-900">{tracks.length}</b>
+              </span>
+            </div>
+
+            {/* Stat 6: Events (الفعاليات) */}
+            <div className="p-5 rounded-2xl bg-rose-500/5 border border-rose-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-rose-800">6. الفعاليات وورش العمل</span>
+                <span className="text-base">📅</span>
+              </div>
+              <input
+                type="text"
+                value={form.stats.eventsCount ?? '+35'}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    stats: { ...form.stats, eventsCount: e.target.value },
+                  })
+                }
+                placeholder="+35"
+                className="w-full px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-base font-black text-center text-rose-950 shadow-inner"
+              />
+              <span className="text-[11px] text-slate-500 block text-center">
+                الفعاليات المسجلة بالجدول: <b className="text-slate-900">{eventsList.length}</b>
+              </span>
+            </div>
           </div>
 
           {/* Quick Preview Strip */}
           <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3">
-            <span className="text-xs text-slate-400 font-bold block">معاينة شريط الأرقام في الهيرو:</span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white/10 rounded-xl p-3 text-center border border-white/10">
-                <span className="block text-xl font-black text-amber-300 font-mono">{form.stats.trainersCount}</span>
-                <span className="text-xs text-slate-300">مدرب معتمد</span>
+            <span className="text-xs text-slate-400 font-bold block">معاينة شريط الأرقام في الهيرو (صفين اثنين بثلاثة أعمدة):</span>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-amber-300 font-mono">{form.stats.trainersCount}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">مدرب معتمد</span>
               </div>
-              <div className="bg-white/10 rounded-xl p-3 text-center border border-white/10">
-                <span className="block text-xl font-black text-amber-300 font-mono">{form.stats.hoursCount}</span>
-                <span className="text-xs text-slate-300">ساعة تدريب</span>
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-amber-300 font-mono">{form.stats.hoursCount}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">ساعة تدريب</span>
               </div>
-              <div className="bg-white/10 rounded-xl p-3 text-center border border-white/10">
-                <span className="block text-xl font-black text-amber-300 font-mono">{form.stats.countriesCount}</span>
-                <span className="text-xs text-slate-300">دولة معتمدة</span>
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-amber-300 font-mono">{form.stats.countriesCount}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">دولة معتمدة</span>
               </div>
-              <div className="bg-white/10 rounded-xl p-3 text-center border border-white/10">
-                <span className="block text-xl font-black text-emerald-300 font-mono">{form.stats.satisfactionRate}</span>
-                <span className="text-xs text-slate-300">نسبة الرضا</span>
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-emerald-300 font-mono">{form.stats.satisfactionRate}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">نسبة الرضا</span>
+              </div>
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-amber-300 font-mono">{form.stats.specialtiesCount ?? (tracks.length > 0 ? `+${tracks.length}` : '+12')}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">تخصص معتمد</span>
+              </div>
+              <div className="bg-white/10 rounded-xl p-2.5 sm:p-3 text-center border border-white/10">
+                <span className="block text-base sm:text-xl font-black text-amber-300 font-mono">{form.stats.eventsCount ?? (eventsList.length > 0 ? `+${eventsList.length}` : '+35')}</span>
+                <span className="text-[11px] sm:text-xs text-slate-300">فعالية وورشة</span>
               </div>
             </div>
           </div>
@@ -1244,31 +1302,43 @@ export const HomePageEditor: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* 4 Stats */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-6 border-t border-white/20 text-center">
-                    <div className="bg-white/10 rounded-xl p-2 border border-white/10">
-                      <span className="block text-base sm:text-lg font-black text-amber-300 font-mono">
+                  {/* 6 Stats - Exactly 2 rows across all sizes */}
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-6 border-t border-white/20 text-center">
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-amber-300 font-mono">
                         {form.stats.trainersCount}
                       </span>
-                      <span className="text-[10px] text-white/80 font-medium">مدرب معتمد</span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">مدرب معتمد</span>
                     </div>
-                    <div className="bg-white/10 rounded-xl p-2 border border-white/10">
-                      <span className="block text-base sm:text-lg font-black text-amber-300 font-mono">
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-amber-300 font-mono">
                         {form.stats.hoursCount}
                       </span>
-                      <span className="text-[10px] text-white/80 font-medium">ساعة تدريب</span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">ساعة تدريب</span>
                     </div>
-                    <div className="bg-white/10 rounded-xl p-2 border border-white/10">
-                      <span className="block text-base sm:text-lg font-black text-amber-300 font-mono">
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-amber-300 font-mono">
                         {form.stats.countriesCount}
                       </span>
-                      <span className="text-[10px] text-white/80 font-medium">دولة معتمدة</span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">دولة معتمدة</span>
                     </div>
-                    <div className="bg-white/10 rounded-xl p-2 border border-white/10">
-                      <span className="block text-base sm:text-lg font-black text-emerald-300 font-mono">
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-emerald-300 font-mono">
                         {form.stats.satisfactionRate}
                       </span>
-                      <span className="text-[10px] text-white/80 font-medium">نسبة الرضا</span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">نسبة الرضا</span>
+                    </div>
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-amber-300 font-mono">
+                        {form.stats.specialtiesCount ?? (tracks.length > 0 ? `+${tracks.length}` : '+12')}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">تخصص معتمد</span>
+                    </div>
+                    <div className="bg-white/10 rounded-xl p-1.5 sm:p-2 border border-white/10">
+                      <span className="block text-sm sm:text-base md:text-lg font-black text-amber-300 font-mono">
+                        {form.stats.eventsCount ?? (eventsList.length > 0 ? `+${eventsList.length}` : '+35')}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-white/80 font-medium block truncate">فعالية وورشة</span>
                     </div>
                   </div>
                 </div>

@@ -44,6 +44,8 @@ export const defaultHomeSettings: HomePageSettings = {
     hoursCount: '+45,000',
     countriesCount: '18',
     satisfactionRate: '98.7%',
+    specialtiesCount: '+12',
+    eventsCount: '+35',
   },
   announcement: {
     enabled: true,

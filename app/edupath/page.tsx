@@ -3407,8 +3407,33 @@ function EduPathContent() {
                           {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0)}
                           <span className="stat-sub"> / 36</span>
                         </div>
-                        <div className="stat-note text-slate-400">
+                        <div className="stat-note text-slate-400 lg:hidden">
                           {lang === 'ar' ? 'إجمالي الأخطاء' : 'Total Mistakes'}
+                        </div>
+                        <div className="stat-bar hidden lg:block">
+                          <div
+                            className="stat-fill bg-rose-500"
+                            style={{
+                              width: `${(Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0) / 36) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Card 4: إجمالي الأخطاء (مفردة في صف واحد على الحاسوب، مخفية في الهاتف للحفاظ على الهاتف 4 عناصر كما هو) */}
+                      <div className="report-stat-card hidden lg:block">
+                        <div className="stat-label">{lang === 'ar' ? 'إجمالي الأخطاء' : 'Total Mistakes'}</div>
+                        <div className="stat-value text-rose-700">
+                          {Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0)}
+                          <span className="stat-sub text-slate-400"> {lang === 'ar' ? 'خطأ' : 'err'}</span>
+                        </div>
+                        <div className="stat-note text-rose-500/80">
+                          {(() => {
+                            const errCount = Object.values(quizHistory).reduce((acc, curr) => acc + (curr?.wrong || 0), 0);
+                            if (errCount === 0) return lang === 'ar' ? 'بلا أخطاء ✨' : 'Zero mistakes';
+                            if (errCount <= 5) return lang === 'ar' ? 'أخطاء طفيفة' : 'Minor errors';
+                            return lang === 'ar' ? 'مراجعة موصى بها' : 'Review needed';
+                          })()}
                         </div>
                       </div>
 

@@ -2808,65 +2808,178 @@ html[dir="ltr"] .whatsapp-float:hover .whatsapp-label {
     font-size: 14px !important;
   }
 
-  /* Slide 7: Official Paper Report on Desktop */
+  /* Slide 7: Official Paper Report on Desktop (Compact Low-Height & 5-in-1-Row Stats) */
   .print-report-source-detailed {
     display: none !important;
   }
 
   .report-paper-doc {
-    padding: 32px 36px !important;
-    border-radius: 18px !important;
+    padding: 16px 24px !important;
+    border-radius: 14px !important;
     max-width: 950px !important;
     margin: 0 auto !important;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  .report-header-banner {
+    margin-bottom: 6px !important;
+    padding-bottom: 5px !important;
+    border-bottom: 1px dashed #cbd5e1 !important;
+  }
+
+  .report-badge-top {
+    margin-bottom: 2px !important;
+  }
+
+  .report-logo-text {
+    font-size: 11px !important;
+  }
+
+  .report-type-badge {
+    font-size: 9.5px !important;
+    padding: 2px 7px !important;
   }
 
   .report-main-title {
-    font-size: 18px !important;
-    margin: 6px 0 10px 0 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    margin: 2px 0 4px 0 !important;
   }
 
+  .report-track-row {
+    font-size: 10.5px !important;
+    padding: 3px 8px !important;
+    margin-bottom: 6px !important;
+    border-radius: 6px !important;
+  }
+
+  /* 5 Stats in One Single Horizontal Row on Desktop */
   .report-stats-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 14px !important;
-    margin-bottom: 16px !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 6px !important;
   }
 
   .report-stat-card {
-    padding: 12px 14px !important;
-    border-radius: 10px !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
   }
 
   .report-stat-card .stat-label {
-    font-size: 11px !important;
+    font-size: 9.5px !important;
+    white-space: nowrap !important;
+    margin-bottom: 2px !important;
   }
 
   .report-stat-card .stat-value {
-    font-size: 18px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+  }
+
+  .report-stat-card .stat-sub {
+    font-size: 9.5px !important;
+  }
+
+  .report-stat-card .stat-bar {
+    height: 3px !important;
+    margin-top: 3px !important;
+    border-radius: 999px !important;
+  }
+
+  .report-stat-card .stat-note {
+    font-size: 8.5px !important;
+    margin-top: 2px !important;
+    white-space: nowrap !important;
+  }
+
+  /* 6 Axes in exactly 3 rows and 2 columns on Desktop */
+  .report-table-wrap {
+    margin-top: 6px !important;
+  }
+
+  .report-table-title {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    margin-bottom: 4px !important;
   }
 
   .report-axis-summary-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 12px !important;
-    margin: 12px 0 !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px 12px !important;
+    margin: 4px 0 !important;
   }
 
   .report-summary-mini-card {
-    padding: 12px 14px !important;
-    border-radius: 10px !important;
+    padding: 5px 10px !important;
+    border-radius: 7px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 0 !important;
+  }
+
+  .summary-mini-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 0 !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
   .summary-mini-title {
-    font-size: 12px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
     max-width: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .summary-mini-status-dot {
+    width: 6px !important;
+    height: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .summary-mini-stats {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
   }
 
   .summary-mini-pct {
-    font-size: 16px !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
   }
 
   .summary-mini-count {
-    font-size: 11px !important;
+    font-size: 9.5px !important;
+  }
+
+  /* Compact Verification Seal & Barcode on Desktop */
+  .report-official-seal {
+    padding: 4px 10px !important;
+    margin-top: 5px !important;
+    border-radius: 6px !important;
+  }
+
+  .seal-badge {
+    font-size: 9px !important;
+  }
+
+  .barcode-mock {
+    font-size: 8px !important;
+    letter-spacing: 2px !important;
+  }
+
+  .seal-code-str {
+    font-size: 8px !important;
   }
 
   .qz-report-actions-row {

@@ -53,6 +53,53 @@ export const defaultHomeSettings: HomePageSettings = {
       fr: '✨ Inscription ouverte pour la 14ème promotion du programme TOTF126!',
     },
     linkUrl: '/edupath?track=tot-foundation',
+    style: 'gold',
+  },
+  vmo: {
+    aboutIntro: {
+      ar: 'أول أكاديمية دولية متخصصة ومستقلة بالكامل لهندسة وتأهيل مدربي المدربين وبرامج TOT وفق المعايير البيداغوجية العالمية المعتمدة.',
+      en: 'The premier international and fully independent academy dedicated to trainer of trainers engineering and TOT qualification.',
+      fr: "Première académie internationale indépendante dédiée à l'ingénierie et à la formation de formateurs.",
+    },
+    missionTitle: {
+      ar: 'رسالتنا التدريبية',
+      en: 'Our Training Mission',
+      fr: 'Notre Mission',
+    },
+    missionText: {
+      ar: 'بناء وتأهيل جيل من المدربين المحترفين القادرين على هندسة المعرفة وتصميم الحقائب التفاعلية وقيادة التحول التدريبي المعاصر.',
+      en: 'Empowering professional trainers with advanced instructional engineering, interactive kits, and pedagogical leadership.',
+      fr: 'Former des formateurs professionnels capables de concevoir des parcours interactifs.',
+    },
+    visionTitle: {
+      ar: 'رؤيتنا الاستراتيجية',
+      en: 'Our Strategic Vision',
+      fr: 'Notre Vision',
+    },
+    visionText: {
+      ar: 'أن نكون المرجع الأكاديمي والمهني الأول عالمياً في اعتماد وتأهيل مدربي النخبة وإثراء المحتوى البيداغوجي الذكي.',
+      en: 'To be the leading global benchmark in elite trainer accreditation and smart pedagogical development.',
+      fr: 'Être la référence internationale dans la certification des formateurs.',
+    },
+    objectivesTitle: {
+      ar: 'أهدافنا المحورية',
+      en: 'Our Core Objectives',
+      fr: 'Nos Objectifs',
+    },
+    objectivesText: {
+      ar: 'تأصيل كفايات التيسير والتدريب المتقدم، وتوفير بيئة تدريبية رقمية تواكب تقنيات الذكاء الاصطناعي وصناعة الأثر الإنساني المستدام.',
+      en: 'Developing facilitation competencies, integrating AI-driven tools, and fostering sustainable educational impact.',
+      fr: 'Développer les compétences clés et intégrer les outils numériques modernes.',
+    },
+  },
+  quickSupport: {
+    whatsappNumber: '213555989370',
+    catalogUrl: '#part1-section',
+    contactBtnText: {
+      ar: 'تواصل عبر واتساب',
+      en: 'Contact on WhatsApp',
+      fr: 'Contacter sur WhatsApp',
+    },
   },
 };
 

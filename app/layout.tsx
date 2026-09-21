@@ -11,6 +11,7 @@ import { CurriculumProvider } from '@/context/CurriculumContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 
 import { TopBar } from '@/components/layout/TopBar';
+import { AnnouncementBar } from '@/components/layout/AnnouncementBar';
 import { MainNavbar } from '@/components/layout/MainNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { Footer } from '@/components/layout/Footer';
@@ -54,6 +55,7 @@ export default function RootLayout({
           <AuthModalProvider>
             <CurriculumProvider>
               <UserAccountProvider>
+                <AnnouncementBar />
                 <TopBar />
                 <div className="hidden lg:block w-[98%] max-w-[1820px] mx-auto px-4">
                   <MainNavbar />

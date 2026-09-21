@@ -2,31 +2,108 @@
 
 import React from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurriculum } from '@/context/CurriculumContext';
 import { coreI18n } from '@/data/homeData';
 
 export default function HeroSection() {
   const { language } = useLanguage();
+  const { homeSettings } = useCurriculum();
   const t = coreI18n[language] || coreI18n['ar'];
+
+  const heroBadge =
+    homeSettings?.hero?.badge?.[language] ||
+    homeSettings?.hero?.badge?.ar ||
+    t.hero_subtitle;
+
+  const heroTitle =
+    homeSettings?.hero?.title?.[language] ||
+    homeSettings?.hero?.title?.ar ||
+    t.hero_title;
+
+  const heroDesc =
+    homeSettings?.hero?.desc?.[language] ||
+    homeSettings?.hero?.desc?.ar ||
+    t.hero_desc;
+
+  const primaryCta =
+    homeSettings?.hero?.primaryCta?.[language] ||
+    homeSettings?.hero?.primaryCta?.ar ||
+    t.btn_contact;
+
+  const primaryCtaUrl =
+    homeSettings?.hero?.primaryCtaUrl ||
+    (homeSettings?.quickSupport?.whatsappNumber
+      ? `https://wa.me/${homeSettings.quickSupport.whatsappNumber}`
+      : 'https://wa.me/213555989370');
+
+  const secondaryCta =
+    homeSettings?.hero?.secondaryCta?.[language] ||
+    homeSettings?.hero?.secondaryCta?.ar ||
+    t.btn_catalog;
+
+  const secondaryCtaUrl =
+    homeSettings?.hero?.secondaryCtaUrl ||
+    homeSettings?.quickSupport?.catalogUrl ||
+    '#part1-section';
+
+  const videoId = homeSettings?.hero?.videoId || '8G84kPpD4w0';
+
+  const aboutIntro =
+    homeSettings?.vmo?.aboutIntro?.[language] ||
+    homeSettings?.vmo?.aboutIntro?.ar ||
+    t.about_intro;
+
+  const missionTitle =
+    homeSettings?.vmo?.missionTitle?.[language] ||
+    homeSettings?.vmo?.missionTitle?.ar ||
+    t.mission_title;
+
+  const missionText =
+    homeSettings?.vmo?.missionText?.[language] ||
+    homeSettings?.vmo?.missionText?.ar ||
+    t.mission_text;
+
+  const visionTitle =
+    homeSettings?.vmo?.visionTitle?.[language] ||
+    homeSettings?.vmo?.visionTitle?.ar ||
+    t.vision_title;
+
+  const visionText =
+    homeSettings?.vmo?.visionText?.[language] ||
+    homeSettings?.vmo?.visionText?.ar ||
+    t.vision_text;
+
+  const objectivesTitle =
+    homeSettings?.vmo?.objectivesTitle?.[language] ||
+    homeSettings?.vmo?.objectivesTitle?.ar ||
+    t.objectives_title;
+
+  const objectivesText =
+    homeSettings?.vmo?.objectivesText?.[language] ||
+    homeSettings?.vmo?.objectivesText?.ar ||
+    t.objectives_text;
+
+  const stats = homeSettings?.stats;
 
   return (
     <section className="hero-wrapper w-full">
       <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6">
         <div className="hero-content">
           <div className="hero-text-side">
-            <p className="subtitle">{t.hero_subtitle}</p>
-            <h1 className="hero-title">{t.hero_title}</h1>
-            <p className="hero-desc">{t.hero_desc}</p>
+            <p className="subtitle">{heroBadge}</p>
+            <h1 className="hero-title">{heroTitle}</h1>
+            <p className="hero-desc">{heroDesc}</p>
             <div className="hero-actions">
               <a
-                href="https://wa.me/213555989370"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={primaryCtaUrl}
+                target={primaryCtaUrl.startsWith('http') ? '_blank' : undefined}
+                rel={primaryCtaUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
                 className="btn-primary"
               >
-                {t.btn_contact}
+                {primaryCta}
               </a>
-              <a href="#part1-section" className="btn-outline">
-                {t.btn_catalog}
+              <a href={secondaryCtaUrl} className="btn-outline">
+                {secondaryCta}
                 <svg
                   width="16"
                   height="16"
@@ -41,13 +118,43 @@ export default function HeroSection() {
                 </svg>
               </a>
             </div>
+
+            {/* Platform Live Stats Strip */}
+            {stats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-6 pt-6 border-t border-white/15 text-white">
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
+                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+                    {stats.trainersCount || '+1,200'}
+                  </span>
+                  <span className="text-[11px] text-white/80 font-medium">مدرب معتمد</span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
+                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+                    {stats.hoursCount || '+45,000'}
+                  </span>
+                  <span className="text-[11px] text-white/80 font-medium">ساعة تدريب</span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
+                  <span className="block text-lg sm:text-2xl font-black text-amber-300 font-mono">
+                    {stats.countriesCount || '18'}
+                  </span>
+                  <span className="text-[11px] text-white/80 font-medium">دولة معتمدة</span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-xs rounded-xl p-2.5 border border-white/10 text-center">
+                  <span className="block text-lg sm:text-2xl font-black text-emerald-300 font-mono">
+                    {stats.satisfactionRate || '98.7%'}
+                  </span>
+                  <span className="text-[11px] text-white/80 font-medium">نسبة الرضا</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="hero-image-side">
             <div className="video-thumbnail">
               <iframe
                 className="hero-video"
-                src="https://www.youtube.com/embed/8G84kPpD4w0?autoplay=0&controls=1&rel=0"
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&rel=0`}
                 title="YouTube video player"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -73,24 +180,24 @@ export default function HeroSection() {
             <div className="about-quote-icon">“</div>
             <p
               className="about-intro-text"
-              dangerouslySetInnerHTML={{ __html: t.about_intro }}
+              dangerouslySetInnerHTML={{ __html: aboutIntro }}
             />
 
             <div className="vmo-grid">
               <div className="vmo-card">
                 <div className="vmo-icon">🎯</div>
-                <h3 className="vmo-title">{t.mission_title}</h3>
-                <p className="vmo-text">{t.mission_text}</p>
+                <h3 className="vmo-title">{missionTitle}</h3>
+                <p className="vmo-text">{missionText}</p>
               </div>
               <div className="vmo-card">
                 <div className="vmo-icon">👁️</div>
-                <h3 className="vmo-title">{t.vision_title}</h3>
-                <p className="vmo-text">{t.vision_text}</p>
+                <h3 className="vmo-title">{visionTitle}</h3>
+                <p className="vmo-text">{visionText}</p>
               </div>
               <div className="vmo-card">
                 <div className="vmo-icon">🚀</div>
-                <h3 className="vmo-title">{t.objectives_title}</h3>
-                <p className="vmo-text">{t.objectives_text}</p>
+                <h3 className="vmo-title">{objectivesTitle}</h3>
+                <p className="vmo-text">{objectivesText}</p>
               </div>
             </div>
           </div>

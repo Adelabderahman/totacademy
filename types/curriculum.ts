@@ -208,6 +208,21 @@ export interface HomePageSettings {
     enabled: boolean;
     text: LocalizedString;
     linkUrl?: string;
+    style?: 'gold' | 'blue' | 'emerald' | 'rose';
+  };
+  vmo?: {
+    aboutIntro?: LocalizedString;
+    missionTitle?: LocalizedString;
+    missionText?: LocalizedString;
+    visionTitle?: LocalizedString;
+    visionText?: LocalizedString;
+    objectivesTitle?: LocalizedString;
+    objectivesText?: LocalizedString;
+  };
+  quickSupport?: {
+    whatsappNumber?: string;
+    catalogUrl?: string;
+    contactBtnText?: LocalizedString;
   };
 }
 

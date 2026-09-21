@@ -41,7 +41,7 @@ export default function StudioPage() {
 
   // Active section tab - strictly ordered as requested:
   // الرئيسية / التخصصات / المدربين / الشهادات / الفعاليات / المجلة / الحسابات / النسخ الاحتياطي
-  const [activeSection, setActiveSection] = useState<StudioSection>('specialties');
+  const [activeSection, setActiveSection] = useState<StudioSection>('home');
 
   // Floating feedback notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);

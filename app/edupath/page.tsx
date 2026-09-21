@@ -3493,54 +3493,93 @@ function EduPathContent() {
 
                   {/* Action Buttons: Prominent PDF Download, View Modal, Copy, Print, Reset */}
                   <div className="mt-3">
-                    <button
-                      type="button"
-                      className="qz-btn-download-main"
-                      onClick={downloadReportPDF}
-                      disabled={isDownloadingReport}
-                    >
-                      <span>📥</span>
-                      <span>
-                        {isDownloadingReport
-                          ? (lang === 'ar' ? 'جارٍ إنشاء وتحميل ملف PDF...' : 'Generating & Downloading PDF...')
-                          : (lang === 'ar' ? 'تحميل التقرير النهائي بالتفاصيل (PDF)' : 'Download Detailed Report (PDF)')}
-                      </span>
-                    </button>
-
-                    <div className="qz-report-actions-row">
+                    {/* Desktop Dedicated Action Buttons (التحميل، المعاينة، التصفير) */}
+                    <div className="hidden lg:flex items-center justify-center gap-3 my-3 flex-wrap">
                       <button
                         type="button"
-                        className="qz-report-action-btn btn-view-report"
+                        className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-900/30 transition active:scale-95 cursor-pointer"
+                        onClick={downloadReportPDF}
+                        disabled={isDownloadingReport}
+                      >
+                        <span>📥</span>
+                        <span>
+                          {isDownloadingReport
+                            ? (lang === 'ar' ? 'جارٍ تحميل PDF...' : 'Downloading PDF...')
+                            : (lang === 'ar' ? 'تحميل التقرير (PDF)' : 'Download Report (PDF)')}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-sky-900/30 transition active:scale-95 cursor-pointer"
                         onClick={openReportModal}
-                        title={lang === 'ar' ? 'الاطلاع على التقرير التفصيلي' : 'View Full Report'}
+                        title={lang === 'ar' ? 'معاينة التقرير المفصل' : 'Preview Full Report'}
                       >
                         <span>👁️</span>
-                        <span>{lang === 'ar' ? 'الاطلاع' : 'View'}</span>
+                        <span>{lang === 'ar' ? 'المعاينة' : 'Preview'}</span>
                       </button>
+
                       <button
                         type="button"
-                        className="qz-report-action-btn"
-                        onClick={copyReport}
-                      >
-                        <span>📋</span>
-                        <span>{lang === 'ar' ? 'نسخ' : 'Copy'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="qz-report-action-btn"
-                        onClick={printReport}
-                      >
-                        <span>🖨️</span>
-                        <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="qz-report-action-btn btn-reset"
+                        className="px-4 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-sm flex items-center gap-2 transition active:scale-95 cursor-pointer"
                         onClick={resetQuizzes}
                       >
                         <span>🔄</span>
                         <span>{lang === 'ar' ? 'تصفير' : 'Reset'}</span>
                       </button>
+                    </div>
+
+                    {/* Mobile View Buttons (100% identical and untouched) */}
+                    <div className="lg:hidden">
+                      <button
+                        type="button"
+                        className="qz-btn-download-main"
+                        onClick={downloadReportPDF}
+                        disabled={isDownloadingReport}
+                      >
+                        <span>📥</span>
+                        <span>
+                          {isDownloadingReport
+                            ? (lang === 'ar' ? 'جارٍ إنشاء وتحميل ملف PDF...' : 'Generating & Downloading PDF...')
+                            : (lang === 'ar' ? 'تحميل التقرير النهائي بالتفاصيل (PDF)' : 'Download Detailed Report (PDF)')}
+                        </span>
+                      </button>
+
+                      <div className="qz-report-actions-row">
+                        <button
+                          type="button"
+                          className="qz-report-action-btn btn-view-report"
+                          onClick={openReportModal}
+                          title={lang === 'ar' ? 'الاطلاع على التقرير التفصيلي' : 'View Full Report'}
+                        >
+                          <span>👁️</span>
+                          <span>{lang === 'ar' ? 'الاطلاع' : 'View'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="qz-report-action-btn"
+                          onClick={copyReport}
+                        >
+                          <span>📋</span>
+                          <span>{lang === 'ar' ? 'نسخ' : 'Copy'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="qz-report-action-btn"
+                          onClick={printReport}
+                        >
+                          <span>🖨️</span>
+                          <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="qz-report-action-btn btn-reset"
+                          onClick={resetQuizzes}
+                        >
+                          <span>🔄</span>
+                          <span>{lang === 'ar' ? 'تصفير' : 'Reset'}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -230,11 +230,21 @@ export interface AcademyEventItem {
   location: LocalizedString;
   mode: 'inperson' | 'online' | 'hybrid';
   trainerName: LocalizedString;
+  trainerAvatar?: string;
   seats: number;
   coverImage: string;
   desc: LocalizedString;
   status: 'upcoming' | 'ongoing' | 'completed';
   registrationUrl?: string;
+  category?: 'workshops' | 'days' | 'bootcamps' | 'camps' | 'meetups' | string;
+  meetingUrl?: string;
+  price?: {
+    amount: number;
+    currency: string;
+    isFree?: boolean;
+  };
+  targetAudience?: LocalizedString;
+  notes?: LocalizedString;
 }
 
 export interface TrainerDirectoryItem {

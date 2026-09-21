@@ -108,8 +108,9 @@ export const defaultEventsList: AcademyEventItem[] = EVENT_SECTIONS.flatMap((sec
     seats: ev.seats,
     coverImage: ev.img,
     desc: ev.desc,
-    status: 'upcoming',
+    status: 'upcoming' as const,
     registrationUrl: 'https://sites.google.com/view/totacademya/totf126',
+    category: sec.key,
   }))
 );
 

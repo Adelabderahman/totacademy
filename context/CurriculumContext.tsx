@@ -53,6 +53,7 @@ interface CurriculumContextType {
   saveSiteSettings: (settings: SiteGeneralSettings) => Promise<{ success: boolean; error?: string }>;
   saveEvent: (event: AcademyEventItem) => Promise<{ success: boolean; error?: string }>;
   deleteEvent: (eventId: string) => Promise<{ success: boolean; error?: string }>;
+  syncAllEventsToFirestore: () => Promise<{ success: boolean; count: number; error?: string }>;
   saveTrainer: (trainer: TrainerDirectoryItem) => Promise<{ success: boolean; error?: string }>;
   deleteTrainer: (trainerId: string) => Promise<{ success: boolean; error?: string }>;
   addAdminEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -371,7 +372,19 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (isMounted && !eventsSnap.empty) {
           const remoteEvents: AcademyEventItem[] = [];
           eventsSnap.forEach((d) => remoteEvents.push({ ...(d.data() as AcademyEventItem), id: d.id }));
+          // Ensure all default events are available
+          defaultEventsList.forEach((seedEv) => {
+            if (!remoteEvents.some((r) => r.id === seedEv.id)) {
+              remoteEvents.push(seedEv);
+            }
+          });
           setEventsList(remoteEvents);
+        } else if (isMounted) {
+          setEventsList(defaultEventsList);
+          // Auto-seed to Firestore
+          defaultEventsList.forEach((ev) => {
+            setDoc(doc(firestore, 'events', ev.id), ev).catch(console.warn);
+          });
         }
       } catch (e: any) {
         console.warn('Firestore initial sync note:', e?.message || e);
@@ -646,6 +659,33 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     []
   );
 
+  const syncAllEventsToFirestore = useCallback(
+    async (): Promise<{ success: boolean; count: number; error?: string }> => {
+      try {
+        if (!db || !isFirebaseConfigured) {
+          return { success: false, count: 0, error: 'الاتصال بـ Firebase غير مفعل أو قيد التهيئة' };
+        }
+        const map = new Map<string, AcademyEventItem>();
+        defaultEventsList.forEach((e) => map.set(e.id, e));
+        eventsList.forEach((e) => map.set(e.id, e));
+        const combined = Array.from(map.values());
+
+        let savedCount = 0;
+        for (const ev of combined) {
+          await setDoc(doc(db, 'events', ev.id), ev, { merge: true });
+          savedCount++;
+        }
+
+        setEventsList(combined);
+        return { success: true, count: savedCount };
+      } catch (err: any) {
+        console.error('Error syncing all events to Firestore:', err);
+        return { success: false, count: 0, error: err.message || 'فشل مزامنة الفعاليات مع قاعدة البيانات' };
+      }
+    },
+    [eventsList]
+  );
+
   // Trainer Handlers
   const saveTrainer = useCallback(
     async (trainer: TrainerDirectoryItem): Promise<{ success: boolean; error?: string }> => {
@@ -853,6 +893,7 @@ export const CurriculumProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         saveSiteSettings,
         saveEvent,
         deleteEvent,
+        syncAllEventsToFirestore,
         saveTrainer,
         deleteTrainer,
         addAdminEmail,

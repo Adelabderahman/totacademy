@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import '@/components/events/events.css';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCurriculum } from '@/context/CurriculumContext';
 import {
   EVENT_SECTIONS,
   EventItemType,
@@ -19,12 +20,51 @@ import { ReservationModal } from '@/components/events/ReservationModal';
 
 export default function EventsPage() {
   const { language } = useLanguage();
+  const { eventsList } = useCurriculum();
 
   // Filters State
   const [category, setCategory] = useState('all');
   const [mode, setMode] = useState('all');
   const [period, setPeriod] = useState('all');
   const [search, setSearch] = useState('');
+
+  // Live Sections built from Firestore/Curriculum eventsList
+  const liveSections = useMemo(() => {
+    if (!eventsList || eventsList.length === 0) return EVENT_SECTIONS;
+    return EVENT_SECTIONS.map((sec) => {
+      const matchingFromContext = eventsList.filter(
+        (e) => (e.category || 'workshops') === sec.key
+      );
+      if (matchingFromContext.length > 0) {
+        return {
+          ...sec,
+          events: matchingFromContext.map((e) => ({
+            id: e.id,
+            title: {
+              ar: e.title.ar || '',
+              en: e.title.en || e.title.ar || '',
+              fr: e.title.fr || e.title.ar || '',
+            },
+            date: e.date,
+            loc: {
+              ar: e.location.ar || '',
+              en: e.location.en || e.location.ar || '',
+              fr: e.location.fr || e.location.ar || '',
+            },
+            desc: {
+              ar: e.desc.ar || '',
+              en: e.desc.en || e.desc.ar || '',
+              fr: e.desc.fr || e.desc.ar || '',
+            },
+            mode: e.mode,
+            seats: e.seats,
+            img: e.coverImage,
+          })),
+        };
+      }
+      return sec;
+    });
+  }, [eventsList]);
 
   // Active event per section (section.key -> event.id)
   const [activeEvents, setActiveEvents] = useState<Record<string, string>>(() => {
@@ -109,7 +149,7 @@ export default function EventsPage() {
     const counts: Record<string, number> = {};
     let total = 0;
 
-    const sections = EVENT_SECTIONS.map((sec) => {
+    const sections = liveSections.map((sec) => {
       const isSecMatch = category === 'all' || sec.key === category;
 
       const matchingEvents = sec.events.filter((ev) => {

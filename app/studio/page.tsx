@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { MASTER_ADMIN_EMAIL } from '@/lib/adminAccess';
 import { AccessDenied } from '@/components/studio/AccessDenied';
 import { HomePageEditor } from '@/components/studio/HomePageEditor';
+import { StudioOperationsDashboard } from '@/components/studio/StudioOperationsDashboard';
 import { SpecialtiesManager } from '@/components/studio/SpecialtiesManager';
 import { TrainersEditor } from '@/components/studio/TrainersEditor';
 import { CertificatesEditor } from '@/components/studio/CertificatesEditor';
@@ -42,6 +43,7 @@ export default function StudioPage() {
   // Active section tab - strictly ordered as requested:
   // الرئيسية / التخصصات / المدربين / الشهادات / الفعاليات / المجلة / الحسابات / النسخ الاحتياطي
   const [activeSection, setActiveSection] = useState<StudioSection>('home');
+  const [homeSubView, setHomeSubView] = useState<'operations' | 'cms'>('operations');
 
   // Floating feedback notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -169,8 +171,44 @@ export default function StudioPage() {
       {/* Studio Content Viewport */}
       {/* ========================================================================= */}
       <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
-        {/* 1. الرئيسية (Home) */}
-        {activeSection === 'home' && <HomePageEditor />}
+        {/* 1. الرئيسية (Home / Live Operations & Activities Hub) */}
+        {activeSection === 'home' && (
+          <div className="space-y-6">
+            {/* Sub-view switcher for Home */}
+            <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
+              <button
+                type="button"
+                onClick={() => setHomeSubView('operations')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                  homeSubView === 'operations'
+                    ? 'bg-amber-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <span>⚡</span>
+                <span>مركز العمليات والأنشطة المباشرة</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHomeSubView('cms')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                  homeSubView === 'cms'
+                    ? 'bg-amber-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <span>🎨</span>
+                <span>تخصيص محتوى الواجهة (CMS)</span>
+              </button>
+            </div>
+
+            {homeSubView === 'operations' ? (
+              <StudioOperationsDashboard onShowToast={showToast} />
+            ) : (
+              <HomePageEditor />
+            )}
+          </div>
+        )}
 
         {/* 2. التخصصات (Tracks / Specializations with Card & Content Editors) */}
         {activeSection === 'specialties' && <SpecialtiesManager onShowToast={showToast} />}

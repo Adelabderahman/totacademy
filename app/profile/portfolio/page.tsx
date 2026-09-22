@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserAccount } from '@/context/UserAccountContext';
 import { getAccountTypeLabel } from '@/types/user';
+import { CATEGORIES, COUNTRIES } from '@/data/trainersData';
 import {
   Sparkles,
   CheckCircle2,
@@ -15,7 +17,6 @@ import {
   ShieldCheck,
   Share2,
   Download,
-  ExternalLink,
   Award,
   BookOpen,
   Briefcase,
@@ -24,23 +25,62 @@ import {
   ArrowLeft,
   GraduationCap,
   Clock,
-  User,
   Check,
 } from 'lucide-react';
 
-export default function TrainerPortfolioLandingPage() {
-  const { language, t } = useLanguage();
+function PortfolioContent() {
+  const { language } = useLanguage();
   const isRTL = language === 'ar';
   const { user } = useUserAccount();
+  const searchParams = useSearchParams();
+  const trainerId = searchParams.get('id');
 
   const [copied, setCopied] = useState(false);
 
-  const accountTypeRoleLabel =
-    language === 'ar'
-      ? (user.accountTypeLabelAr || getAccountTypeLabel(user.accountType, 'ar'))
-      : language === 'fr'
-      ? getAccountTypeLabel(user.accountType, 'fr')
-      : (user.accountTypeLabelEn || getAccountTypeLabel(user.accountType, 'en'));
+  // Check if viewing a specific trainer from directory
+  const trainerFromDirectory = useMemo(() => {
+    if (!trainerId) return null;
+    for (const cat of CATEGORIES) {
+      const found = cat.trainers.find((item) => item.id === trainerId);
+      if (found) return { trainer: found, category: cat };
+    }
+    return null;
+  }, [trainerId]);
+
+  const activeName = trainerFromDirectory
+    ? trainerFromDirectory.trainer.name[language] || trainerFromDirectory.trainer.name.ar
+    : user.name;
+
+  const activeAvatar = trainerFromDirectory
+    ? trainerFromDirectory.trainer.image
+    : user.avatar;
+
+  const activeSpecialty = trainerFromDirectory
+    ? trainerFromDirectory.trainer.role[language] || trainerFromDirectory.trainer.role.ar
+    : user.specialtyAr;
+
+  const countryObj = trainerFromDirectory ? COUNTRIES[trainerFromDirectory.trainer.country] : null;
+  const activeCountry = trainerFromDirectory
+    ? (countryObj ? countryObj[language] || countryObj.ar : trainerFromDirectory.trainer.country)
+    : user.country;
+
+  const activeCity = trainerFromDirectory ? '' : user.city;
+
+  const activeMembershipNumber = trainerFromDirectory
+    ? `TOT-${trainerFromDirectory.trainer.id.toUpperCase()}`
+    : user.membershipNumber;
+
+  const activeBio = trainerFromDirectory
+    ? trainerFromDirectory.trainer.bio[language] || trainerFromDirectory.trainer.bio.ar
+    : user.bioAr;
+
+  const accountTypeRoleLabel = trainerFromDirectory
+    ? (trainerFromDirectory.trainer.role[language] || trainerFromDirectory.trainer.role.ar)
+    : language === 'ar'
+    ? (user.accountTypeLabelAr || getAccountTypeLabel(user.accountType, 'ar'))
+    : language === 'fr'
+    ? getAccountTypeLabel(user.accountType, 'fr')
+    : (user.accountTypeLabelEn || getAccountTypeLabel(user.accountType, 'en'));
 
   const memberBadgeText =
     language === 'ar'
@@ -63,6 +103,11 @@ export default function TrainerPortfolioLandingPage() {
     }
   };
 
+  const backHref = trainerFromDirectory ? '/trainers' : '/profile';
+  const backLabel = language === 'ar'
+    ? (trainerFromDirectory ? 'العودة لقائمة المدربين' : 'العودة للوحة الحساب')
+    : (trainerFromDirectory ? 'Back to Trainers' : 'Back to Dashboard');
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-16 font-sans">
       {/* Top Floating Nav */}
@@ -70,11 +115,11 @@ export default function TrainerPortfolioLandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
-              href="/profile"
+              href={backHref}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-600 hover:text-primary-blue transition-colors"
             >
               {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4 text-slate-600" />}
-              <span>{language === 'ar' ? 'العودة للوحة الحساب' : 'Back to Dashboard'}</span>
+              <span>{backLabel}</span>
             </Link>
           </div>
 
@@ -107,8 +152,8 @@ export default function TrainerPortfolioLandingPage() {
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-5">
           <div className="relative inline-block mx-auto">
             <img
-              src={user.avatar}
-              alt={user.name}
+              src={activeAvatar}
+              alt={activeName}
               className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl object-cover ring-4 ring-white/30 shadow-2xl mx-auto"
             />
             <span
@@ -121,7 +166,7 @@ export default function TrainerPortfolioLandingPage() {
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-center gap-2.5">
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">{user.name}</h1>
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">{activeName}</h1>
               <span className="px-3.5 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-primary-blue border border-blue-300 shadow-xs flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-primary-blue" />
                 {memberBadgeText}
@@ -129,17 +174,17 @@ export default function TrainerPortfolioLandingPage() {
             </div>
 
             <p className="text-sm sm:text-base font-semibold text-blue-200">
-              {user.specialtyAr} • {user.city}، {user.country}
+              {activeSpecialty} {activeCity ? `• ${activeCity}، ` : '• '}{activeCountry}
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 pt-1">
               <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full border border-white/15">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                {language === 'ar' ? 'رقم العضوية:' : 'Membership No:'} {user.membershipNumber}
+                {language === 'ar' ? 'رقم العضوية:' : 'Membership No:'} {activeMembershipNumber}
               </span>
               <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full border border-white/15">
                 <Calendar className="w-3.5 h-3.5 text-blue-300" />
-                {language === 'ar' ? `تاريخ الانضمام: ${user.joinedDate}` : `Joined: ${user.joinedDate}`}
+                {language === 'ar' ? `الاعتماد: عضو معتمد` : `Accreditation: Certified Member`}
               </span>
             </div>
           </div>
@@ -149,7 +194,7 @@ export default function TrainerPortfolioLandingPage() {
             <span className="text-blue-300 font-bold block mb-1 text-xs">
               {language === 'ar' ? 'نبذة عن نفسي:' : 'About Me:'}
             </span>
-            &ldquo;{user.bioAr || (language === 'ar' ? 'مدرب معتمد بالأكاديمية متخصص في تقديم برامج إعداد المدربين وتطوير الكفاءات القيادية والمؤسسية.' : 'Certified Academy Trainer dedicated to TOT and organizational leadership.')}&rdquo;
+            &ldquo;{activeBio || (language === 'ar' ? 'مدرب معتمد بالأكاديمية متخصص في تقديم برامج إعداد المدربين وتطوير الكفاءات القيادية والمؤسسية.' : 'Certified Academy Trainer dedicated to TOT and organizational leadership.')}&rdquo;
           </div>
         </div>
       </section>
@@ -218,163 +263,80 @@ export default function TrainerPortfolioLandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                title: 'البرنامج الوطني لتأهيل وإعداد المدربين TOT المتقدم',
-                org: 'قصر المؤتمرات الدولي - الجزائر العاصمة',
-                date: 'أكتوبر 2024',
-                attendees: '120 مشاركاً',
-                badge: 'معتمد دولياً',
-                badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                desc: 'برنامج تدريبي مكثف امتد على مدار 60 ساعة تدريبية، شمل تقنيات هندسة التدريب، كاريزما الإلقاء، وتصميم الحقائب الحديثة.',
+                titleAr: 'دورة إعداد وتأهيل مدربي TOT الدفعة 14',
+                titleEn: 'TOT Trainer Certification - Batch 14',
+                date: 'نوفمبر 2024',
+                hours: '40 ساعة',
+                partner: 'الأكاديمية الدولية لتدريب المدربين',
+                icon: Award,
               },
               {
-                title: 'الملتقى السنوي لتقنيات التدريب الذكي بالذكاء الاصطناعي',
-                org: 'فندق الشيراطون - وهران',
-                date: 'ديسمبر 2024',
-                attendees: '280 مشاركاً',
-                badge: 'ورقة عمل رئيسية',
-                badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
-                desc: 'تقديم ورقة عمل وبناء نموذج عملي حول توظيف خوارزميات الذكاء الاصطناعي التوليدي في تصميم الأنشطة والتقييم الفوري.',
+                titleAr: 'ملتقى الذكاء الاصطناعي في هندسة التدريب التفاعلي',
+                titleEn: 'AI in Interactive Training Engineering Summit',
+                date: 'سبتمبر 2024',
+                hours: '18 ساعة',
+                partner: 'مجمع الابتكار وتطوير الكفاءات',
+                icon: BookOpen,
               },
               {
-                title: 'برنامج القيادة التكيفية وإدارة فرق العمل للمديرين التنفيذيين',
-                org: 'المعهد الوطني لترقية الإدارة - قسنطينة',
-                date: 'يناير 2025',
-                attendees: '45 مديراً تنفيذياً',
-                badge: 'تدريب مؤسسي',
-                badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
-                desc: 'تدريب عالي المستوى ركز على مهارات اتخاذ القرار تحت الضغط، ديناميكيات التفاوض، وبناء ثقافة العمل المرنة.',
+                titleAr: 'برنامج الكوتشينغ والتوجيه القيادي التنفيذي',
+                titleEn: 'Executive Coaching & Mentoring Track',
+                date: 'ماي 2024',
+                hours: '32 ساعة',
+                partner: 'مركز القيادة وتطوير المهارات',
+                icon: Briefcase,
               },
               {
-                title: 'ورشة تصميم وهندسة الحقائب التدريبية وفق نموذج ADDIE',
-                org: 'أكاديمية التدريب الشاملة - عنابة',
-                date: 'فبراير 2025',
-                attendees: '85 متدرباً',
-                badge: 'تطوير حقائب',
-                badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-                desc: 'تطبيق عملي خطوة بخطوة لبناء حقيبة تدريبية احترافية تتضمن دليل المدرب، كراس المتدرب، والعروض التفاعلية.',
+                titleAr: 'ورشة بناء وتصميم الحقائب التدريبية الاحترافية',
+                titleEn: 'Professional Courseware Design Workshop',
+                date: 'جانفي 2024',
+                hours: '24 ساعة',
+                partner: 'هيئة الاعتماد وتأهيل المدربين',
+                icon: GraduationCap,
               },
-              {
-                title: 'دورة كاريزما الإلقاء المسرحي والتأثير الجماهيري للمدربين',
-                org: 'المنصة التفاعلية المباشرة بالأكاديمية',
-                date: 'مارس 2025',
-                attendees: '190 مشاركاً',
-                badge: 'تدريب افتراضي',
-                badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
-                desc: 'صقل مهارات لغة الجسد، التلوين الصوتي، والسيطرة على رهبة المسرح أمام الجمهور وقاعات التدريب الكبرى.',
-              },
-              {
-                title: 'مبادرة التدريب المجتمعي لتمكين رواد الأعمال وأصحاب المشاريع',
-                org: 'حاضنة الأعمال الوطنية للابتكار',
-                date: 'أفريل 2025',
-                attendees: '310 مستفيدين',
-                badge: 'مبادرة مجتمعية',
-                badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                desc: 'سلسلة لقاءات تفاعلية استهدفت تمكين الشباب من بناء خطط العمل وإدارة الموارد البشرية الناشئة بكفاءة.',
-              },
-            ].map((activity, idx) => (
-              <div
-                key={idx}
-                className="p-5 rounded-2xl border border-slate-200/90 bg-slate-50/50 hover:bg-white hover:border-primary-blue/30 hover:shadow-md transition-all space-y-3"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${activity.badgeColor}`}>
-                    {activity.badge}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-400">
-                    {activity.date}
-                  </span>
+            ].map((activity, idx) => {
+              const IconComp = activity.icon;
+              return (
+                <div
+                  key={idx}
+                  className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-primary-blue/40 transition-all flex items-start gap-4"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-primary-blue flex items-center justify-center shrink-0 mt-0.5">
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1.5 min-w-0">
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900 leading-snug">
+                      {language === 'ar' ? activity.titleAr : activity.titleEn}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-500">{activity.partner}</p>
+                    <div className="flex items-center gap-3 text-[11px] text-slate-400 font-semibold pt-1">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {activity.date}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {activity.hours}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-
-                <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                  {activity.title}
-                </h3>
-
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium">
-                  <span className="flex items-center gap-1 text-slate-600">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {activity.org}
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-600">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    {activity.attendees}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed pt-1">
-                  {activity.desc}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
-        {/* Training Packages */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-                <span className="w-2.5 h-6 rounded-full bg-emerald-500" />
-                {language === 'ar' ? 'الحقائب التدريبية والمؤلفات المعتمدة' : 'Accredited Training Toolkits'}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                {language === 'ar'
-                  ? 'مجموعة من الأدوات والحقائب المتخصصة الجاهزة للتقديم المؤسسي'
-                  : 'Specialized instructional toolkits ready for corporate delivery'}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                title: 'حقيبة TOT المتكاملة للمدرب المحترف',
-                units: '18 وحدة تدريبية',
-                format: 'دليل المدرب + كراس المتدرب + شرائح تفاعلية',
-                badge: 'الإصدار الماسي',
-                icon: '📘',
-              },
-              {
-                title: 'دليل التقييم وقياس الأثر التدريبي وفق نموذج كيركباتريك',
-                units: '8 نماذج استرشادية',
-                format: 'استبيانات رقمية ومصفوفة مؤشرات',
-                badge: 'معتمد أكاديمياً',
-                icon: '📊',
-              },
-              {
-                title: 'حقيبة كاريزما الإلقاء والتأثير الجماهيري',
-                units: '12 ورشة عملية',
-                format: 'تمارين صوتية + لغة الجسد + إدارة المنصة',
-                badge: 'تطبيقي مكثف',
-                icon: '🎙️',
-              },
-            ].map((kit, i) => (
-              <div key={i} className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-white transition-all space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl">{kit.icon}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                    {kit.badge}
-                  </span>
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">{kit.title}</h3>
-                <p className="text-xs text-slate-500 font-medium">{kit.units}</p>
-                <p className="text-xs text-slate-600">{kit.format}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Gallery */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-                <span className="w-2.5 h-6 rounded-full bg-purple-500" />
-                {language === 'ar' ? 'معرض التوثيق الميداني والأنشطة الحية' : 'Live Activity Gallery'}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                {language === 'ar' ? 'لقطات من قاعات التدريب والمؤتمرات' : 'Moments from training halls and conferences'}
-              </p>
-            </div>
+        {/* Gallery / Documentary Highlights */}
+        <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-4">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
+              <span className="w-2.5 h-6 rounded-full bg-secondary-blue" />
+              {language === 'ar' ? 'معرض الصور والتوثيق الميداني' : 'Field Photo Documentary'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              {language === 'ar' ? 'لقطات من ورش العمل والندوات والمحاضرات التفاعلية' : 'Moments from interactive workshops and keynotes'}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -430,5 +392,13 @@ export default function TrainerPortfolioLandingPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function TrainerPortfolioLandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Loading portfolio...</div>}>
+      <PortfolioContent />
+    </Suspense>
   );
 }

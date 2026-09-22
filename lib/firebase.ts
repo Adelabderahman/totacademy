@@ -33,6 +33,7 @@ import {
   UserCertificate,
   UserAppointment,
   ConfirmedEnrollmentRecord,
+  UserNotification,
 } from '@/types/user';
 
 export enum OperationType {
@@ -352,8 +353,41 @@ export async function saveConfirmedEnrollmentToFirestore(
       ...record,
       confirmedAt: record.confirmedAt || new Date().toISOString(),
     }, { merge: true });
+
+    const globalRef = doc(db, 'enrollment_records', `${uid}_${record.trackKey}`);
+    await setDoc(globalRef, {
+      ...record,
+      userId: uid,
+      confirmedAt: record.confirmedAt || new Date().toISOString(),
+    }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchAllConfirmedEnrollmentsFromFirestore(): Promise<ConfirmedEnrollmentRecord[]> {
+  if (!db) return [];
+  const path = 'enrollment_records';
+  try {
+    const collRef = collection(db, 'enrollment_records');
+    const snap = await getDocs(collRef);
+    return snap.docs.map((d) => (d.data() as ConfirmedEnrollmentRecord));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function fetchAllUsersFromFirestore(): Promise<UserProfile[]> {
+  if (!db) return [];
+  const path = 'users';
+  try {
+    const collRef = collection(db, 'users');
+    const snap = await getDocs(collRef);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserProfile));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
   }
 }
 
@@ -370,6 +404,57 @@ export async function fetchUserCertificatesFromFirestore(uid: string): Promise<U
   }
 }
 
+export async function saveUserCertificateToFirestore(
+  uid: string,
+  cert: UserCertificate
+): Promise<void> {
+  if (!db || !uid || !cert.id) return;
+  const userPath = `users/${uid}/certificates/${cert.id}`;
+  const globalPath = `certificate_requests/${cert.id}`;
+  try {
+    const userDocRef = doc(db, 'users', uid, 'certificates', cert.id);
+    await setDoc(userDocRef, { ...cert, userId: uid }, { merge: true });
+
+    const globalDocRef = doc(db, 'certificate_requests', cert.id);
+    await setDoc(globalDocRef, { ...cert, userId: uid }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, userPath);
+  }
+}
+
+export async function fetchAllCertificateRequestsFromFirestore(): Promise<UserCertificate[]> {
+  if (!db) return [];
+  const path = 'certificate_requests';
+  try {
+    const collRef = collection(db, 'certificate_requests');
+    const snap = await getDocs(collRef);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserCertificate));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function updateCertificateStatusInFirestore(
+  certId: string,
+  status: 'pending_review' | 'approved' | 'issued' | 'rejected',
+  userId?: string,
+  updates?: Partial<UserCertificate>
+): Promise<void> {
+  if (!db || !certId) return;
+  try {
+    const globalRef = doc(db, 'certificate_requests', certId);
+    await setDoc(globalRef, { status, ...updates }, { merge: true });
+
+    if (userId) {
+      const userRef = doc(db, 'users', userId, 'certificates', certId);
+      await setDoc(userRef, { status, ...updates }, { merge: true });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `certificate_requests/${certId}`);
+  }
+}
+
 export async function fetchUserAppointmentsFromFirestore(uid: string): Promise<UserAppointment[]> {
   if (!db || !uid) return [];
   const path = `users/${uid}/appointments`;
@@ -381,4 +466,142 @@ export async function fetchUserAppointmentsFromFirestore(uid: string): Promise<U
     handleFirestoreError(error, OperationType.LIST, path);
     return [];
   }
+}
+
+export async function saveUserAppointmentToFirestore(
+  uid: string,
+  appt: UserAppointment
+): Promise<void> {
+  if (!db || !uid || !appt.id) return;
+  const userPath = `users/${uid}/appointments/${appt.id}`;
+  const globalPath = `appointments/${appt.id}`;
+  try {
+    const userDocRef = doc(db, 'users', uid, 'appointments', appt.id);
+    await setDoc(userDocRef, { ...appt, userId: uid }, { merge: true });
+
+    const globalDocRef = doc(db, 'appointments', appt.id);
+    await setDoc(globalDocRef, { ...appt, userId: uid }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, userPath);
+  }
+}
+
+export async function deleteUserAppointmentFromFirestore(
+  uid: string,
+  apptId: string
+): Promise<void> {
+  if (!db || !uid || !apptId) return;
+  try {
+    const userDocRef = doc(db, 'users', uid, 'appointments', apptId);
+    await deleteDoc(userDocRef);
+
+    const globalDocRef = doc(db, 'appointments', apptId);
+    await deleteDoc(globalDocRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `users/${uid}/appointments/${apptId}`);
+  }
+}
+
+export async function fetchAllAppointmentsFromFirestore(): Promise<UserAppointment[]> {
+  if (!db) return [];
+  const path = 'appointments';
+  try {
+    const collRef = collection(db, 'appointments');
+    const snap = await getDocs(collRef);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserAppointment));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function updateAppointmentStatusInFirestore(
+  apptId: string,
+  status: 'upcoming' | 'completed' | 'cancelled' | 'pending' | 'approved' | 'rejected',
+  userId?: string,
+  updates?: Partial<UserAppointment>
+): Promise<void> {
+  if (!db || !apptId) return;
+  try {
+    const globalRef = doc(db, 'appointments', apptId);
+    await setDoc(globalRef, { status, ...updates }, { merge: true });
+
+    if (userId) {
+      const userRef = doc(db, 'users', userId, 'appointments', apptId);
+      await setDoc(userRef, { status, ...updates }, { merge: true });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `appointments/${apptId}`);
+  }
+}
+
+// --- Notifications Management (إدارة الإشعارات الحية للحسابات) ---
+
+export async function fetchUserNotificationsFromFirestore(uid: string): Promise<UserNotification[]> {
+  if (!db || !uid) return [];
+  const path = `users/${uid}/notifications`;
+  try {
+    const notifColl = collection(db, 'users', uid, 'notifications');
+    const snap = await getDocs(notifColl);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserNotification));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function saveUserNotificationToFirestore(
+  uid: string,
+  notif: UserNotification
+): Promise<void> {
+  if (!db || !uid || !notif.id) return;
+  const path = `users/${uid}/notifications/${notif.id}`;
+  try {
+    const notifRef = doc(db, 'users', uid, 'notifications', notif.id);
+    await setDoc(notifRef, notif, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function markNotificationReadInFirestore(uid: string, notifId: string): Promise<void> {
+  if (!db || !uid || !notifId) return;
+  const path = `users/${uid}/notifications/${notifId}`;
+  try {
+    const notifRef = doc(db, 'users', uid, 'notifications', notifId);
+    await updateDoc(notifRef, { read: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function deleteNotificationFromFirestore(uid: string, notifId: string): Promise<void> {
+  if (!db || !uid || !notifId) return;
+  const path = `users/${uid}/notifications/${notifId}`;
+  try {
+    const notifRef = doc(db, 'users', uid, 'notifications', notifId);
+    await deleteDoc(notifRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function sendNotificationToUser(
+  notif: Omit<UserNotification, 'id' | 'userId' | 'read' | 'createdAt'> & {
+    createdAt?: string;
+    read?: boolean;
+    userId?: string;
+  },
+  targetUserId: string
+): Promise<void> {
+  if (!db || !targetUserId) return;
+  const id = 'notif-' + Math.random().toString(36).substring(2, 9);
+  const fullNotif: UserNotification = {
+    ...notif,
+    id,
+    userId: targetUserId,
+    read: false,
+    createdAt: notif.createdAt || new Date().toISOString(),
+  };
+  await saveUserNotificationToFirestore(targetUserId, fullNotif);
 }

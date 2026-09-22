@@ -66,6 +66,30 @@ service cloud.firestore {
         allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(apptId);
         allow delete: if isOwner(userId) && isValidId(userId);
       }
+
+      // User's Notifications Subcollection
+      match /notifications/{notifId} {
+        allow get, list: if isOwner(userId) && isValidId(userId);
+        allow create, update, delete: if isOwner(userId) && isValidId(userId) && isValidId(notifId);
+      }
+    }
+
+    // Global Appointments (for admin dashboard oversight and real-time operations)
+    match /appointments/{apptId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(apptId);
+    }
+
+    // Global Certificate Requests (for admin dashboard review and issuance)
+    match /certificate_requests/{reqId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(reqId);
+    }
+
+    // Global Broadcast Notifications
+    match /notifications/{notifId} {
+      allow get, list: if true;
+      allow create, update, delete: if isValidId(notifId);
     }
 
     // CMS Studio settings

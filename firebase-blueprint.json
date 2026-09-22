@@ -154,6 +154,62 @@
       },
       "required": ["id", "userId", "code", "title"]
     },
+    "AppointmentRecord": {
+      "title": "AppointmentRecord",
+      "description": "Appointment, workshop, or consultation booking record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "titleAr": { "type": "string" },
+        "titleEn": { "type": "string" },
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "locationAr": { "type": "string" },
+        "mentorOrHost": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "titleAr", "date", "status"]
+    },
+    "CertificateRequest": {
+      "title": "CertificateRequest",
+      "description": "Certificate issuance request or accredited credential record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "trackKey": { "type": "string" },
+        "titleAr": { "type": "string" },
+        "code": { "type": "string" },
+        "grade": { "type": "string" },
+        "hours": { "type": "number" },
+        "status": { "type": "string" },
+        "requestedAt": { "type": "string" }
+      },
+      "required": ["id", "titleAr", "status"]
+    },
+    "UserNotification": {
+      "title": "UserNotification",
+      "description": "In-app and system alert notification delivered to the user account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "titleAr": { "type": "string" },
+        "messageAr": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "titleAr", "read"]
+    },
     "TrackProgress": {
       "title": "TrackProgress",
       "description": "Detailed lesson and quiz progress tracking for an enrolled user",
@@ -298,8 +354,24 @@
       "description": "Official academy certificates issued to the user"
     },
     "/users/{userId}/appointments/{apptId}": {
-      "schema": "object",
+      "schema": "AppointmentRecord",
       "description": "Scheduled appointments and interactive workshops"
+    },
+    "/users/{userId}/notifications/{notifId}": {
+      "schema": "UserNotification",
+      "description": "User specific in-app notifications and administrative messages"
+    },
+    "/appointments/{apptId}": {
+      "schema": "AppointmentRecord",
+      "description": "Global scheduled appointments and interactive workshops stream for admin review"
+    },
+    "/certificate_requests/{reqId}": {
+      "schema": "CertificateRequest",
+      "description": "Global certificate requests and issuance records for admin oversight"
+    },
+    "/notifications/{notifId}": {
+      "schema": "UserNotification",
+      "description": "Broadcast notifications and system announcements"
     },
     "/cms/{documentId}": {
       "schema": "CMSConfig",

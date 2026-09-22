@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   TrainerItem,
@@ -71,16 +72,27 @@ export default function TrainerCard({ trainer, category }: TrainerCardProps) {
             <span className="trainer-word">✦ {t.trainer_word}</span>
             <div className="trainer-front-name">{name}</div>
             <div className="trainer-front-role">{role}</div>
-            <button
-              type="button"
-              className="fc-cta fc-flip-trigger"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFlipped(true);
-              }}
-            >
-              {t.meet_trainer}
-            </button>
+            <div className="trainer-front-actions flex items-center justify-center gap-2 mt-2">
+              <button
+                type="button"
+                className="fc-cta fc-flip-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFlipped(true);
+                }}
+              >
+                {t.meet_trainer}
+              </button>
+              <Link
+                href={`/profile/portfolio?id=${trainer.id}`}
+                className="fc-cta fc-profile-link inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white backdrop-blur-xs text-xs font-bold px-3 py-2 rounded-xl transition-all"
+                onClick={(e) => e.stopPropagation()}
+                title={language === 'ar' ? 'الملف الشخصي العام' : 'Public Profile'}
+              >
+                <span>{language === 'ar' ? 'الملف الشخصي' : language === 'fr' ? 'Profil' : 'Profile'}</span>
+                <span>↗</span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -333,16 +345,26 @@ export default function TrainerCard({ trainer, category }: TrainerCardProps) {
           </div>
 
           {/* Footer CTA */}
-          <div className="fc-back-footer">
-            <a
-              href={trainer.profile}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="fc-cta fc-back-cta"
+          <div className="fc-back-footer flex items-center justify-center gap-2">
+            <Link
+              href={`/profile/portfolio?id=${trainer.id}`}
+              className="fc-cta fc-back-cta bg-primary-blue hover:bg-blue-600 text-white font-bold"
               onClick={(e) => e.stopPropagation()}
             >
-              {t.profile_cta}
-            </a>
+              <span>{language === 'ar' ? 'الملف الشخصي العام' : language === 'fr' ? 'Profil Public' : 'Public Profile'}</span>
+              <span> ↗</span>
+            </Link>
+            {trainer.profile && (
+              <a
+                href={trainer.profile}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fc-cta fc-back-cta"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {t.profile_cta}
+              </a>
+            )}
           </div>
         </div>
       </div>

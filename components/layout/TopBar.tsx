@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useLanguage, Language } from '@/context/LanguageContext';
 import { useAuthModal } from '@/context/AuthModalContext';
 import { useUserAccount } from '@/context/UserAccountContext';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export const TopBar: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -142,6 +143,9 @@ export const TopBar: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-primary-blue"></span>
               {t('لوحة التحكم CMS', 'CMS Studio', 'Studio CMS')}
             </Link>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* User Account / Registration button */}
             {isAuthenticated ? (

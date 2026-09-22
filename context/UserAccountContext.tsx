@@ -10,6 +10,7 @@ import {
   SupervisedStudent,
   SupervisingProfessor,
   ConfirmedEnrollmentRecord,
+  UserNotification,
 } from '@/types/user';
 import {
   auth,
@@ -26,7 +27,15 @@ import {
   fetchUserConfirmedEnrollments,
   saveConfirmedEnrollmentToFirestore,
   fetchUserCertificatesFromFirestore,
+  saveUserCertificateToFirestore,
   fetchUserAppointmentsFromFirestore,
+  saveUserAppointmentToFirestore,
+  deleteUserAppointmentFromFirestore,
+  fetchUserNotificationsFromFirestore,
+  saveUserNotificationToFirestore,
+  markNotificationReadInFirestore,
+  deleteNotificationFromFirestore,
+  sendNotificationToUser,
   TrackProgressRecord,
 } from '@/lib/firebase';
 import {
@@ -38,6 +47,7 @@ import {
   updateProfile as updateFirebaseProfile,
   User as FirebaseUser,
 } from 'firebase/auth';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 interface RegisterData {
   name: string;
@@ -59,6 +69,8 @@ interface UserAccountContextType {
   enrolledTracks: EnrolledTrack[];
   certificates: UserCertificate[];
   appointments: UserAppointment[];
+  notifications: UserNotification[];
+  unreadNotificationsCount: number;
   articles: ContributedArticle[];
   students: SupervisedStudent[];
   professors: SupervisingProfessor[];
@@ -99,8 +111,13 @@ interface UserAccountContextType {
   ) => Promise<void>;
   getTrackProgress: (trackKey: string) => Promise<TrackProgressRecord | null>;
   addAppointment: (appointment: Omit<UserAppointment, 'id'>) => { success: boolean; id: string };
+  cancelAppointment: (apptId: string) => Promise<{ success: boolean }>;
   addArticle: (article: Omit<ContributedArticle, 'id'>) => { success: boolean; id: string };
   addCertificate: (cert: Omit<UserCertificate, 'id'>) => { success: boolean; id: string };
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  sendDirectNotification: (notif: Omit<UserNotification, 'id'>, targetUserId: string) => Promise<void>;
 }
 
 const DEFAULT_USER_PROFILE: UserProfile = {
@@ -432,6 +449,8 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [confirmedEnrollments, setConfirmedEnrollments] = useState<Record<string, ConfirmedEnrollmentRecord>>({});
   const [certificates, setCertificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
   const [appointments, setAppointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
   const [articles, setArticles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
   const [students] = useState<SupervisedStudent[]>(INITIAL_STUDENTS);
   const [professors] = useState<SupervisingProfessor[]>(INITIAL_PROFESSORS);
@@ -463,6 +482,10 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       const savedAppointments = localStorage.getItem('tot_user_appointments');
       if (savedAppointments) {
         setAppointments(JSON.parse(savedAppointments));
+      }
+      const savedNotifications = localStorage.getItem('tot_user_notifications');
+      if (savedNotifications) {
+        setNotifications(JSON.parse(savedNotifications));
       }
       const savedArticles = localStorage.getItem('tot_user_articles');
       if (savedArticles) {
@@ -597,6 +620,72 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           } else {
             setAppointments([]);
           }
+
+          // Load notifications from Firestore
+          const remoteNotifs = await fetchUserNotificationsFromFirestore(fUser.uid);
+          if (remoteNotifs && remoteNotifs.length > 0) {
+            setNotifications(remoteNotifs);
+            try {
+              localStorage.setItem('tot_user_notifications', JSON.stringify(remoteNotifs));
+            } catch {}
+          } else {
+            // First welcome notification for new / active user
+            const welcomeNotif: UserNotification = {
+              id: 'notif-welcome',
+              userId: fUser.uid,
+              titleAr: 'مرحباً بك في أكاديمية TOT الدولية!',
+              titleEn: 'Welcome to TOT International Academy!',
+              messageAr: 'حسابك مفعل وجاهز الآن. يمكنك متابعة مساراتك التدريبية، حجز المواعيد والورشات التفاعلية، وطلب الشهادات والاعتمادات الرسمية.',
+              messageEn: 'Your account is active. You can enroll in tracks, book interactive appointments, and request official credentials.',
+              type: 'system',
+              read: false,
+              createdAt: new Date().toISOString(),
+              sender: 'إدارة الأكاديمية والمشرف العام',
+            };
+            setNotifications([welcomeNotif]);
+            saveUserNotificationToFirestore(fUser.uid, welcomeNotif).catch(() => {});
+          }
+
+          // Attach live Firestore listeners for real-time synchronization
+          if (db) {
+            try {
+              const notifColl = collection(db, 'users', fUser.uid, 'notifications');
+              unsubNotifs = onSnapshot(notifColl, (snap) => {
+                const liveNotifs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserNotification));
+                liveNotifs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                if (liveNotifs.length > 0) {
+                  setNotifications(liveNotifs);
+                  try {
+                    localStorage.setItem('tot_user_notifications', JSON.stringify(liveNotifs));
+                  } catch {}
+                }
+              });
+
+              const apptColl = collection(db, 'users', fUser.uid, 'appointments');
+              unsubAppts = onSnapshot(apptColl, (snap) => {
+                if (!snap.empty) {
+                  const liveAppts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserAppointment));
+                  setAppointments(liveAppts);
+                  try {
+                    localStorage.setItem('tot_user_appointments', JSON.stringify(liveAppts));
+                  } catch {}
+                }
+              });
+
+              const certColl = collection(db, 'users', fUser.uid, 'certificates');
+              unsubCerts = onSnapshot(certColl, (snap) => {
+                if (!snap.empty) {
+                  const liveCerts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserCertificate));
+                  setCertificates(liveCerts);
+                  try {
+                    localStorage.setItem('tot_user_certificates', JSON.stringify(liveCerts));
+                  } catch {}
+                }
+              });
+            } catch (snapErr) {
+              console.warn('Realtime listeners warning:', snapErr);
+            }
+          }
         } catch (err) {
           console.warn('Note loading user data from Firestore:', err);
         }
@@ -608,12 +697,22 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
           setEnrolledTracks([]);
           setCertificates([]);
           setAppointments([]);
+          setNotifications([]);
         }
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    let unsubNotifs: (() => void) | null = null;
+    let unsubAppts: (() => void) | null = null;
+    let unsubCerts: (() => void) | null = null;
+
+    return () => {
+      unsubscribe();
+      unsubNotifs?.();
+      unsubAppts?.();
+      unsubCerts?.();
+    };
   }, []);
 
   const updateProfile = async (updated: Partial<UserProfile>) => {
@@ -1241,18 +1340,71 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   };
 
-  // Add an appointment to user account and local persistence
+  // Add an appointment to user account, local persistence, and Firestore sync
   const addAppointment = (newApp: Omit<UserAppointment, 'id'>): { success: boolean; id: string } => {
     const id = `app-${Date.now()}`;
-    const fullApp: UserAppointment = { id, ...newApp };
+    const targetUid = firebaseUser?.uid || user.id;
+    const fullApp: UserAppointment = {
+      id,
+      userId: targetUid,
+      userName: user.name,
+      userEmail: user.email,
+      userPhone: user.phone,
+      createdAt: new Date().toISOString(),
+      ...newApp,
+      status: newApp.status || 'pending',
+    };
+
     setAppointments((prev) => {
-      const updated = [fullApp, ...prev];
+      const updated = [fullApp, ...prev.filter((a) => a.id !== id)];
       try {
         localStorage.setItem('tot_user_appointments', JSON.stringify(updated));
       } catch {}
       return updated;
     });
+
+    if (targetUid) {
+      saveUserAppointmentToFirestore(targetUid, fullApp).catch((err) => {
+        console.warn('Could not persist appointment to Firestore:', err);
+      });
+
+      const appNotif: UserNotification = {
+        id: `notif-app-${Date.now()}`,
+        userId: targetUid,
+        titleAr: `تم تسجيل طلب الموعد: ${fullApp.titleAr}`,
+        titleEn: `Appointment requested: ${fullApp.titleEn || fullApp.titleAr}`,
+        messageAr: `تم استلام طلب حجزك بنجاح بتاريخ ${fullApp.date} (${fullApp.time}) في ${fullApp.locationAr}. طلبك قيد التأكيد النهائي من إدارة الأكاديمية.`,
+        messageEn: `Your booking request for ${fullApp.date} (${fullApp.time}) was received and is awaiting admin confirmation.`,
+        type: 'system',
+        read: false,
+        createdAt: new Date().toISOString(),
+        sender: 'إدارة العمليات والمواعيد',
+      };
+      setNotifications((prev) => [appNotif, ...prev]);
+      saveUserNotificationToFirestore(targetUid, appNotif).catch(() => {});
+    }
+
     return { success: true, id };
+  };
+
+  const cancelAppointment = async (apptId: string): Promise<{ success: boolean }> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === apptId ? { ...a, status: 'cancelled' } : a))
+    );
+    try {
+      const saved = localStorage.getItem('tot_user_appointments');
+      if (saved) {
+        const parsed: UserAppointment[] = JSON.parse(saved);
+        const updated = parsed.map((a) => (a.id === apptId ? { ...a, status: 'cancelled' } : a));
+        localStorage.setItem('tot_user_appointments', JSON.stringify(updated));
+      }
+    } catch {}
+
+    if (targetUid) {
+      await deleteUserAppointmentFromFirestore(targetUid, apptId).catch(() => {});
+    }
+    return { success: true };
   };
 
   // Add an article submission to user account
@@ -1269,18 +1421,125 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     return { success: true, id };
   };
 
-  // Add a certificate to user account
+  // Add a certificate to user account and request review in Firestore
   const addCertificate = (newCert: Omit<UserCertificate, 'id'>): { success: boolean; id: string } => {
     const id = `cert-${Date.now()}`;
-    const fullCert: UserCertificate = { id, ...newCert };
+    const targetUid = firebaseUser?.uid || user.id;
+    const fullCert: UserCertificate = {
+      id,
+      userId: targetUid,
+      userName: user.name,
+      userEmail: user.email,
+      status: 'pending_review',
+      requestedAt: new Date().toISOString(),
+      ...newCert,
+    };
+
     setCertificates((prev) => {
-      const updated = [fullCert, ...prev];
+      const updated = [fullCert, ...prev.filter((c) => c.id !== id)];
       try {
         localStorage.setItem('tot_user_certificates', JSON.stringify(updated));
       } catch {}
       return updated;
     });
+
+    if (targetUid) {
+      saveUserCertificateToFirestore(targetUid, fullCert).catch((err) => {
+        console.warn('Could not persist certificate to Firestore:', err);
+      });
+
+      const certNotif: UserNotification = {
+        id: `notif-cert-${Date.now()}`,
+        userId: targetUid,
+        titleAr: `طلب اعتماد شهادة: ${fullCert.titleAr}`,
+        titleEn: `Certificate request: ${fullCert.titleEn || fullCert.titleAr}`,
+        messageAr: `تم إيداع طلبك للحصول على شهادة ${fullCert.titleAr} بالرمز (${fullCert.credentialId})، وسيتم تدقيق إنجازاتك والمصادقة عليها من قبل مجلس الاعتماد الأكاديمي.`,
+        messageEn: `Your request for ${fullCert.titleEn || fullCert.titleAr} has been logged for academic board verification.`,
+        type: 'certificate_pending',
+        read: false,
+        createdAt: new Date().toISOString(),
+        sender: 'هيئة الاعتماد والشهادات',
+      };
+      setNotifications((prev) => [certNotif, ...prev]);
+      saveUserNotificationToFirestore(targetUid, certNotif).catch(() => {});
+    }
+
     return { success: true, id };
+  };
+
+  const markNotificationAsRead = async (id: string): Promise<void> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    try {
+      const saved = localStorage.getItem('tot_user_notifications');
+      if (saved) {
+        const parsed: UserNotification[] = JSON.parse(saved);
+        const updated = parsed.map((n) => (n.id === id ? { ...n, read: true } : n));
+        localStorage.setItem('tot_user_notifications', JSON.stringify(updated));
+      }
+    } catch {}
+
+    if (targetUid) {
+      await markNotificationReadInFirestore(targetUid, id).catch(() => {});
+    }
+  };
+
+  const markAllNotificationsAsRead = async (): Promise<void> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      const saved = localStorage.getItem('tot_user_notifications');
+      if (saved) {
+        const parsed: UserNotification[] = JSON.parse(saved);
+        const updated = parsed.map((n) => ({ ...n, read: true }));
+        localStorage.setItem('tot_user_notifications', JSON.stringify(updated));
+      }
+    } catch {}
+
+    if (targetUid) {
+      for (const n of notifications) {
+        if (!n.read) {
+          markNotificationReadInFirestore(targetUid, n.id).catch(() => {});
+        }
+      }
+    }
+  };
+
+  const deleteNotification = async (id: string): Promise<void> => {
+    const targetUid = firebaseUser?.uid || user.id;
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      const saved = localStorage.getItem('tot_user_notifications');
+      if (saved) {
+        const parsed: UserNotification[] = JSON.parse(saved);
+        const updated = parsed.filter((n) => n.id !== id);
+        localStorage.setItem('tot_user_notifications', JSON.stringify(updated));
+      }
+    } catch {}
+
+    if (targetUid) {
+      await deleteNotificationFromFirestore(targetUid, id).catch(() => {});
+    }
+  };
+
+  const sendDirectNotification = async (
+    notif: Omit<UserNotification, 'id'>,
+    targetUserId: string
+  ): Promise<void> => {
+    await sendNotificationToUser(notif, targetUserId);
+    // If sent to self, update local state
+    if (targetUserId === user.id || targetUserId === firebaseUser?.uid) {
+      const full: UserNotification = {
+        ...notif,
+        id: `notif-${Date.now()}`,
+        userId: targetUserId,
+        read: false,
+        createdAt: notif.createdAt || new Date().toISOString(),
+      };
+      setNotifications((prev) => [full, ...prev]);
+    }
   };
 
   // Sign out
@@ -1296,12 +1555,15 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       setConfirmedEnrollments({});
       setCertificates([]);
       setAppointments([]);
+      setNotifications([]);
       setAuthCookie(null);
       try {
         localStorage.setItem(AUTH_STATE_KEY, 'false');
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem('tot_user_enrolled_tracks');
         localStorage.removeItem('tot_user_confirmed_enrollments');
+        localStorage.removeItem('tot_user_appointments');
+        localStorage.removeItem('tot_user_notifications');
       } catch {}
     }
   };
@@ -1321,6 +1583,8 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         resetTrackProgress,
         certificates,
         appointments,
+        notifications,
+        unreadNotificationsCount,
         articles,
         students,
         professors,
@@ -1335,8 +1599,13 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         updateTrackProgress,
         getTrackProgress,
         addAppointment,
+        cancelAppointment,
         addArticle,
         addCertificate,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        deleteNotification,
+        sendDirectNotification,
       }}
     >
       {children}

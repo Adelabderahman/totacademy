@@ -107,6 +107,9 @@ export interface ConfirmedEnrollmentRecord {
 
 export interface UserCertificate {
   id: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
   titleAr: string;
   titleEn: string;
   trackTitleAr: string;
@@ -117,10 +120,17 @@ export interface UserCertificate {
   hours: number;
   issuerAr: string;
   issuerEn: string;
+  status?: 'pending_review' | 'approved' | 'issued' | 'rejected';
+  rejectionReason?: string;
+  requestedAt?: string;
 }
 
 export interface UserAppointment {
   id: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  userPhone?: string;
   titleAr: string;
   titleEn: string;
   type: 'workshop' | 'interactive_meeting' | 'consultation' | 'exam';
@@ -131,8 +141,34 @@ export interface UserAppointment {
   locationAr: string;
   locationEn: string;
   mentorOrHost: string;
-  status: 'upcoming' | 'completed' | 'cancelled';
+  status: 'upcoming' | 'completed' | 'cancelled' | 'pending' | 'approved' | 'rejected';
   link?: string;
+  notes?: string;
+  rejectionReason?: string;
+  createdAt?: string;
+}
+
+export interface UserNotification {
+  id: string;
+  userId: string;
+  titleAr: string;
+  titleEn?: string;
+  messageAr: string;
+  messageEn?: string;
+  type:
+    | 'appointment_approved'
+    | 'appointment_rejected'
+    | 'certificate_issued'
+    | 'certificate_pending'
+    | 'certificate_rejected'
+    | 'enrollment_confirmed'
+    | 'supervisor_assigned'
+    | 'system'
+    | 'admin_message';
+  link?: string;
+  read: boolean;
+  createdAt: string; // ISO date string
+  sender?: string;
 }
 
 export interface ContributedArticle {

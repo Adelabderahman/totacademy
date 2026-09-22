@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserAccount } from '@/context/UserAccountContext';
 import { useAuthModal } from '@/context/AuthModalContext';
-import { EnrolledTrack } from '@/types/user';
+import { EnrolledTrack, getAccountTypeLabel } from '@/types/user';
 import {
   User,
   Award,
@@ -36,6 +36,12 @@ import {
   Phone,
   Mail,
   Download,
+  Briefcase,
+  Star,
+  Globe,
+  Layers,
+  MessageSquare,
+  Check,
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -57,9 +63,24 @@ export default function ProfilePage() {
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
 
+  // Determine displayed account type label according to user registration
+  const accountTypeRoleLabel =
+    language === 'ar'
+      ? (user.accountTypeLabelAr || getAccountTypeLabel(user.accountType, 'ar'))
+      : language === 'fr'
+      ? getAccountTypeLabel(user.accountType, 'fr')
+      : (user.accountTypeLabelEn || getAccountTypeLabel(user.accountType, 'en'));
+
+  const memberBadgeText =
+    language === 'ar'
+      ? `عضو الأكاديمية: ${accountTypeRoleLabel}`
+      : language === 'fr'
+      ? `Membre de l'Académie : ${accountTypeRoleLabel}`
+      : `Academy Member: ${accountTypeRoleLabel}`;
+
   const [activeTab, setActiveTab] = useState<
-    'tracks' | 'certificates' | 'appointments' | 'articles' | 'network' | 'settings'
-  >('tracks');
+    'portfolio' | 'tracks' | 'certificates' | 'appointments' | 'articles' | 'network' | 'settings'
+  >('portfolio');
 
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -220,9 +241,9 @@ export default function ProfilePage() {
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {user.name}
                 </h1>
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs bg-blue-100 text-primary-blue border border-blue-200">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {language === 'ar' ? 'عضو الأكاديمية (Academy Member)' : 'Academy Member'}
+                <span className="px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-extrabold flex items-center gap-1.5 shadow-xs bg-blue-100 text-primary-blue border border-blue-300">
+                  <Sparkles className="w-3.5 h-3.5 text-primary-blue" />
+                  {memberBadgeText}
                 </span>
                 <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                   {user.membershipNumber}
@@ -366,6 +387,23 @@ export default function ProfilePage() {
               className="flex-1 flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto py-3 px-0.5 scrollbar-none scroll-smooth touch-pan-x"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
+              {/* Tab 0: الملف الشخصي (بورتفوليو الأعمال والنشاطات) */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('portfolio')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'portfolio'
+                    ? 'bg-gradient-to-r from-primary-blue to-indigo-600 text-white shadow-sm'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'الملف الشخصي' : language === 'fr' ? 'Profil / Portfolio' : 'Profile / Portfolio'}</span>
+                <span className={`px-1.5 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] font-semibold ${activeTab === 'portfolio' ? 'bg-white/20 text-white' : 'bg-blue-50 text-primary-blue'}`}>
+                  {language === 'ar' ? 'بورتفوليو' : 'Portfolio'}
+                </span>
+              </button>
+
               {/* Tab 1: المسارات المسجلة */}
               <button
                 type="button"
@@ -483,6 +521,425 @@ export default function ProfilePage() {
 
         {/* 4. TAB CONTENTS */}
         <div className="mt-6">
+          {/* ================= TAB 0: PORTFOLIO & PUBLIC LANDING ================= */}
+          {activeTab === 'portfolio' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Header & Quick Public Link Action Bar */}
+              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                      {language === 'ar' ? 'صفحة هبوط بورتفوليو نشطة' : 'Active Public Portfolio'}
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900">
+                    {language === 'ar' ? 'الملف الشخصي وبورتفوليو الأعمال والنشاطات' : 'Personal Profile & Activities Portfolio'}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-2xl">
+                    {language === 'ar'
+                      ? 'صفحة هبوط احترافية متكاملة تبرز سجلك التدريبي، الفعاليات وورش العمل المنجزة، الحقائب المعتمدة، وانطباعات المتدربين.'
+                      : 'Comprehensive showcase of your past training activities, workshops, accredited kits, and impact metrics.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = typeof window !== 'undefined' ? `${window.location.origin}/profile/portfolio` : '';
+                      copyToClipboard(url, 'portfolio_url');
+                    }}
+                    className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-white text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-primary-blue" />
+                    <span>
+                      {copiedCode === 'portfolio_url'
+                        ? (language === 'ar' ? '✓ تم نسخ الرابط' : '✓ Copied!')
+                        : (language === 'ar' ? 'مشاركة الرابط' : 'Share Link')}
+                    </span>
+                  </button>
+
+                  <Link
+                    href="/profile/portfolio"
+                    target="_blank"
+                    className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-blue to-indigo-600 hover:from-secondary-blue hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>{language === 'ar' ? 'معاينة كصفحة عامة' : 'View Public Landing'}</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Spotlight Trainer Card */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-primary-blue to-slate-950 text-white p-6 sm:p-8 shadow-xl">
+                <div className="absolute top-0 end-0 -mt-10 -me-10 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+                <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
+                  <div className="relative shrink-0">
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-white/20 shadow-2xl"
+                    />
+                    <span className="absolute -bottom-2 -end-2 bg-emerald-500 text-white p-1 rounded-full ring-2 ring-slate-900">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </span>
+                  </div>
+
+                  <div className="flex-1 text-center md:text-start space-y-3">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                      <h3 className="text-xl sm:text-2xl font-black">{user.name}</h3>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/15 backdrop-blur-md text-emerald-300 border border-white/20 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {memberBadgeText}
+                      </span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm font-semibold text-blue-200">
+                      {user.specialtyAr} • {user.city}، {user.country}
+                    </p>
+
+                    {/* Bio Highlight Box (20 words or extended) */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 text-xs sm:text-sm leading-relaxed max-w-3xl">
+                      <span className="text-primary-blue font-bold text-sm block mb-1">
+                        {language === 'ar' ? 'نبذة عن نفسي:' : 'About Me:'}
+                      </span>
+                      &ldquo;{user.bioAr || (language === 'ar' ? 'مدرب معتمد بالأكاديمية متخصص في تقديم برامج إعداد المدربين وتطوير الكفاءات القيادية والمؤسسية.' : 'Certified Academy Trainer dedicated to TOT and organizational leadership.')}&rdquo;
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1 text-xs text-slate-300">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        {language === 'ar' ? 'عضوية معتمدة رقم:' : 'Membership No:'} {user.membershipNumber}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-blue-300" />
+                        {language === 'ar' ? `تاريخ الانضمام: ${user.joinedDate}` : `Joined: ${user.joinedDate}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 Impact Metric Highlights */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs text-center space-y-1">
+                  <div className="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-primary-blue flex items-center justify-center mb-2">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 block">48+</span>
+                  <span className="text-xs text-slate-500 font-semibold block">
+                    {language === 'ar' ? 'ورشة وبرنامج تدريبي' : 'Workshops Delivered'}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs text-center space-y-1">
+                  <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 block">1,450+</span>
+                  <span className="text-xs text-slate-500 font-semibold block">
+                    {language === 'ar' ? 'ساعة تدريب واستشارة' : 'Training Hours'}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs text-center space-y-1">
+                  <div className="w-10 h-10 mx-auto rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 block">3,800+</span>
+                  <span className="text-xs text-slate-500 font-semibold block">
+                    {language === 'ar' ? 'متدرب ومستفيد' : 'Trainees Reached'}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs text-center space-y-1">
+                  <div className="w-10 h-10 mx-auto rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
+                    <Star className="w-5 h-5" />
+                  </div>
+                  <span className="text-2xl sm:text-3xl font-black text-slate-900 block">99.4%</span>
+                  <span className="text-xs text-slate-500 font-semibold block">
+                    {language === 'ar' ? 'نسبة الرضا والتقييم' : 'Satisfaction Rate'}
+                  </span>
+                </div>
+              </div>
+
+              {/* أعمال ونشاطات المدرب السابقة (سجل الفعاليات والورش) */}
+              <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                      <span className="w-2 h-5 rounded-full bg-primary-blue" />
+                      {language === 'ar' ? 'سجل الأعمال والنشاطات السابقة' : 'Past Activities & Programs'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {language === 'ar'
+                        ? 'توثيق لأبرز البرامج التدريبية، المؤتمرات، وورش العمل التي تم تقديمها وإشرافها'
+                        : 'Documentation of major training programs and workshops successfully delivered'}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-primary-blue bg-blue-50 px-3 py-1 rounded-xl">
+                    6 {language === 'ar' ? 'فعاليات موثقة' : 'Events'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      title: 'البرنامج الوطني لتأهيل وإعداد المدربين TOT المتقدم',
+                      org: 'قصر المؤتمرات الدولي - الجزائر العاصمة',
+                      date: 'أكتوبر 2024',
+                      attendees: '120 مشاركاً',
+                      badge: 'معتمد دولياً',
+                      badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                      desc: 'برنامج تدريبي مكثف امتد على مدار 60 ساعة تدريبية، شمل تقنيات هندسة التدريب، كاريزما الإلقاء، وتصميم الحقائب الحديثة.',
+                    },
+                    {
+                      title: 'الملتقى السنوي لتقنيات التدريب الذكي بالذكاء الاصطناعي',
+                      org: 'فندق الشيراطون - وهران',
+                      date: 'ديسمبر 2024',
+                      attendees: '280 مشاركاً',
+                      badge: 'ورقة عمل رئيسية',
+                      badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+                      desc: 'تقديم ورقة عمل وبناء نموذج عملي حول توظيف خوارزميات الذكاء الاصطناعي التوليدي في تصميم الأنشطة والتقييم الفوري.',
+                    },
+                    {
+                      title: 'برنامج القيادة التكيفية وإدارة فرق العمل للمديرين التنفيذيين',
+                      org: 'المعهد الوطني لترقية الإدارة - قسنطينة',
+                      date: 'يناير 2025',
+                      attendees: '45 مديراً تنفيذياً',
+                      badge: 'تدريب مؤسسي',
+                      badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
+                      desc: 'تدريب عالي المستوى ركز على مهارات اتخاذ القرار تحت الضغط، ديناميكيات التفاوض، وبناء ثقافة العمل المرنة.',
+                    },
+                    {
+                      title: 'ورشة تصميم وهندسة الحقائب التدريبية وفق نموذج ADDIE',
+                      org: 'أكاديمية التدريب الشاملة - عنابة',
+                      date: 'فبراير 2025',
+                      attendees: '85 متدرباً',
+                      badge: 'تطوير حقائب',
+                      badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
+                      desc: 'تطبيق عملي خطوة بخطوة لبناء حقيبة تدريبية احترافية تتضمن دليل المدرب، كراس المتدرب، والعروض التفاعلية.',
+                    },
+                    {
+                      title: 'دورة كاريزما الإلقاء المسرحي والتأثير الجماهيري للمدربين',
+                      org: 'المنصة التفاعلية المباشرة بالأكاديمية',
+                      date: 'مارس 2025',
+                      attendees: '190 مشاركاً',
+                      badge: 'تدريب افتراضي',
+                      badgeColor: 'bg-teal-100 text-teal-800 border-teal-200',
+                      desc: 'صقل مهارات لغة الجسد، التلوين الصوتي، والسيطرة على رهبة المسرح أمام الجمهور وقاعات التدريب الكبرى.',
+                    },
+                    {
+                      title: 'مبادرة التدريب المجتمعي لتمكين رواد الأعمال وأصحاب المشاريع',
+                      org: 'حاضنة الأعمال الوطنية للابتكار',
+                      date: 'أفريل 2025',
+                      attendees: '310 مستفيدين',
+                      badge: 'مبادرة مجتمعية',
+                      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                      desc: 'سلسلة لقاءات تفاعلية استهدفت تمكين الشباب من بناء خطط العمل وإدارة الموارد البشرية الناشئة بكفاءة.',
+                    },
+                  ].map((activity, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-slate-50/60 hover:bg-white hover:border-primary-blue/40 hover:shadow-md transition-all space-y-2.5 group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${activity.badgeColor}`}>
+                          {activity.badge}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          {activity.date}
+                        </span>
+                      </div>
+
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary-blue transition-colors">
+                        {activity.title}
+                      </h4>
+
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 font-medium">
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          {activity.org}
+                        </span>
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                          {activity.attendees}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                        {activity.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* الحقائب التدريبية والمؤلفات المعتمدة */}
+              <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                      <span className="w-2 h-5 rounded-full bg-emerald-500" />
+                      {language === 'ar' ? 'الحقائب التدريبية والمؤلفات المعتمدة' : 'Training Kits & Authored Toolkits'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {language === 'ar'
+                        ? 'أدلة وحقائب تدريبية تم إعدادها وتصميمها وفق المعايير الدولية للأكاديمية'
+                        : 'Accredited training modules and instructional materials created by the trainer'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    {
+                      title: 'حقيبة TOT المتكاملة للمدرب المحترف',
+                      units: '18 وحدة تدريبية',
+                      format: 'دليل المدرب + كراس المتدرب + شرائح تفاعلية',
+                      badge: 'الإصدار الماسي',
+                      icon: '📘',
+                    },
+                    {
+                      title: 'دليل التقييم وقياس الأثر التدريبي وفق نموذج كيركباتريك',
+                      units: '8 نماذج استرشادية',
+                      format: 'استبيانات رقمية ومصفوفة مؤشرات',
+                      badge: 'معتمد أكاديمياً',
+                      icon: '📊',
+                    },
+                    {
+                      title: 'حقيبة كاريزما الإلقاء والتأثير الجماهيري',
+                      units: '12 ورشة عملية',
+                      format: 'تمارين صوتية + لغة الجسد + إدارة المنصة',
+                      badge: 'تطبيقي مكثف',
+                      icon: '🎙️',
+                    },
+                  ].map((kit, i) => (
+                    <div key={i} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-white transition-all space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl">{kit.icon}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                          {kit.badge}
+                        </span>
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900">{kit.title}</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">{kit.units}</p>
+                      <p className="text-[11px] text-slate-600">{kit.format}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* معرض الصور الميداني وتوثيق الفعاليات */}
+              <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                      <span className="w-2 h-5 rounded-full bg-purple-500" />
+                      {language === 'ar' ? 'معرض التوثيق الميداني للورش والفعاليات' : 'Live Events & Gallery'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {language === 'ar' ? 'لقطات حية من قاعات التدريب، التفاعل الجماعي، وحفلات التخرج' : 'Visual moments from training halls and certification ceremonies'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                  {[
+                    { label: 'جلسة تدريب تفاعلية - TOT', location: 'الجزائر العاصمة', date: '2024', seed: 'tot_hall_1' },
+                    { label: 'حفل تخرج الدفعة المعتمدة', location: 'قسنطينة', date: '2024', seed: 'tot_grad_2' },
+                    { label: 'ورشة عمل الذكاء الاصطناعي', location: 'وهران', date: '2025', seed: 'ai_workshop_3' },
+                    { label: 'محاضرة كاريزما الإلقاء والتأثير', location: 'عنابة', date: '2025', seed: 'keynote_stage_4' },
+                  ].map((photo, pIdx) => (
+                    <div key={pIdx} className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs aspect-4/3">
+                      <img
+                        src={`https://picsum.photos/seed/${photo.seed}/600/450`}
+                        alt={photo.label}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/30 to-transparent p-3 flex flex-col justify-end text-white">
+                        <span className="text-[11px] font-bold truncate">{photo.label}</span>
+                        <span className="text-[10px] text-slate-300 flex items-center justify-between">
+                          <span>{photo.location}</span>
+                          <span>{photo.date}</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* شهادات التقدير والأوسمة الأكاديمية */}
+              <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    {language === 'ar' ? 'الشهادات والأوسمة والاعتمادات الأكاديمية' : 'Accreditations & Honors'}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-start gap-3">
+                    <span className="text-2xl shrink-0">🏅</span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-amber-950">درع التميز في التدريب الاحترافي</h4>
+                      <p className="text-[11px] text-amber-800 mt-0.5">ممنوح من الأكاديمية الدولية للتدريب TOT لعام 2024</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex items-start gap-3">
+                    <span className="text-2xl shrink-0">🎖️</span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-blue-950">وسام المدرب المبتكر</h4>
+                      <p className="text-[11px] text-blue-800 mt-0.5">تقديراً لدمج تقنيات الذكاء الاصطناعي في الفصول التدريبية</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex items-start gap-3">
+                    <span className="text-2xl shrink-0">📜</span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-emerald-950">اعتماد مدرب دولي مرخص</h4>
+                      <p className="text-[11px] text-emerald-800 mt-0.5">مسجل برقم ترخيص أكاديمي معتمد ومتاح للتحقق</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* دعوة للتواصل وحجز الاستشارات / البرامج التدريبية */}
+              <div className="bg-gradient-to-r from-primary-blue via-secondary-blue to-indigo-700 rounded-3xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+                <div className="space-y-1.5 text-center md:text-start">
+                  <h3 className="text-lg sm:text-xl font-black">
+                    {language === 'ar' ? 'هل ترغب في تنظيم برنامج تدريبي أو حجز استشارة خاصة؟' : 'Interested in booking a training program or consultation?'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-blue-100 max-w-xl">
+                    {language === 'ar'
+                      ? 'يمكنك جدولة موعد أو التواصل المباشر للتنسيق حول إقامة ورش عمل حضورية أو عن بعد.'
+                      : 'Schedule a session or reach out directly to coordinate in-person or virtual training modules.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('appointments')}
+                    className="px-5 py-2.5 rounded-xl bg-white text-primary-blue font-bold text-xs sm:text-sm hover:bg-blue-50 shadow-md transition-all cursor-pointer"
+                  >
+                    {language === 'ar' ? 'المواعيد المحجوزة' : 'Book Session'}
+                  </button>
+                  <Link
+                    href="/profile/portfolio"
+                    target="_blank"
+                    className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm transition-all"
+                  >
+                    {language === 'ar' ? 'فتح الصفحة العامة' : 'Open Landing'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ================= TAB 1: TRACKS ================= */}
           {activeTab === 'tracks' && (
             <div className="space-y-5 animate-fadeIn">

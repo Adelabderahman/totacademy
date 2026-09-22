@@ -30,87 +30,88 @@ interface SpecialtyCategory {
   options: SpecialtyOption[];
 }
 
-interface RoleOption {
+export interface AccountTypeOption {
   id: string;
   nameAr: string;
   nameEn: string;
   nameFr: string;
   badge: string;
   icon: string;
+  role: 'trainee' | 'trainer';
 }
 
-interface RoleCategory {
-  categoryNameAr: string;
-  categoryNameEn: string;
-  categoryNameFr: string;
-  categoryIcon: string;
-  options: RoleOption[];
-}
-
-const ROLE_GROUPS: RoleCategory[] = [
+export const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
   {
-    categoryNameAr: 'المسار التدريبي والتأهيلي',
-    categoryNameEn: 'Training & Qualification Track',
-    categoryNameFr: 'Formation & Qualification',
-    categoryIcon: '🎯',
-    options: [
-      {
-        id: 'trainee-foundation',
-        nameAr: 'متدرب TOT أساسي (TOT/P-F)',
-        nameEn: 'Trainee TOT Foundation (TOT/P-F)',
-        nameFr: 'Stagiaire TOT Fondamental (TOT/P-F)',
-        badge: 'TOT/P-F',
-        icon: '📘',
-      },
-      {
-        id: 'trainee-pro',
-        nameAr: 'متدرب متخصص احترافي (TOT/P-P)',
-        nameEn: 'Professional Specialized Trainee (TOT/P-P)',
-        nameFr: 'Stagiaire Spécialisé Pro (TOT/P-P)',
-        badge: 'TOT/P-P',
-        icon: '⭐',
-      },
-      {
-        id: 'trainee-master',
-        nameAr: 'مترشح دبلوم خبير مدرب دولي (Master)',
-        nameEn: 'Master Trainer Candidate',
-        nameFr: 'Candidat Master Trainer',
-        badge: 'Master',
-        icon: '👑',
-      },
-    ],
+    id: 'trainee',
+    nameAr: 'متدرب',
+    nameEn: 'Trainee',
+    nameFr: 'Stagiaire',
+    badge: 'Trainee',
+    icon: '📘',
+    role: 'trainee',
   },
   {
-    categoryNameAr: 'الهيئة التدريبية والمستفيدون',
-    categoryNameEn: 'Training Faculty & Members',
-    categoryNameFr: 'Corps Formateur & Adhérents',
-    categoryIcon: '👥',
-    options: [
-      {
-        id: 'certified-trainer',
-        nameAr: 'مدرب معتمد ضمن طاقم الأكاديمية',
-        nameEn: 'Certified Staff Trainer',
-        nameFr: "Formateur Certifié de l'Académie",
-        badge: 'Trainer',
-        icon: '🎓',
-      },
-      {
-        id: 'corporate-rep',
-        nameAr: 'ممثل مؤسسة أو قطاع أعمال (B2B)',
-        nameEn: 'Corporate / Business Representative',
-        nameFr: 'Représentant Entreprise / B2B',
-        badge: 'B2B',
-        icon: '🏢',
-      },
-      {
-        id: 'visitor',
-        nameAr: 'مستفيد / زائر مهتم بالبرامج والشهادات',
-        nameEn: 'Beneficiary / General Visitor',
-        nameFr: 'Bénéficiaire / Visiteur Intéressé',
-        badge: 'Member',
-        icon: '🌟',
-      },
-    ],
+    id: 'trainer',
+    nameAr: 'مدرب',
+    nameEn: 'Trainer',
+    nameFr: 'Formateur',
+    badge: 'Trainer',
+    icon: '🎓',
+    role: 'trainer',
+  },
+  {
+    id: 'pro-trainer',
+    nameAr: 'مدرب محترف',
+    nameEn: 'Professional Trainer',
+    nameFr: 'Formateur Pro',
+    badge: 'Pro',
+    icon: '⭐',
+    role: 'trainer',
+  },
+  {
+    id: 'tot-master-trainer',
+    nameAr: 'حساب مدرب مدربين',
+    nameEn: 'Trainer of Trainers (TOT)',
+    nameFr: 'Formateur de Formateurs',
+    badge: 'TOT',
+    icon: '👑',
+    role: 'trainer',
+  },
+  {
+    id: 'senior-trainer',
+    nameAr: 'كبير مدربين',
+    nameEn: 'Senior Trainer',
+    nameFr: 'Grand Formateur',
+    badge: 'Senior',
+    icon: '🏆',
+    role: 'trainer',
+  },
+  {
+    id: 'excellent-trainer',
+    nameAr: 'مدرب ممتاز',
+    nameEn: 'Distinguished Trainer',
+    nameFr: 'Formateur Émérite',
+    badge: 'Excellence',
+    icon: '🎖️',
+    role: 'trainer',
+  },
+  {
+    id: 'distinguished-trainer',
+    nameAr: 'مدرب مميز',
+    nameEn: 'Elite Specialist Trainer',
+    nameFr: 'Formateur d\'Élite',
+    badge: 'Elite',
+    icon: '🌟',
+    role: 'trainer',
+  },
+  {
+    id: 'media-trainer',
+    nameAr: 'مدرب إعلامي',
+    nameEn: 'Media & Public Trainer',
+    nameFr: 'Formateur Médias',
+    badge: 'Media',
+    icon: '🎙️',
+    role: 'trainer',
   },
 ];
 
@@ -248,7 +249,7 @@ const SPECIALTY_GROUPS: SpecialtyCategory[] = [
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   initialMode = 'register',
   initialSpecialty = '',
-  initialRole = 'trainee-foundation',
+  initialRole = 'trainee',
   onSuccess,
   className = '',
 }) => {
@@ -265,6 +266,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [registerPhone, setRegisterPhone] = useState('');
   const [registerCountry, setRegisterCountry] = useState('');
   const [registerRole, setRegisterRole] = useState(initialRole);
+  const [registerBio, setRegisterBio] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -288,6 +290,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Word counter helper for bio
+  const getWordCount = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).filter(Boolean).length;
+  };
+  const bioWordCount = getWordCount(registerBio);
 
   // Click outside to close specialty & role dropdowns
   useEffect(() => {
@@ -328,21 +338,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     return cat.categoryNameEn;
   };
 
-  // Find currently selected role object
-  const selectedRoleObj = ROLE_GROUPS.flatMap((g) => g.options).find(
-    (opt) => opt.id === registerRole
-  );
+  // Find currently selected accountType/role object
+  const selectedRoleObj =
+    ACCOUNT_TYPE_OPTIONS.find((opt) => opt.id === registerRole) ||
+    ACCOUNT_TYPE_OPTIONS[0];
 
-  const getRoleLabel = (opt: RoleOption) => {
+  const getRoleLabel = (opt: AccountTypeOption) => {
     if (language === 'ar') return opt.nameAr;
     if (language === 'fr') return opt.nameFr;
     return opt.nameEn;
-  };
-
-  const getRoleCategoryLabel = (cat: RoleCategory) => {
-    if (language === 'ar') return cat.categoryNameAr;
-    if (language === 'fr') return cat.categoryNameFr;
-    return cat.categoryNameEn;
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -354,6 +358,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         language === 'ar'
           ? 'يرجى اختيار تخصص من القائمة للاستمرار.'
           : 'Please choose a specialty from the list to continue.'
+      );
+      return;
+    }
+
+    if (bioWordCount > 20) {
+      setErrorMessage(
+        language === 'ar'
+          ? `النبذة عن نفسك يجب ألا تتجاوز 20 كلمة (حالياً: ${bioWordCount} كلمة). يرجى الاختصار للاستمرار.`
+          : `Bio must not exceed 20 words (currently ${bioWordCount} words). Please shorten to continue.`
       );
       return;
     }
@@ -387,12 +400,20 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      const selectedAccountTypeObj =
+        ACCOUNT_TYPE_OPTIONS.find((opt) => opt.id === registerRole) ||
+        ACCOUNT_TYPE_OPTIONS[0];
+
       const res = await register(registerEmail, registerPassword, {
         name: registerName,
         phone: registerPhone,
         country: registerCountry || 'الجزائر',
-        role: registerRole.includes('trainer') ? 'trainer' : 'trainee',
+        role: selectedAccountTypeObj.role,
+        accountType: selectedAccountTypeObj.id,
+        accountTypeLabelAr: selectedAccountTypeObj.nameAr,
+        accountTypeLabelEn: selectedAccountTypeObj.nameEn,
         specialty: registerSpecialty,
+        bio: registerBio.trim(),
       });
 
       if (!res.success) {
@@ -485,67 +506,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <span>{errorMessage}</span>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* الصف 1: خيارا التبديل (عمودان متوازيان مع تأثير انسيابي إبداعي) */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 mb-3.5">
-        {/* الصف 1، العمود الأول: هل لديك حساب؟ قم بتسجيل الدخول */}
-        <button
-          type="button"
-          onClick={() => setMode('login')}
-          className={`relative p-2.5 sm:p-3 rounded-xl text-start transition-all duration-300 cursor-pointer overflow-hidden group ${
-            mode === 'login'
-              ? 'border-2 border-primary-blue bg-gradient-to-br from-blue-50/95 to-indigo-50/70 shadow-sm scale-[1.01]'
-              : 'border border-slate-200 hover:border-slate-300 bg-slate-50/60 hover:bg-slate-100/80 opacity-80 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span className={`text-base sm:text-lg transition-transform duration-300 ${mode === 'login' ? 'scale-110' : 'grayscale group-hover:grayscale-0'}`}>
-              🔑
-            </span>
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
-                {language === 'ar' ? 'هل لديك حساب؟' : language === 'fr' ? 'Avez-vous un compte ?' : 'Already have account?'}
-              </div>
-              <div className={`text-xs sm:text-[13px] font-bold transition-colors ${mode === 'login' ? 'text-primary-blue' : 'text-slate-700'}`}>
-                {language === 'ar' ? 'قم بتسجيل الدخول' : language === 'fr' ? 'Connectez-vous' : 'Log In'}
-              </div>
-            </div>
-          </div>
-          {mode === 'login' && (
-            <span className="absolute end-2 top-2 w-2 h-2 rounded-full bg-primary-blue animate-pulse" />
-          )}
-        </button>
-
-        {/* الصف 1، العمود الثاني: ليس لدي حساب : أنشئ حساب وصر من المحترفين (بخط أصغر وأنيق) */}
-        <button
-          type="button"
-          onClick={() => setMode('register')}
-          className={`relative p-2.5 sm:p-3 rounded-xl text-start transition-all duration-300 cursor-pointer overflow-hidden group ${
-            mode === 'register'
-              ? 'border-2 border-primary-green bg-gradient-to-br from-emerald-50/95 to-teal-50/70 shadow-sm scale-[1.01]'
-              : 'border border-slate-200 hover:border-slate-300 bg-slate-50/60 hover:bg-slate-100/80 opacity-80 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span className={`text-base sm:text-lg transition-transform duration-300 ${mode === 'register' ? 'scale-110' : 'grayscale group-hover:grayscale-0'}`}>
-              🌟
-            </span>
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
-                {language === 'ar' ? 'ليس لدي حساب' : language === 'fr' ? 'Pas de compte ?' : 'No account?'}
-              </div>
-              <div className={`text-[11px] sm:text-xs font-semibold leading-tight transition-colors ${mode === 'register' ? 'text-primary-green' : 'text-slate-700'}`}>
-                {language === 'ar' ? 'أنشئ حساب وصر من المحترفين' : language === 'fr' ? 'Créer un compte et devenir pro' : 'Create account & join pros'}
-              </div>
-            </div>
-          </div>
-          {mode === 'register' && (
-            <span className="absolute end-2 top-2 w-2 h-2 rounded-full bg-primary-green animate-pulse" />
-          )}
-        </button>
-      </div>
 
       {/* ========================================================================= */}
       {/* الحاوية الديناميكية المتحركة بانسيابية وإبداع بين الوضعين */}
@@ -844,15 +804,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 />
               </div>
 
-              {/* الصف 4، العمود الثاني: الصفة أو الفئة المستهدفة (قائمة منسدلة مخصصة فائقة الأناقة) */}
+              {/* الصف 4، العمود الثاني: التسجيل كـ: (قائمة منسدلة بأنواع الحسابات) */}
               <div className="relative" ref={roleDropdownRef}>
                 <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'ar' ? 'الصفة أو الفئة المستهدفة' : language === 'fr' ? 'Statut / Catégorie' : 'Role / Category'}
+                  {language === 'ar' ? 'التسجيل كـ:' : language === 'fr' ? 'Inscription en tant que :' : 'Register as:'}
                   <span className="text-red-500 ms-1">*</span>
                 </label>
 
                 {/* حقل القيمة المخفية لدعم التحقق النموذجي */}
-                <input type="hidden" name="role" value={registerRole} />
+                <input type="hidden" name="accountType" value={registerRole} />
 
                 {/* الزر الرئيسي المشغل للقائمة المنسدلة */}
                 <button
@@ -883,7 +843,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       </>
                     ) : (
                       <span className="text-[11px] sm:text-xs text-slate-400 font-normal">
-                        {language === 'ar' ? '-- اختر الصفة --' : '-- Choose Role --'}
+                        {language === 'ar' ? '-- اختر نوع الحساب --' : '-- Choose Account Type --'}
                       </span>
                     )}
                   </div>
@@ -898,65 +858,101 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
                 {/* القائمة المنسدلة الاحترافية والمنسقة بعرض مريح وخلفية غير شفافة مع تضبيب */}
                 {isRoleOpen && (
-                  <div className={`absolute top-[calc(100%+6px)] z-50 bg-white/98 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn py-1.5 max-h-72 sm:max-h-80 overflow-y-auto divide-y divide-slate-100 w-full min-w-[290px] sm:min-w-[340px] md:min-w-[390px] max-w-[90vw] ${
+                  <div className={`absolute top-[calc(100%+6px)] z-50 bg-white/98 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-fadeIn py-1.5 max-h-72 sm:max-h-80 overflow-y-auto divide-y divide-slate-100 w-full min-w-[280px] sm:min-w-[320px] max-w-[90vw] ${
                     isRTL ? 'end-0 sm:start-auto sm:end-0' : 'start-0 sm:end-auto sm:start-0'
                   }`}>
-                    {ROLE_GROUPS.map((group, groupIdx) => (
-                      <div key={groupIdx} className="p-1.5 sm:p-2 bg-white/95">
-                        {/* ترويسة المجموعة بتصميم ناعم ومقاس خط مصغر */}
-                        <div className="px-2.5 py-1.5 mb-1.5 rounded-lg bg-slate-100/90 flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-slate-700 tracking-normal">
-                          <span className="flex items-center gap-1.5">
-                            <span className="text-xs">{group.categoryIcon}</span>
-                            <span>{getRoleCategoryLabel(group)}</span>
-                          </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/90 text-slate-500 font-semibold border border-slate-200/60 shadow-2xs">
-                            {group.options.length} {language === 'ar' ? 'فئات' : 'roles'}
-                          </span>
-                        </div>
-
-                        {/* خيارات الصفة المنسقة بخط أصغر وأنيق وعرض كافٍ للقراءة الكاملة */}
-                        <div className="space-y-1">
-                          {group.options.map((opt) => {
-                            const isSelected = registerRole === opt.id;
-                            return (
-                              <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => {
-                                  setRegisterRole(opt.id);
-                                  setIsRoleOpen(false);
-                                }}
-                                className={`w-full text-start px-2.5 py-2 rounded-xl flex items-center justify-between transition-all duration-150 cursor-pointer group ${
-                                  isSelected
-                                    ? 'bg-emerald-50/90 text-emerald-950 font-semibold border-s-4 border-primary-green shadow-xs'
-                                    : 'hover:bg-slate-50 text-slate-700 hover:text-slate-950'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 min-w-0 flex-1 pe-2">
-                                  <span className="text-xs sm:text-sm shrink-0">{opt.icon}</span>
-                                  <span className="text-[10.5px] sm:text-[11.5px] leading-snug whitespace-normal break-words">
-                                    {getRoleLabel(opt)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0 ms-2">
-                                  <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md font-medium shrink-0 ${
-                                    isSelected
-                                      ? 'bg-emerald-200/80 text-emerald-900 border border-emerald-300/60'
-                                      : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/80'
-                                  }`}>
-                                    {opt.badge}
-                                  </span>
-                                  {isSelected && (
-                                    <span className="text-primary-green text-xs font-bold">✓</span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                    <div className="p-1.5 sm:p-2 space-y-1">
+                      {ACCOUNT_TYPE_OPTIONS.map((opt) => {
+                        const isSelected = registerRole === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => {
+                              setRegisterRole(opt.id);
+                              setIsRoleOpen(false);
+                            }}
+                            className={`w-full text-start px-2.5 py-2 rounded-xl flex items-center justify-between transition-all duration-150 cursor-pointer group ${
+                              isSelected
+                                ? 'bg-emerald-50/90 text-emerald-950 font-semibold border-s-4 border-primary-green shadow-xs'
+                                : 'hover:bg-slate-50 text-slate-700 hover:text-slate-950'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1 pe-2">
+                              <span className="text-xs sm:text-sm shrink-0">{opt.icon}</span>
+                              <span className="text-[10.5px] sm:text-[11.5px] leading-snug whitespace-normal break-words">
+                                {getRoleLabel(opt)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 ms-2">
+                              <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md font-medium shrink-0 ${
+                                isSelected
+                                  ? 'bg-emerald-200/80 text-emerald-900 border border-emerald-300/60'
+                                  : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/80'
+                              }`}>
+                                {opt.badge}
+                              </span>
+                              {isSelected && (
+                                <span className="text-primary-green text-xs font-bold">✓</span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* ======================================================== */}
+              {/* حقل نبذة عن نفسك (لا تتجاوز عشرين كلمة) */}
+              {/* ======================================================== */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] sm:text-xs font-semibold text-slate-700">
+                    {language === 'ar' ? 'نبذة عن نفسك' : language === 'fr' ? 'À propos de vous' : 'About Yourself'}
+                    <span className="text-slate-400 font-normal ms-1 text-[10px]">
+                      ({language === 'ar' ? 'النبذة لا تتجاوز 20 كلمة' : 'Max 20 words'})
+                    </span>
+                  </label>
+                  <span
+                    className={`text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                      bioWordCount > 20
+                        ? 'bg-red-100 text-red-700 font-bold animate-pulse'
+                        : bioWordCount > 0
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {bioWordCount} / 20 {language === 'ar' ? 'كلمة' : 'words'}
+                  </span>
+                </div>
+                <textarea
+                  rows={2}
+                  value={registerBio}
+                  onChange={(e) => setRegisterBio(e.target.value)}
+                  placeholder={
+                    language === 'ar'
+                      ? 'اكتب نبذة مختصرة تعرف فيها عن نفسك وخبراتك أو تطلعاتك التدريبية (في حدود 20 كلمة)...'
+                      : language === 'fr'
+                      ? 'Brève présentation de votre parcours ou objectifs (20 mots max)...'
+                      : 'Brief bio highlighting your experience or training goals (max 20 words)...'
+                  }
+                  className={`w-full px-3 py-2 rounded-xl border text-xs sm:text-sm focus:outline-none transition-all resize-none ${
+                    bioWordCount > 20
+                      ? 'border-red-400 ring-2 ring-red-400/20 bg-red-50/40 text-red-900'
+                      : 'border-slate-200 focus:border-primary-green focus:ring-2 focus:ring-primary-green/20 bg-slate-50/70 hover:bg-white focus:bg-white text-slate-800'
+                  }`}
+                />
+                {bioWordCount > 20 && (
+                  <p className="text-[10.5px] text-red-600 mt-1 font-medium flex items-center gap-1 animate-fadeIn">
+                    <span>⚠️</span>
+                    <span>
+                      {language === 'ar'
+                        ? `لقد تجاوزت الحد المسموح به (${bioWordCount} كلمة). يرجى تقليص النبذة إلى 20 كلمة كحد أقصى.`
+                        : `Word limit exceeded (${bioWordCount} words). Please reduce to at most 20 words.`}
+                    </span>
+                  </p>
                 )}
               </div>
 

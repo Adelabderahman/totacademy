@@ -44,7 +44,11 @@ interface RegisterData {
   phone?: string;
   country?: string;
   role?: 'user' | 'trainer' | 'trainee';
+  accountType?: string;
+  accountTypeLabelAr?: string;
+  accountTypeLabelEn?: string;
   specialty?: string;
+  bio?: string;
 }
 
 interface UserAccountContextType {
@@ -107,6 +111,9 @@ const DEFAULT_USER_PROFILE: UserProfile = {
   role: 'user',
   roleTitleAr: 'عضو أكاديمية تدريب المدربين',
   roleTitleEn: 'TOT Academy Member',
+  accountType: 'trainer',
+  accountTypeLabelAr: 'مدرب',
+  accountTypeLabelEn: 'Trainer',
   specialtyAr: 'إعداد وتأهيل المدربين وتطوير المهارات',
   specialtyEn: 'Professional Training & Skill Development',
   bioAr: 'عضو مسجل بالأكاديمية لمتابعة المسارات التدريبية المعتمدة وتطوير مهارات التدريب الاحترافي.',
@@ -128,6 +135,9 @@ const DEFAULT_TRAINER_PROFILE: UserProfile = {
   role: 'trainer',
   roleTitleAr: 'مدرب دولي معتمد وخبير تدريب المدربين (Master TOT)',
   roleTitleEn: 'Certified International Master Trainer (TOT)',
+  accountType: 'tot-master-trainer',
+  accountTypeLabelAr: 'مدرب مدربين',
+  accountTypeLabelEn: 'Master Trainer of Trainers',
   specialtyAr: 'هندسة التدريب والتطوير القيادي والذكاء الاصطناعي التعليمي',
   specialtyEn: 'Training Engineering, Leadership & AI in Education',
   bioAr: 'خبير واستشاري معتمد في تأهيل المدربين وتصميم الحقائب التدريبية التفاعلية بخبرة تفوق 14 سنة في الإشراف الأكاديمي والتوجيه الاحترافي في الجزائر والعالم العربي.',
@@ -149,6 +159,9 @@ const DEFAULT_TRAINEE_PROFILE: UserProfile = {
   role: 'trainee',
   roleTitleAr: 'متدرب متخصص احترافي (TOT/P-P)',
   roleTitleEn: 'Professional Specialized Trainee (TOT/P-P)',
+  accountType: 'trainee',
+  accountTypeLabelAr: 'متدرب',
+  accountTypeLabelEn: 'Trainee',
   specialtyAr: 'تصميم الحقائب التدريبية واستراتيجيات التدريب المباشر',
   specialtyEn: 'Instructional Design & Live Facilitation Strategies',
   bioAr: 'أستاذ باحث ومترشح للحصول على الاعتماد الاحترافي لتدريب المدربين ضمن الدفعة 14 بالأكاديمية.',
@@ -670,6 +683,11 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         }
       }
 
+      const accountType = profileData.accountType || (profileData.role === 'trainee' ? 'trainee' : 'trainer');
+      const accountTypeLabelAr = profileData.accountTypeLabelAr || (accountType === 'trainee' ? 'متدرب' : 'مدرب');
+      const accountTypeLabelEn = profileData.accountTypeLabelEn || (accountType === 'trainee' ? 'Trainee' : 'Trainer');
+      const assignedRole = accountType === 'trainee' ? 'trainee' : 'trainer';
+
       const newProfile: UserProfile = {
         ...DEFAULT_USER_PROFILE,
         id: createdUid,
@@ -677,11 +695,16 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         email,
         phone: profileData.phone || '+213 555 000 000',
         country: profileData.country || 'الجزائر',
-        role: 'user',
-        roleTitleAr: 'عضو أكاديمية تدريب المدربين',
-        roleTitleEn: 'TOT Academy Member',
+        role: assignedRole,
+        roleTitleAr: accountTypeLabelAr,
+        roleTitleEn: accountTypeLabelEn,
+        accountType,
+        accountTypeLabelAr,
+        accountTypeLabelEn,
         specialtyAr: profileData.specialty || 'إعداد وتأهيل المدربين المحترفين',
         specialtyEn: 'Training of Trainers',
+        bioAr: profileData.bio || 'عضو مسجل في الأكاديمية الدولية لتدريب المدربين.',
+        bioEn: profileData.bio || 'Registered member at TOT International Academy.',
         joinedDate: new Date().toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }),
         membershipNumber: `TOT-${Math.floor(1000 + Math.random() * 9000)}`,
         status: 'active',

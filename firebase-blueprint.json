@@ -30,6 +30,14 @@
           "enum": ["trainer", "trainee"],
           "description": "Role in the academy"
         },
+        "accountType": {
+          "type": "string",
+          "description": "Specific member account type: trainee, trainer, pro-trainer, tot-master-trainer, senior-trainer, excellent-trainer, distinguished-trainer, media-trainer"
+        },
+        "accountTypeLabelAr": {
+          "type": "string",
+          "description": "Arabic label for account type"
+        },
         "avatar": {
           "type": "string",
           "description": "URL to the user avatar"

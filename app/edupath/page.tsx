@@ -690,10 +690,10 @@ function EduPathContent() {
         {
           id: currentTrackKey,
           trackKey: currentTrackKey,
-          titleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
-          titleEn: 'Foundation Training Track (TOTF126)',
-          categoryAr: 'تدريب المدربين (TOT)',
-          categoryEn: 'Training of Trainers (TOT)',
+          titleAr: displayTitle,
+          titleEn: displayTitle,
+          categoryAr: displayCategory,
+          categoryEn: displayCategory,
           mentorName: 'د. عبد الكريم بلخيري',
           badge: 'TOT/P-F',
         }
@@ -705,7 +705,7 @@ function EduPathContent() {
     try {
       const res = await contextConfirmTrackEnrollment(
         currentTrackKey,
-        strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين (TOTF126)',
+        displayTitle,
         {
           overallProgress,
           completedLessons,
@@ -4422,7 +4422,7 @@ function EduPathContent() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   addAppointment({
-                    titleAr: `لقاء تفاعلي عن بعد: ${strings.pathway_name_value || 'مسار التدريب'}`,
+                    titleAr: `لقاء تفاعلي عن بعد: ${displayTitle}`,
                     titleEn: `Remote Interactive Meeting: ${displayTitle}`,
                     type: 'interactive_meeting',
                     typeLabelAr: 'لقاء تفاعلي عن بعد',
@@ -4445,7 +4445,7 @@ function EduPathContent() {
                 <div className="grand-form-grid">
                   <div>
                     <label className="grand-label">{strings.label_pathway_name}</label>
-                    <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} />
+                    <input type="text" readOnly className="grand-input font-bold bg-slate-800 text-sky-400" value={displayTitle} />
                   </div>
                   <div>
                     <label className="grand-label">{strings.label_supervisor}</label>
@@ -4497,7 +4497,7 @@ function EduPathContent() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   addAppointment({
-                    titleAr: `ورشة تدريبية حضورية: ${strings.pathway_name_value || 'مسار التدريب'}`,
+                    titleAr: `ورشة تدريبية حضورية: ${displayTitle}`,
                     titleEn: `In-Person Workshop: ${displayTitle}`,
                     type: 'workshop',
                     typeLabelAr: 'ورشة تدريبية حضورية',
@@ -4986,7 +4986,7 @@ function EduPathContent() {
                         <input
                           type="text"
                           readOnly
-                          value={strings.pathway_name_value}
+                          value={displayTitle}
                           className="bg-slate-100 font-bold"
                         />
                       </div>

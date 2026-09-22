@@ -32,8 +32,6 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
   const [seatType, setSeatType] = useState('trainee');
   const [seatCount, setSeatCount] = useState('1');
-  const [city, setCity] = useState('');
-  const [notes, setNotes] = useState('');
   const [consent, setConsent] = useState(true);
 
   const [statusMessage, setStatusMessage] = useState<{
@@ -84,6 +82,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
     const reservationCode = 'TOT-' + Math.random().toString(36).substring(2, 7).toUpperCase();
 
+    const userLocation = (user?.city ? `${user.city}، ` : '') + (user?.country || (language === 'ar' ? 'الجزائر' : 'Algeria'));
+
     const reservationRecord = {
       code: reservationCode,
       eventId: event.id,
@@ -94,8 +94,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
       email: user?.email || '',
       seatType,
       seatCount,
-      city,
-      notes,
+      city: userLocation,
+      country: user?.country || 'الجزائر',
     };
 
     try {
@@ -135,6 +135,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   const handleWhatsAppReservation = () => {
     const reservationCode = 'TOT-' + Math.random().toString(36).substring(2, 7).toUpperCase();
     const seatTypeLabel = getTranslation(`seat_type_${seatType}`, language);
+    const userLocation = (user?.city ? `${user.city}، ` : '') + (user?.country || (language === 'ar' ? 'الجزائر' : 'Algeria'));
 
     const message = `*طلب حجز مقعد - TOT Academy*
 الرمز: ${reservationCode}
@@ -143,14 +144,13 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 المكان: ${eventLoc}
 النمط: ${eventMode}
 
-*بيانات المشترك المعتمدة:*
+*بيانات المشترك المعتمدة المستردة من الحساب:*
 الاسم: ${user?.name || 'عضو الأكاديمية'}
 الهاتف/واتساب: ${user?.phone || 'غير محدد'}
 البريد: ${user?.email || 'غير محدد'}
+المدينة/البلد: ${userLocation}
 نوع المقعد: ${seatTypeLabel}
-عدد المقاعد: ${seatCount}
-المدينة/البلد: ${city || 'غير محدد'}
-ملاحظات: ${notes || 'لا يوجد'}`;
+عدد المقاعد: ${seatCount}`;
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -215,6 +215,9 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
               <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 <span>{user?.email || 'member@tot-academy.org'}</span>
                 {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                <span className="mx-1 text-blue-600 dark:text-blue-400 font-medium">
+                  • 📍 {(user?.city ? `${user.city}، ` : '') + (user?.country || (language === 'ar' ? 'الجزائر' : 'Algeria'))}
+                </span>
               </div>
             </div>
           </div>
@@ -252,31 +255,6 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                 ]}
                 themeColor="blue"
                 dropdownWidthClass="w-full min-w-[200px] sm:min-w-[240px]"
-              />
-            </div>
-
-            <div className="reservation-field">
-              <label htmlFor="res-city">
-                {getTranslation('reservation_city', language)}
-              </label>
-              <input
-                type="text"
-                id="res-city"
-                placeholder={getTranslation('reservation_city_placeholder', language)}
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
-
-            <div className="reservation-field full">
-              <label htmlFor="res-notes">
-                {getTranslation('reservation_notes', language)}
-              </label>
-              <textarea
-                id="res-notes"
-                placeholder={getTranslation('reservation_notes_placeholder', language)}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUserAccount } from '@/context/UserAccountContext';
@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   LogOut,
   ChevronRight,
+  ChevronLeft,
   AlertCircle,
   AlertTriangle,
   Trash2,
@@ -59,6 +60,17 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<
     'tracks' | 'certificates' | 'appointments' | 'articles' | 'network' | 'settings'
   >('tracks');
+
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollTabs = (direction: 'next' | 'prev') => {
+    if (tabsContainerRef.current) {
+      // In RTL (Arabic), positive scroll moves toward the left in standard browsers, or negative depending on spec
+      const step = 220;
+      const scrollValue = direction === 'next' ? (isRTL ? -step : step) : (isRTL ? step : -step);
+      tabsContainerRef.current.scrollBy({ left: scrollValue, behavior: 'smooth' });
+    }
+  };
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [trackToDelete, setTrackToDelete] = useState<EnrolledTrack | null>(null);
@@ -281,41 +293,41 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Quick Stats Grid Bar */}
+          {/* Quick Stats Grid Bar - Key Activities Counters Only */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
-            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70">
+            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70 shadow-2xs">
               <span className="text-xl sm:text-2xl font-black text-primary-blue block">
                 {enrolledTracks.length}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {language === 'ar' ? 'المسارات المسجلة' : 'Enrolled Tracks'}
+                {language === 'ar' ? 'المسارات المسجلة' : language === 'fr' ? 'Parcours Inscrits' : 'Enrolled Tracks'}
               </span>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70">
+            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70 shadow-2xs">
               <span className="text-xl sm:text-2xl font-black text-amber-600 block">
                 {certificates.length}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {language === 'ar' ? 'الشهادات المعتمدة' : 'Accredited Certs'}
+                {language === 'ar' ? 'الشهادات المعتمدة' : language === 'fr' ? 'Certificats Agréés' : 'Accredited Certs'}
               </span>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70">
+            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70 shadow-2xs">
               <span className="text-xl sm:text-2xl font-black text-emerald-600 block">
                 {appointments.length}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {language === 'ar' ? 'المواعيد واللقاءات' : 'Sessions / Events'}
+                {language === 'ar' ? 'المواعيد المحجوزة' : language === 'fr' ? 'Rendez-vous Réservés' : 'Booked Sessions'}
               </span>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70">
+            <div className="bg-slate-50 rounded-2xl p-3.5 text-center border border-slate-200/70 shadow-2xs">
               <span className="text-xl sm:text-2xl font-black text-purple-600 block">
                 {professors.length}
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {language === 'ar' ? 'الأساتذة والمدربون' : 'Faculty Mentors'}
+                {language === 'ar' ? 'الأساتذة المشرفون' : language === 'fr' ? 'Professeurs Encadrants' : 'Supervising Mentors'}
               </span>
             </div>
           </div>
@@ -333,102 +345,140 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* 3. NAVIGATION TABS BAR */}
-        <div className="flex items-center gap-2 overflow-x-auto py-4 mt-6 scrollbar-none border-b border-slate-200/80">
-          <button
-            type="button"
-            onClick={() => setActiveTab('tracks')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'tracks'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>{language === 'ar' ? 'المسارات المسجلة' : 'My Tracks'}</span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {enrolledTracks.length}
-            </span>
-          </button>
+        {/* 3. NAVIGATION TABS BAR - HORIZONTAL SWIPE LIST */}
+        <div className="relative mt-6 border-b border-slate-200/80">
+          <div className="flex items-center gap-1">
+            {/* Scroll Button (Previous / Start) for Desktop */}
+            <button
+              type="button"
+              onClick={() => handleScrollTabs('prev')}
+              className="hidden md:flex items-center justify-center w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 shadow-2xs shrink-0 cursor-pointer transition-colors"
+              title={isRTL ? 'تمرير للخلف' : 'Scroll backward'}
+              aria-label="Scroll tabs backward"
+            >
+              {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('certificates')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'certificates'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            <span>{language === 'ar' ? 'الشهادات والاعتمادات' : 'Certificates'}</span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {certificates.length}
-            </span>
-          </button>
+            {/* Horizontal Tabs Scroll Area with Compact Mobile Button Widths */}
+            <div
+              ref={tabsContainerRef}
+              dir={isRTL ? 'rtl' : 'ltr'}
+              className="flex-1 flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto py-3 px-0.5 scrollbar-none scroll-smooth touch-pan-x"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {/* Tab 1: المسارات المسجلة */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('tracks')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'tracks'
+                    ? 'bg-primary-blue text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'المسارات المسجلة' : language === 'fr' ? 'Parcours Inscrits' : 'My Tracks'}</span>
+                <span className={`px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] ${activeTab === 'tracks' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {enrolledTracks.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('appointments')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'appointments'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>{language === 'ar' ? 'المواعيد والورشات' : 'My Schedule'}</span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {appointments.length}
-            </span>
-          </button>
+              {/* Tab 2: الشهادات المعتمدة */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('certificates')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'certificates'
+                    ? 'bg-primary-blue text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'الشهادات المعتمدة' : language === 'fr' ? 'Certificats Agréés' : 'Accredited Certs'}</span>
+                <span className={`px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] ${activeTab === 'certificates' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {certificates.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('articles')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'articles'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>{language === 'ar' ? 'مساهمات المجلة' : 'Magazine Articles'}</span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {articles.length}
-            </span>
-          </button>
+              {/* Tab 3: المواعيد المحجوزة */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('appointments')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'appointments'
+                    ? 'bg-primary-blue text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'المواعيد المحجوزة' : language === 'fr' ? 'Rendez-vous Réservés' : 'Booked Sessions'}</span>
+                <span className={`px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] ${activeTab === 'appointments' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {appointments.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('network')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'network'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            <span>
-              {language === 'ar' ? 'الهيئة الأكاديمية' : 'Faculty Mentors'}
-            </span>
-            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-white/20">
-              {professors.length}
-            </span>
-          </button>
+              {/* Tab 4: الأساتذة المشرفون */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('network')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'network'
+                    ? 'bg-primary-blue text-white shadow-md'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>
+                  {language === 'ar' ? 'الأساتذة المشرفون' : language === 'fr' ? 'Professeurs Encadrants' : 'Supervising Mentors'}
+                </span>
+                <span className={`px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] ${activeTab === 'network' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {professors.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'settings'
-                ? 'bg-primary-blue text-white shadow-md'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>{language === 'ar' ? 'إعدادات الحساب' : 'Settings'}</span>
-          </button>
+              {/* Tab 5: مساهمات المجلة */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('articles')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'articles'
+                    ? 'bg-primary-blue text-white shadow-md'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'مساهمات المجلة' : language === 'fr' ? 'Articles Magazine' : 'Magazine Articles'}</span>
+                <span className={`px-1 py-0.2 sm:px-1.5 sm:py-0.5 rounded-md text-[9px] sm:text-[10px] ${activeTab === 'articles' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {articles.length}
+                </span>
+              </button>
+
+              {/* Tab 6: إعدادات الحساب */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                className={`flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs md:text-sm font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'settings'
+                    ? 'bg-primary-blue text-white shadow-md'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{language === 'ar' ? 'إعدادات الحساب' : language === 'fr' ? 'Paramètres' : 'Settings'}</span>
+              </button>
+            </div>
+
+            {/* Scroll Button (Next / End) for Desktop */}
+            <button
+              type="button"
+              onClick={() => handleScrollTabs('next')}
+              className="hidden md:flex items-center justify-center w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 shadow-2xs shrink-0 cursor-pointer transition-colors"
+              title={isRTL ? 'تمرير للأمام' : 'Scroll forward'}
+              aria-label="Scroll tabs forward"
+            >
+              {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* 4. TAB CONTENTS */}

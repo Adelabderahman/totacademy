@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 import {
   MAG_GROUPS,
   MAG_SECTIONS,
@@ -53,6 +54,7 @@ import './magazine.css';
 
 export default function TrainerMagazinePage() {
   const { language, direction } = useLanguage();
+  const { user, addArticle } = useUserAccount();
   const isRtl = direction === 'rtl';
   const lang = (language as 'ar' | 'en' | 'fr') || 'ar';
   const t = coreI18n[lang] || coreI18n.ar;
@@ -126,9 +128,6 @@ export default function TrainerMagazinePage() {
 
   // Writer form submission state
   const [writerForm, setWriterForm] = useState({
-    fullName: '',
-    whatsapp: '',
-    email: '',
     section: '',
     articleTitle: '',
     summary: '',
@@ -919,6 +918,11 @@ export default function TrainerMagazinePage() {
                 <h4 style={{ color: '#fff', fontSize: 17, fontWeight: 800, margin: '0 0 8px' }}>
                   {t.writer_success.replace('{code}', writerSuccessCode)}
                 </h4>
+                <p style={{ color: '#94a3b8', fontSize: 13, margin: '0 0 16px', lineHeight: 1.6 }}>
+                  {lang === 'ar'
+                    ? `تم حفظ وإدراج مقالك تلقائياً في حسابك (${user?.name || 'عضو الأكاديمية'}) ويمكنك متابعة حالة المراجعة والنشر مباشرة.`
+                    : 'Your article has been linked to your account profile automatically and you can track review status directly.'}
+                </p>
                 <button
                   type="button"
                   className="btn-read-story"
@@ -939,54 +943,54 @@ export default function TrainerMagazinePage() {
                     showNotification(t.writer_terms_accept);
                     return;
                   }
+                  if (!writerForm.section) {
+                    showNotification(lang === 'ar' ? 'يرجى اختيار القسم المناسب لمقالك' : 'Please select a section');
+                    return;
+                  }
+                  if (!writerForm.articleTitle.trim()) {
+                    showNotification(lang === 'ar' ? 'يرجى كتابة عنوان المقال' : 'Please enter article title');
+                    return;
+                  }
                   const code = `TOT-MAG-${Math.floor(100000 + Math.random() * 900000)}`;
+                  addArticle({
+                    titleAr: writerForm.articleTitle.trim(),
+                    titleEn: writerForm.articleTitle.trim(),
+                    categoryAr: writerForm.section,
+                    categoryEn: writerForm.section,
+                    readCount: 0,
+                    publishDate: new Date().toISOString().split('T')[0],
+                    status: 'under_review',
+                    issueNumber: 3,
+                  });
                   setWriterSuccessCode(code);
                 }}
               >
+                {/* Authenticated Writer Identity Card */}
+                <div className="flex items-center gap-3 p-3.5 mb-5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-slate-200">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-sm shrink-0 shadow-sm">
+                    {user?.name ? user.name.trim().charAt(0) : '✓'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs text-amber-400 font-bold">
+                        {lang === 'ar' ? 'الكاتب المعتمد:' : 'Authenticated Author:'}
+                      </span>
+                      <span className="text-xs font-black text-white truncate">
+                        {user?.name || (lang === 'ar' ? 'عضو الأكاديمية' : 'Academy Member')}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                        ✓ {lang === 'ar' ? 'حساب موثق' : 'Verified'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                      <span>{user?.email || 'member@tot-academy.org'}</span>
+                      {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="writer-form-grid">
-                  <div>
-                    <label className="form-label">{t.writer_full_name}</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={t.writer_full_name_placeholder}
-                      className="form-input"
-                      value={writerForm.fullName}
-                      onChange={(e) =>
-                        setWriterForm({ ...writerForm, fullName: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">{t.writer_whatsapp}</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+213..."
-                      className="form-input"
-                      value={writerForm.whatsapp}
-                      onChange={(e) =>
-                        setWriterForm({ ...writerForm, whatsapp: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">{t.writer_email}</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="name@example.com"
-                      className="form-input"
-                      value={writerForm.email}
-                      onChange={(e) =>
-                        setWriterForm({ ...writerForm, email: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
+                  <div className="writer-full-col">
                     <CustomDropdown
                       id="writer-section"
                       label={t.writer_section}

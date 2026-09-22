@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 import {
   EVENT_SECTIONS,
   WHATSAPP_NUMBER,
@@ -26,11 +27,9 @@ export const SidebarWidgets: React.FC<SidebarWidgetsProps> = ({
   categoryCounts,
 }) => {
   const { language } = useLanguage();
+  const { user } = useUserAccount();
 
   // Proposal Form State
-  const [proposalName, setProposalName] = useState('');
-  const [proposalEmail, setProposalEmail] = useState('');
-  const [proposalPhone, setProposalPhone] = useState('');
   const [proposalType, setProposalType] = useState('');
   const [proposalMessage, setProposalMessage] = useState('');
   const [proposalFile, setProposalFile] = useState<string>('');
@@ -42,12 +41,15 @@ export const SidebarWidgets: React.FC<SidebarWidgetsProps> = ({
 
   const handleProposalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!proposalName || !proposalPhone) return;
+
+    const authorName = user?.name || (language === 'ar' ? 'عضو الأكاديمية' : 'Academy Member');
+    const authorPhone = user?.phone || 'غير محدد';
+    const authorEmail = user?.email || 'غير محدد';
 
     const message = `*مقترح فعالية جديدة - TOT Academy*
-الاسم: ${proposalName}
-الهاتف: ${proposalPhone}
-البريد: ${proposalEmail || 'غير محدد'}
+الاسم: ${authorName}
+الهاتف: ${authorPhone}
+البريد: ${authorEmail}
 نوع الفعالية: ${proposalType || 'عام'}
 الملف المرفق: ${proposalFile ? 'نعم (تم تجهيزه)' : 'لا يوجد'}
 ملخص الفكرة:
@@ -133,29 +135,26 @@ ${proposalMessage || 'لا يوجد تفاصيل إضافية'}`;
         </p>
 
         <form onSubmit={handleProposalSubmit}>
-          <input
-            type="text"
-            className="event-input"
-            required
-            placeholder={getTranslation('proposal_name', language)}
-            value={proposalName}
-            onChange={(e) => setProposalName(e.target.value)}
-          />
-          <input
-            type="email"
-            className="event-input"
-            placeholder={getTranslation('proposal_email', language)}
-            value={proposalEmail}
-            onChange={(e) => setProposalEmail(e.target.value)}
-          />
-          <input
-            type="tel"
-            className="event-input"
-            required
-            placeholder={getTranslation('proposal_phone', language)}
-            value={proposalPhone}
-            onChange={(e) => setProposalPhone(e.target.value)}
-          />
+          {/* Authenticated Proposer Identity Card */}
+          <div className="flex items-center gap-2.5 p-2.5 mb-3 rounded-xl bg-blue-500/10 border border-blue-500/25 text-slate-800 dark:text-slate-200">
+            <div className="w-8 h-8 rounded-lg bg-primary-blue text-white font-bold flex items-center justify-center text-xs shrink-0">
+              {user?.name ? user.name.trim().charAt(0) : '✓'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                  {language === 'ar' ? 'صاحب المقترح:' : 'Proposer:'}
+                </span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {user?.name || (language === 'ar' ? 'عضو الأكاديمية' : 'Member')}
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                <span>{user?.email || 'member@tot-academy.org'}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="mb-2">
             <CustomDropdown
               id="sidebar-proposal-type"

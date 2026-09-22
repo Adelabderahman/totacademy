@@ -178,6 +178,8 @@ function EduPathContent() {
     confirmTrackEnrollment: contextConfirmTrackEnrollment,
     deleteTrackFromAccount,
     resetTrackProgress,
+    addAppointment,
+    addCertificate,
   } = useUserAccount();
   const { openAuthModal } = useAuthModal();
 
@@ -4391,25 +4393,56 @@ function EduPathContent() {
                 <span className="text-blue">💬</span>
                 <span>{strings.dt_part1_title}</span>
               </h3>
+
+              {/* Authenticated Trainee Identity Card */}
+              <div className="flex items-center gap-3 p-3 mb-4 rounded-xl bg-sky-500/10 border border-sky-500/25 text-slate-200">
+                <div className="w-9 h-9 rounded-lg bg-sky-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
+                  {user?.name ? user.name.trim().charAt(0) : '✓'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-sky-400 font-bold">
+                      {lang === 'ar' ? 'المتدرب المسجل:' : 'Registered Trainee:'}
+                    </span>
+                    <span className="text-xs font-black text-white truncate">
+                      {user?.name || (lang === 'ar' ? 'متدرب الأكاديمية' : 'Academy Trainee')}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                      ✓ {lang === 'ar' ? 'حساب نشط' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                    <span>{user?.email || 'member@tot-academy.org'}</span>
+                    {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                  </div>
+                </div>
+              </div>
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  alert(lang === 'ar' ? 'تم إرسال طلب اللقاء التفاعلي بنجاح!' : 'Meeting request sent!');
+                  addAppointment({
+                    titleAr: `لقاء تفاعلي عن بعد: ${strings.pathway_name_value || 'مسار التدريب'}`,
+                    titleEn: `Remote Interactive Meeting: ${displayTitle}`,
+                    type: 'interactive_meeting',
+                    typeLabelAr: 'لقاء تفاعلي عن بعد',
+                    typeLabelEn: 'Remote Interactive Meeting',
+                    date: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+                    time: '18:00 - 19:30',
+                    locationAr: 'منصة التدريب الافتراضية (عن بعد)',
+                    locationEn: 'Virtual Training Platform (Online)',
+                    mentorOrHost: 'الأستاذ بلال عويش',
+                    status: 'upcoming',
+                    link: 'https://meet.google.com/tot-interactive',
+                  });
+                  alert(
+                    lang === 'ar'
+                      ? `تم حجز موعد اللقاء التفاعلي بنجاح وإدراجه تلقائياً في حسابك (${user?.name || 'المتدرب'}) ضمن جدول المواعيد!`
+                      : 'Meeting booked and added directly to your account appointments!'
+                  );
                 }}
               >
                 <div className="grand-form-grid">
-                  <div>
-                    <label className="grand-label">{strings.label_name}</label>
-                    <input type="text" required className="grand-input" placeholder="..." />
-                  </div>
-                  <div>
-                    <label className="grand-label">{strings.dt_whatsapp_label}</label>
-                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
-                  </div>
-                  <div className="grand-col-full">
-                    <label className="grand-label">{strings.label_email}</label>
-                    <input type="email" required className="grand-input" placeholder="example@email.com" />
-                  </div>
                   <div>
                     <label className="grand-label">{strings.label_pathway_name}</label>
                     <input type="text" required className="grand-input" defaultValue={strings.pathway_name_value} />
@@ -4435,22 +4468,56 @@ function EduPathContent() {
                 <span className="text-blue">🏢</span>
                 <span>{strings.dt_part2_title}</span>
               </h3>
+
+              {/* Authenticated Trainee Identity Card */}
+              <div className="flex items-center gap-3 p-3 mb-4 rounded-xl bg-sky-500/10 border border-sky-500/25 text-slate-200">
+                <div className="w-9 h-9 rounded-lg bg-sky-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
+                  {user?.name ? user.name.trim().charAt(0) : '✓'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-sky-400 font-bold">
+                      {lang === 'ar' ? 'المتدرب المسجل:' : 'Registered Trainee:'}
+                    </span>
+                    <span className="text-xs font-black text-white truncate">
+                      {user?.name || (lang === 'ar' ? 'متدرب الأكاديمية' : 'Academy Trainee')}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                      ✓ {lang === 'ar' ? 'حساب نشط' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                    <span>{user?.email || 'member@tot-academy.org'}</span>
+                    {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                  </div>
+                </div>
+              </div>
+
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  alert(lang === 'ar' ? 'تم تسجيل طلب الورشة الحضورية بنجاح!' : 'Workshop request registered!');
+                  addAppointment({
+                    titleAr: `ورشة تدريبية حضورية: ${strings.pathway_name_value || 'مسار التدريب'}`,
+                    titleEn: `In-Person Workshop: ${displayTitle}`,
+                    type: 'workshop',
+                    typeLabelAr: 'ورشة تدريبية حضورية',
+                    typeLabelEn: 'In-Person Workshop',
+                    date: new Date(Date.now() + 12 * 86400000).toISOString().split('T')[0],
+                    time: workshopTimes === 'morning' ? '09:00 - 13:00' : '14:00 - 18:00',
+                    locationAr: 'المركز الأكاديمي للتدريب - الجزائر العاصمة',
+                    locationEn: 'Academic Training Center - Algiers',
+                    mentorOrHost: 'الأستاذ بلال عويش وفريق الخبراء',
+                    status: 'upcoming',
+                  });
+                  alert(
+                    lang === 'ar'
+                      ? `تم تسجيل طلبك في الورشة الحضورية وإدراجه تلقائياً في حسابك (${user?.name || 'المتدرب'}) ضمن جدول المواعيد!`
+                      : 'In-person workshop booked and added directly to your account appointments!'
+                  );
                 }}
               >
                 <div className="grand-form-grid">
-                  <div>
-                    <label className="grand-label">{strings.label_name}</label>
-                    <input type="text" required className="grand-input" placeholder="..." />
-                  </div>
-                  <div>
-                    <label className="grand-label">{strings.label_phone}</label>
-                    <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
-                  </div>
-                  <div>
+                  <div className="grand-col-full">
                     <label className="grand-label">{strings.dt_location_label}</label>
                     <input type="text" required className="grand-input" placeholder="الجزائر العاصمة، وهران، قسنطينة..." />
                   </div>
@@ -4586,6 +4653,30 @@ function EduPathContent() {
           </div>
 
           <div className="grand-card">
+            {/* Authenticated Trainee Identity Card */}
+            <div className="flex items-center gap-3 p-3.5 mb-5 rounded-xl bg-orange-500/10 border border-orange-500/25 text-slate-200">
+              <div className="w-10 h-10 rounded-xl bg-orange-500 text-white font-black flex items-center justify-center text-sm shrink-0 shadow-sm">
+                {user?.name ? user.name.trim().charAt(0) : '🎓'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-orange-400 font-bold">
+                    {lang === 'ar' ? 'طالب الشهادة المعتمد:' : 'Certified Applicant:'}
+                  </span>
+                  <span className="text-xs font-black text-white truncate">
+                    {user?.name || (lang === 'ar' ? 'عضو الأكاديمية' : 'Academy Member')}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                    ✓ {lang === 'ar' ? 'قيد موثق' : 'Verified ID'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                  <span>{user?.email || 'member@tot-academy.org'}</span>
+                  {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                </div>
+              </div>
+            </div>
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -4598,22 +4689,27 @@ function EduPathContent() {
                   openPathwayModal();
                   return;
                 }
-                alert(lang === 'ar' ? 'تم استلام طلب الاعتماد والشهادة بنجاح! سيتم مراجعة ملفك والتواصل معك.' : 'Certificate application submitted!');
+                const credId = `TOT-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
+                addCertificate({
+                  titleAr: `شهادة اعتماد: ${strings.pathway_name_value || 'مسار التدريب'}`,
+                  titleEn: `Accreditation Certificate: ${displayTitle}`,
+                  trackTitleAr: strings.pathway_name_value || 'البرنامج التأسيسي الشامل لتدريب المدربين',
+                  trackTitleEn: displayTitle,
+                  issueDate: new Date().toISOString().split('T')[0],
+                  credentialId: credId,
+                  grade: 'ممتاز (A)',
+                  hours: 126,
+                  issuerAr: 'أكاديمية التدريب الاحترافي TOT',
+                  issuerEn: 'TOT Professional Training Academy',
+                });
+                alert(
+                  lang === 'ar'
+                    ? `تم استلام طلب الاعتماد والشهادة بنجاح وإدراجه في ملفك الأكاديمي (${user?.name || 'المتدرب'})! رقم القيد: ${credId}.`
+                    : 'Certificate application submitted and linked to your account profile!'
+                );
               }}
             >
               <div className="grand-form-grid">
-                <div>
-                  <label className="grand-label">{strings.label_name}</label>
-                  <input type="text" required className="grand-input" placeholder="..." />
-                </div>
-                <div>
-                  <label className="grand-label">{strings.label_phone}</label>
-                  <input type="tel" required className="grand-input" placeholder="06XXXXXXXX" dir="ltr" />
-                </div>
-                <div>
-                  <label className="grand-label">{strings.label_email}</label>
-                  <input type="email" required className="grand-input" placeholder="example@gmail.com" />
-                </div>
                 <div>
                   <label className="grand-label">{strings.cert_id_label}</label>
                   <input type="text" required className="grand-input" placeholder="..." />
@@ -4861,34 +4957,30 @@ function EduPathContent() {
                         await confirmTrackEnrollment();
                       }}
                     >
-                      <div className="form-group">
-                        <label>{strings.label_name}</label>
-                        <input
-                          type="text"
-                          required
-                          defaultValue={user?.name || ''}
-                          placeholder={strings.ph_name}
-                        />
+                      {/* Authenticated Member Verification Card */}
+                      <div className="flex items-center gap-3 p-3.5 mb-4 rounded-xl bg-blue-50 border border-blue-200 text-slate-700">
+                        <div className="w-10 h-10 rounded-xl bg-primary-blue text-white font-black flex items-center justify-center text-sm shrink-0 shadow-sm">
+                          {user?.name ? user.name.trim().charAt(0) : '✓'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs text-blue-700 font-bold">
+                              {lang === 'ar' ? 'بيانات المشترك المعتمدة:' : 'Verified Trainee:'}
+                            </span>
+                            <span className="text-xs font-black text-slate-900 truncate">
+                              {user?.name || (lang === 'ar' ? 'متدرب الأكاديمية' : 'Academy Trainee')}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold border border-emerald-300">
+                              ✓ {lang === 'ar' ? 'حساب موثق' : 'Verified'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                            <span>{user?.email || 'member@tot-academy.org'}</span>
+                            {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                          </div>
+                        </div>
                       </div>
-                      <div className="form-group">
-                        <label>{strings.label_email}</label>
-                        <input
-                          type="email"
-                          required
-                          defaultValue={user?.email || ''}
-                          placeholder={strings.ph_email}
-                        />
-                      </div>
-                      <div className="form-group full-width">
-                        <label>{strings.label_whatsapp}</label>
-                        <input
-                          type="tel"
-                          required
-                          defaultValue={user?.phone || ''}
-                          placeholder={strings.ph_whatsapp}
-                          dir="ltr"
-                        />
-                      </div>
+
                       <div className="form-group full-width">
                         <label>{strings.label_pathway}</label>
                         <input

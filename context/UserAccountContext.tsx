@@ -94,6 +94,9 @@ interface UserAccountContextType {
     }
   ) => Promise<void>;
   getTrackProgress: (trackKey: string) => Promise<TrackProgressRecord | null>;
+  addAppointment: (appointment: Omit<UserAppointment, 'id'>) => { success: boolean; id: string };
+  addArticle: (article: Omit<ContributedArticle, 'id'>) => { success: boolean; id: string };
+  addCertificate: (cert: Omit<UserCertificate, 'id'>) => { success: boolean; id: string };
 }
 
 const DEFAULT_USER_PROFILE: UserProfile = {
@@ -414,9 +417,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const [enrolledTracks, setEnrolledTracks] = useState<EnrolledTrack[]>([]);
   const [confirmedEnrollments, setConfirmedEnrollments] = useState<Record<string, ConfirmedEnrollmentRecord>>({});
-  const [certificates, setCertificates] = useState<UserCertificate[]>([]);
-  const [appointments, setAppointments] = useState<UserAppointment[]>([]);
-  const [articles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
+  const [certificates, setCertificates] = useState<UserCertificate[]>(INITIAL_CERTIFICATES);
+  const [appointments, setAppointments] = useState<UserAppointment[]>(INITIAL_APPOINTMENTS);
+  const [articles, setArticles] = useState<ContributedArticle[]>(INITIAL_ARTICLES);
   const [students] = useState<SupervisedStudent[]>(INITIAL_STUDENTS);
   const [professors] = useState<SupervisingProfessor[]>(INITIAL_PROFESSORS);
 
@@ -443,6 +446,18 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
       const savedConfirmed = localStorage.getItem('tot_user_confirmed_enrollments');
       if (savedConfirmed) {
         setConfirmedEnrollments(JSON.parse(savedConfirmed));
+      }
+      const savedAppointments = localStorage.getItem('tot_user_appointments');
+      if (savedAppointments) {
+        setAppointments(JSON.parse(savedAppointments));
+      }
+      const savedArticles = localStorage.getItem('tot_user_articles');
+      if (savedArticles) {
+        setArticles(JSON.parse(savedArticles));
+      }
+      const savedCertificates = localStorage.getItem('tot_user_certificates');
+      if (savedCertificates) {
+        setCertificates(JSON.parse(savedCertificates));
       }
     } catch {
       // ignore local cache errors
@@ -1203,6 +1218,48 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   };
 
+  // Add an appointment to user account and local persistence
+  const addAppointment = (newApp: Omit<UserAppointment, 'id'>): { success: boolean; id: string } => {
+    const id = `app-${Date.now()}`;
+    const fullApp: UserAppointment = { id, ...newApp };
+    setAppointments((prev) => {
+      const updated = [fullApp, ...prev];
+      try {
+        localStorage.setItem('tot_user_appointments', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    return { success: true, id };
+  };
+
+  // Add an article submission to user account
+  const addArticle = (newArt: Omit<ContributedArticle, 'id'>): { success: boolean; id: string } => {
+    const id = `art-${Date.now()}`;
+    const fullArt: ContributedArticle = { id, ...newArt };
+    setArticles((prev) => {
+      const updated = [fullArt, ...prev];
+      try {
+        localStorage.setItem('tot_user_articles', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    return { success: true, id };
+  };
+
+  // Add a certificate to user account
+  const addCertificate = (newCert: Omit<UserCertificate, 'id'>): { success: boolean; id: string } => {
+    const id = `cert-${Date.now()}`;
+    const fullCert: UserCertificate = { id, ...newCert };
+    setCertificates((prev) => {
+      const updated = [fullCert, ...prev];
+      try {
+        localStorage.setItem('tot_user_certificates', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    return { success: true, id };
+  };
+
   // Sign out
   const logout = async () => {
     try {
@@ -1254,6 +1311,9 @@ export const UserAccountProvider: React.FC<{ children: ReactNode }> = ({ childre
         enrollInTrack,
         updateTrackProgress,
         getTrackProgress,
+        addAppointment,
+        addArticle,
+        addCertificate,
       }}
     >
       {children}

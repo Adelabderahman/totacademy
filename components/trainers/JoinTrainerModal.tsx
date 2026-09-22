@@ -1,10 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 import { coreI18n } from '@/data/trainersData';
 import CustomDropdown, { DropdownOption } from '@/components/ui/CustomDropdown';
+
+const specialtiesList = [
+  { ar: 'إدارة وتخطيط التدريب', en: 'Training Management & Planning', fr: 'Gestion et planification de la formation' },
+  { ar: 'تصميم الحقائب التدريبية', en: 'Training Package Design', fr: 'Conception de kits de formation' },
+  { ar: 'أساليب وأنشطة التدريب التفاعلي', en: 'Interactive Training Methods', fr: 'Méthodes de formation interactive' },
+  { ar: 'تيسير الورش والندوات', en: 'Workshop Facilitation', fr: 'Facilitation d\'ateliers' },
+  { ar: 'كوتشينغ وتطوير الأداء', en: 'Coaching & Performance Development', fr: 'Coaching et développement de la performance' },
+  { ar: 'التدريب الإلكتروني والتعليم عن بعد', en: 'E-Learning & Digital Training', fr: 'Formation en ligne et e-learning' },
+  { ar: 'القيادة وإدارة التغيير', en: 'Leadership & Change Management', fr: 'Leadership et gestion du changement' },
+  { ar: 'تخصص آخر', en: 'Other Specialization', fr: 'Autre spécialité' },
+];
 
 interface JoinTrainerModalProps {
   isOpen: boolean;
@@ -13,12 +25,10 @@ interface JoinTrainerModalProps {
 
 export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalProps) {
   const { language } = useLanguage();
+  const { user } = useUserAccount();
   const t = coreI18n[language] || coreI18n.ar;
   const isRTL = language === 'ar';
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [otherSpecialty, setOtherSpecialty] = useState('');
@@ -129,7 +139,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
     e.preventDefault();
     setErrorMessage('');
 
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !country.trim() || !specialty) {
+    if (!country.trim() || !specialty) {
       setErrorMessage(t.form_required_alert);
       return;
     }
@@ -158,17 +168,32 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
 
     setIsSubmitting(true);
 
+    try {
+      const existing = JSON.parse(localStorage.getItem('tot_trainer_applications') || '[]');
+      existing.push({
+        id: `tr-app-${Date.now()}`,
+        userId: user?.id,
+        userName: user?.name,
+        userEmail: user?.email,
+        userPhone: user?.phone,
+        country,
+        specialty: specialty === 'other' ? otherSpecialty : specialty,
+        experienceYears,
+        portfolioUrl,
+        bio,
+        appliedAt: new Date().toISOString(),
+      });
+      localStorage.setItem('tot_trainer_applications', JSON.stringify(existing));
+    } catch {}
+
     // Simulate submission to server
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 1200);
+    }, 1000);
   };
 
   const handleResetAndClose = () => {
-    setFullName('');
-    setEmail('');
-    setPhone('');
     setCountry('');
     setSpecialty('');
     setOtherSpecialty('');
@@ -222,7 +247,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
             <div className="success-summary-box">
               <div className="summary-item">
                 <span className="summary-label">{t.form_name_label}:</span>
-                <span className="summary-value">{fullName}</span>
+                <span className="summary-value">{user?.name || (language === 'ar' ? 'عضو الأكاديمية' : 'Academy Member')}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">{t.form_specialty_label}:</span>
@@ -248,6 +273,30 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
               <h2 id="join-modal-title">{t.join_modal_title}</h2>
             </div>
 
+            {/* Authenticated User Account Card */}
+            <div className="flex items-center gap-3 p-3.5 mb-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 text-blue-950">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shrink-0 shadow-sm">
+                {user?.name ? user.name.trim().charAt(0) : '✓'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-blue-700 font-bold">
+                    {language === 'ar' ? 'التقديم بالحساب المعتمد:' : 'Applying with verified account:'}
+                  </span>
+                  <span className="text-xs font-black text-blue-950 truncate">
+                    {user?.name || (language === 'ar' ? 'عضو الأكاديمية' : 'Academy Member')}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                    ✓ {language === 'ar' ? 'حساب موثق' : 'Verified'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                  <span>{user?.email || 'member@tot-academy.org'}</span>
+                  {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+                </div>
+              </div>
+            </div>
+
             {errorMessage && (
               <div className="join-modal-alert" role="alert">
                 ⚠️ {errorMessage}
@@ -256,55 +305,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
 
             <form className="join-modal-form" onSubmit={handleSubmit} noValidate>
               <div className="form-grid-2col-3row">
-                {/* 1. Full Name */}
-                <div className="form-group">
-                  <label htmlFor="join-full-name">
-                    {t.form_name_label} <span className="req">*</span>
-                  </label>
-                  <input
-                    id="join-full-name"
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder={t.form_name_placeholder}
-                    className="form-input"
-                  />
-                </div>
-
-                {/* 2. Email */}
-                <div className="form-group">
-                  <label htmlFor="join-email">
-                    {t.form_email_label} <span className="req">*</span>
-                  </label>
-                  <input
-                    id="join-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.form_email_placeholder}
-                    className="form-input"
-                  />
-                </div>
-
-                {/* 3. WhatsApp / Phone */}
-                <div className="form-group">
-                  <label htmlFor="join-phone">
-                    {t.form_phone_label} <span className="req">*</span>
-                  </label>
-                  <input
-                    id="join-phone"
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder={t.form_phone_placeholder}
-                    className="form-input"
-                  />
-                </div>
-
-                {/* 4. Country / Province */}
+                {/* 1. Country / Province */}
                 <div className="form-group">
                   <label htmlFor="join-country">
                     {t.form_country_label} <span className="req">*</span>
@@ -320,7 +321,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   />
                 </div>
 
-                {/* 5. Specialization */}
+                {/* 2. Specialization */}
                 <div>
                   <CustomDropdown
                     id="join-specialty"
@@ -342,7 +343,7 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   />
                 </div>
 
-                {/* 6. Years of Experience */}
+                {/* 3. Years of Experience */}
                 <div>
                   <CustomDropdown
                     id="join-experience"
@@ -358,6 +359,21 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                     placeholder={t.form_exp_select}
                     themeColor="blue"
                     dropdownWidthClass="w-full min-w-[240px] sm:min-w-[280px]"
+                  />
+                </div>
+
+                {/* 4. Portfolio / LinkedIn */}
+                <div className="form-group">
+                  <label htmlFor="join-portfolio">
+                    {t.form_portfolio_label}
+                  </label>
+                  <input
+                    id="join-portfolio"
+                    type="url"
+                    value={portfolioUrl}
+                    onChange={(e) => setPortfolioUrl(e.target.value)}
+                    placeholder={t.form_portfolio_placeholder}
+                    className="form-input"
                   />
                 </div>
               </div>
@@ -378,21 +394,6 @@ export default function JoinTrainerModal({ isOpen, onClose }: JoinTrainerModalPr
                   />
                 </div>
               ) : null}
-
-              {/* LinkedIn / Portfolio URL */}
-              <div className="form-group">
-                <label htmlFor="join-portfolio">
-                  {t.form_portfolio_label}
-                </label>
-                <input
-                  id="join-portfolio"
-                  type="url"
-                  value={portfolioUrl}
-                  onChange={(e) => setPortfolioUrl(e.target.value)}
-                  placeholder={t.form_portfolio_placeholder}
-                  className="form-input"
-                />
-              </div>
 
               {/* Upload CV Dropzone */}
               <div className="form-group">

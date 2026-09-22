@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import { useUserAccount } from '@/context/UserAccountContext';
 import {
   EventItemType,
   EventSectionType,
@@ -27,10 +28,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   onClose,
 }) => {
   const { language } = useLanguage();
+  const { user, addAppointment } = useUserAccount();
 
-  const [fullName, setFullName] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [email, setEmail] = useState('');
   const [seatType, setSeatType] = useState('trainee');
   const [seatCount, setSeatCount] = useState('1');
   const [city, setCity] = useState('');
@@ -73,7 +72,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
   const handleConfirmReservation = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !whatsapp.trim() || !consent) {
+    if (!consent) {
       setStatusMessage({
         text: getTranslation('reservation_error', language),
         isError: true,
@@ -90,9 +89,9 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
       eventId: event.id,
       eventTitle,
       date: new Date().toISOString(),
-      fullName,
-      whatsapp,
-      email,
+      fullName: user?.name || 'عضو الأكاديمية',
+      whatsapp: user?.phone || '',
+      email: user?.email || '',
       seatType,
       seatCount,
       city,
@@ -106,6 +105,22 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
     } catch {
       // ignore
     }
+
+    // Add to user account appointments
+    const isOnline = event.mode === 'online';
+    addAppointment({
+      titleAr: `حجز فعالية: ${event.title.ar}`,
+      titleEn: `Event Reservation: ${event.title.en || event.title.ar}`,
+      type: isOnline ? 'interactive_meeting' : 'workshop',
+      typeLabelAr: isOnline ? 'فعالية عن بعد' : 'فعالية حضورية',
+      typeLabelEn: isOnline ? 'Online Event' : 'In-Person Event',
+      date: event.date ? (typeof event.date === 'string' ? event.date : new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+      time: '10:00 - 13:00',
+      locationAr: eventLoc || 'المركز الأكاديمي',
+      locationEn: eventLoc || 'Academic Center',
+      mentorOrHost: 'أكاديمية التدريب الاحترافي TOT',
+      status: 'upcoming',
+    });
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -128,10 +143,10 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 المكان: ${eventLoc}
 النمط: ${eventMode}
 
-*بيانات المشترك:*
-الاسم: ${fullName || 'غير محدد'}
-الهاتف/واتساب: ${whatsapp || 'غير محدد'}
-البريد: ${email || 'غير محدد'}
+*بيانات المشترك المعتمدة:*
+الاسم: ${user?.name || 'عضو الأكاديمية'}
+الهاتف/واتساب: ${user?.phone || 'غير محدد'}
+البريد: ${user?.email || 'غير محدد'}
 نوع المقعد: ${seatTypeLabel}
 عدد المقاعد: ${seatCount}
 المدينة/البلد: ${city || 'غير محدد'}
@@ -180,48 +195,31 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
         </div>
 
         <form className="reservation-form" onSubmit={handleConfirmReservation}>
+          {/* Authenticated User Identity Card */}
+          <div className="flex items-center gap-3 p-3.5 mb-4 rounded-xl bg-blue-500/10 border border-blue-500/25 text-slate-800 dark:text-slate-200">
+            <div className="w-10 h-10 rounded-xl bg-primary-blue text-white font-black flex items-center justify-center text-sm shrink-0 shadow-sm">
+              {user?.name ? user.name.trim().charAt(0) : '✓'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-bold">
+                  {language === 'ar' ? 'صاحب الحجز المسجل:' : 'Registered Attendee:'}
+                </span>
+                <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                  {user?.name || (language === 'ar' ? 'عضو الأكاديمية' : 'Academy Member')}
+                </span>
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30">
+                  ✓ {language === 'ar' ? 'حساب معتمد' : 'Verified Account'}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                <span>{user?.email || 'member@tot-academy.org'}</span>
+                {user?.phone ? <span className="mx-1">• {user.phone}</span> : null}
+              </div>
+            </div>
+          </div>
+
           <div className="reservation-grid">
-            <div className="reservation-field">
-              <label htmlFor="res-name">
-                {getTranslation('reservation_full_name', language)}
-              </label>
-              <input
-                type="text"
-                id="res-name"
-                required
-                placeholder={getTranslation('reservation_full_name_placeholder', language)}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-
-            <div className="reservation-field">
-              <label htmlFor="res-whatsapp">
-                {getTranslation('reservation_whatsapp', language)}
-              </label>
-              <input
-                type="tel"
-                id="res-whatsapp"
-                required
-                placeholder="+213 555 000 000"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-              />
-            </div>
-
-            <div className="reservation-field">
-              <label htmlFor="res-email">
-                {getTranslation('reservation_email', language)}
-              </label>
-              <input
-                type="email"
-                id="res-email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
             <div className="reservation-field">
               <CustomDropdown
                 id="res-type"
